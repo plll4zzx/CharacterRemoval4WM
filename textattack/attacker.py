@@ -88,6 +88,20 @@ class Attacker:
 
         # This is to be set if loading from a checkpoint
         self._checkpoint = None
+        self.result_list = []
+
+    
+    def __del__(self):
+        from .utils import save_json, get_advtext_filename
+        import os
+        filename=get_advtext_filename(
+            attack_name=self.attack_args.attack_name,
+            dataset_name=self.attack_args.dataset_name,
+            victim_name=self.attack_args.victim_name,
+            num_examples=self.attack_args.num_examples,
+        )
+        file_path=os.path.join('saved_data', filename)
+        save_json(data=self.result_list, file_path=file_path)
 
     def _get_worklist(self, start, end, num_examples, shuffle):
         if end - start < num_examples:
@@ -188,6 +202,14 @@ class Attacker:
             if not self.attack_args.disable_stdout and not self.attack_args.silent:
                 print("\n")
             num_results += 1
+            self.result_list.append(
+                {
+                    'origin_text': result.original_result.attacked_text.text,
+                    'attacked_text': result.perturbed_result.attacked_text.text,
+                    'num_queries': result.perturbed_result.num_queries,
+                    'cos_score': result.perturbed_result.score
+                }
+            )
 
             if isinstance(result, SkippedAttackResult):
                 num_skipped += 1
@@ -356,6 +378,14 @@ class Attacker:
                 pbar.update()
 
             self.attack_log_manager.log_result(result)
+            self.result_list.append(
+                {
+                    'origin_text': result.original_result.attacked_text.text,
+                    'attacked_text': result.perturbed_result.attacked_text.text,
+                    'num_queries': result.perturbed_result.num_queries,
+                    'cos_score': result.perturbed_result.score
+                }
+            )
             num_results += 1
 
             if isinstance(result, SkippedAttackResult):

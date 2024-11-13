@@ -188,6 +188,9 @@ class AttackArgs:
     """
 
     num_examples: int = 10
+    attack_name: str = ''
+    dataset_name: str = ''
+    victim_name: str = ''
     num_successful_examples: int = None
     num_examples_offset: int = 0
     attack_n: bool = False

@@ -14,6 +14,7 @@ from textattack.goal_functions import (
     NonOverlappingOutput,
     TargetedClassification,
     UntargetedClassification,
+    SemanticGoalFunction
 )
 
 from . import logger

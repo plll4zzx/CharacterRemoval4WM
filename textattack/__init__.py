@@ -22,6 +22,7 @@ from .metrics import Metric
 
 from . import (
     attack_recipes,
+    attack_sems,
     attack_results,
     augmentation,
     commands,
