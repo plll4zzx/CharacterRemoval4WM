@@ -37,6 +37,7 @@ class AttackResult(ABC):
         self.original_result = original_result
         self.perturbed_result = perturbed_result
         self.num_queries = perturbed_result.num_queries
+        self.perturbed_num = self.original_result.attacked_text.words_diff_num(self.perturbed_result.attacked_text)
 
         # We don't want the AttackedText attributes sticking around clogging up
         # space on our devices. Delete them here, if they're still present,

@@ -8,6 +8,7 @@ A Strong Baseline for Natural Language Attack on Text Classification and Entailm
 
 from textattack import Attack
 from textattack.constraints.grammaticality import PartOfSpeech
+from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.constraints.pre_transformation import (
     InputColumnModification,
     RepeatModification,
@@ -32,7 +33,7 @@ class TextFoolerJin2019(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10):
         #
         # Swap words with their 50 closest embedding nearest-neighbors.
         # Embedding: Counter-fitted PARAGRAM-SL999 vectors.
@@ -80,6 +81,7 @@ class TextFoolerJin2019(AttackSem):
         #     skip_text_shorter_than_window=True,
         # )
         # constraints.append(use_constraint)
+        constraints.append(LevenshteinEditDistance(edit_distance))
         #
         # Goal is untargeted classification
         #

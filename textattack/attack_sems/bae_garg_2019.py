@@ -10,7 +10,8 @@ from textattack.constraints.pre_transformation import (
     StopwordModification,
 )
 from textattack.constraints.semantics.sentence_encoders import UniversalSentenceEncoder
-from textattack.goal_functions import UntargetedClassification
+from textattack.goal_functions import UntargetedClassification, UntargetedSemantic
+from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import WordSwapMaskedLM
 
@@ -37,7 +38,7 @@ class BAEGarg2019(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10):
         # "In this paper, we present a simple yet novel technique: BAE (BERT-based
         # Adversarial Examples), which uses a language model (LM) for token
         # replacement to best fit the overall context. We perturb an input sentence
@@ -95,18 +96,19 @@ class BAEGarg2019(AttackSem):
         # adjust the threshold to account for the missing / pi in the cosine
         # similarity comparison. So the final threshold is 1 - (1 - 0.8) / pi
         # = 1 - (0.2 / pi) = 0.936338023.
-        use_constraint = UniversalSentenceEncoder(
-            threshold=0.936338023,
-            metric="cosine",
-            compare_against_original=True,
-            window_size=15,
-            skip_text_shorter_than_window=True,
-        )
-        constraints.append(use_constraint)
+        # use_constraint = UniversalSentenceEncoder(
+        #     threshold=0.936338023,
+        #     metric="cosine",
+        #     compare_against_original=True,
+        #     window_size=15,
+        #     skip_text_shorter_than_window=True,
+        # )
+        # constraints.append(use_constraint)
+        constraints.append(LevenshteinEditDistance(edit_distance))
         #
         # Goal is untargeted classification.
         #
-        goal_function = UntargetedClassification(model_wrapper)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
         #
         # "We estimate the token importance Ii of each token
         # t_i ∈ S = [t1, . . . , tn], by deleting ti from S and computing the

@@ -96,7 +96,7 @@ class SemanticGoalFunction(GoalFunction):
             results.append(
                 self._goal_function_result_type()(
                     attacked_text,
-                    # raw_output,
+                    self.initial_attacked_text.words_diff_num(attacked_text),
                     # displayed_output,
                     goal_status,
                     goal_function_score,

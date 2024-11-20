@@ -8,6 +8,7 @@ from typing import List, Union
 
 import lru
 import torch
+import numpy as np
 
 import textattack
 from textattack.attack_results import (
@@ -449,6 +450,29 @@ class Attack:
         else:
             result = self._attack(goal_function_result)
             return result
+    
+    def step_attack(self, example, ground_truth_output, window_size=10, step_ize=10):
+        example_ids=self.goal_function.model.tokenizer.encode(example)[1:-1]
+        example_list=[
+            self.goal_function.model.tokenizer.decode(example_ids[idx:idx+window_size])
+            for idx in range(0, len(example_ids),step_ize)
+        ]
+        result_list=[
+            self.attack(tmp_ex, ground_truth_output)
+            for tmp_ex in example_list
+        ]
+        rlt_text=''
+        for tmp in result_list:
+            tmp_text=tmp.perturbed_result.attacked_text.text
+            if tmp_text[0:2]=='##':
+                rlt_text=rlt_text+tmp_text[2:]
+            else:
+                rlt_text=rlt_text+' '+tmp_text
+        result={
+            'text': rlt_text,
+            'score':round(np.mean(result['score']),4)
+        }
+        return result
 
     def __repr__(self):
         """Prints attack parameters in a human-readable string.

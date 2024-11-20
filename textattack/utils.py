@@ -26,5 +26,5 @@ def get_advtext_filename(
     ):
 
     return '_'.join([
-        attack_name, dataset_name, victim_name, str(num_examples)
+        attack_name, dataset_name.replace('/','_'), victim_name.replace('/','_'), str(num_examples)
     ])+file_type

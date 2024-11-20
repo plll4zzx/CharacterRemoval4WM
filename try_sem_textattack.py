@@ -5,7 +5,7 @@ import time
 
 import textattack
 import transformers
-
+from read_data import c4
 import textattack.attack_sems
 # from datasets import load_dataset
 # from textattack.models.helpers import (LSTMForClassification,
@@ -23,38 +23,57 @@ import textattack.attack_sems
 # #BAE在原始的huggingface imdb上生成不了对抗样本，改为在原始的huggingface imdb tokenize<512之后的ori_hug_token_imdb文件上生成对抗样本
 
 def main(
-    dataset_name = 'mnli',
+    dataset_name = '../../dataset/c4/realnewslike',
     attack_name = 'TextFoolerJin2019', 
     victim_name = 'sentence-transformers/all-mpnet-base-v2',
-):#['BAEGarg2019', 'TextBuggerLi2018', 'PWWSRen2019', 'DeepWordBugGao2018']
+    file_num=10,
+    file_data_num=2,
+    target_cos=0.7, 
+    edit_distance=10,
+    text_len=50
+):
 
-    data=[("I enjoyed the movie a lot!", 1), ("Absolutely horrible film.", 0), ("Our family had a fun time!", 1)]
+    dataset_name='../../dataset/c4/realnewslike'
+    file_num=int(file_num)
 
-    tokenizer =transformers.AutoTokenizer.from_pretrained("textattack/bert-base-uncased-ag-news")
-    model = transformers.AutoModelForSequenceClassification.from_pretrained("textattack/bert-base-uncased-ag-news")
+    c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num)
+    c4_dataset.load_data(text_len)
     
-    model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(model, tokenizer)
-    dataset = textattack.datasets.Dataset(data)
+    dataset = textattack.datasets.Dataset(c4_dataset.data)
     
-    attack = getattr(textattack.attack_sems, attack_name).build(model_wrapper)
     model = transformers.AutoModel.from_pretrained(victim_name)
     tokenizer = transformers.AutoTokenizer.from_pretrained(victim_name)
+    model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(model, tokenizer)
+    attack = getattr(textattack.attack_sems, attack_name).build(model_wrapper, target_cos=target_cos, edit_distance=edit_distance)
 
     attack_args = textattack.AttackArgs(
-        num_examples=10,
+        num_examples=int(file_num*file_data_num),
         attack_name=attack_name,
-        dataset_name=dataset_name,
+        dataset_name=dataset_name.replace('/','_'),
         victim_name=victim_name,
-        query_budget=100,
+        query_budget=1000,
         disable_stdout=False,
         parallel=False
     )
     
     attacker = textattack.Attacker(attack, dataset, attack_args)
-
+    # attacker.attack.attack(c4_dataset.data[0][0], c4_dataset.data[0][1])
     attack_results = attacker.attack_dataset()
     print()
 
 
 if __name__ == '__main__':
-    main()
+    for attack_name in ['DeepWordBugGao2018']:
+        #'CLARE2020','A2TYoo2021', 'PWWSRen2019', 'TextFoolerJin2019', 'BAEGarg2019', 'TextBuggerLi2018', 'DeepWordBugGao2018', 'BERTAttackLi2020'
+        print(attack_name)
+        main(
+            dataset_name = '../../dataset/c4/realnewslike',
+            attack_name = attack_name, 
+            victim_name = 'sentence-transformers/all-mpnet-base-v2',
+            file_num=10,
+            file_data_num=2,
+            target_cos=0.7, 
+            edit_distance=10,
+            text_len=50
+        )
+        print(attack_name)

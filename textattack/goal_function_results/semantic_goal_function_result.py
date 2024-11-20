@@ -21,7 +21,7 @@ class SemanticGoalFunctionResult(GoalFunctionResult):
     def __init__(
         self,
         attacked_text,
-        # raw_output,
+        perturbed_num,
         # output,
         goal_status,
         score,
@@ -38,6 +38,7 @@ class SemanticGoalFunctionResult(GoalFunctionResult):
             ground_truth_output,
             goal_function_result_type="Semantic",
         )
+        self.perturbed_num=perturbed_num
 
     # @property
     # def _processed_output(self):
@@ -70,4 +71,10 @@ class SemanticGoalFunctionResult(GoalFunctionResult):
     def get_colored_output(self, color_method=None):
         """Returns a string representation of this result's output, colored
         according to `color_method`."""
-        return str(self.output)
+        return ' '.join([
+            'goal_status:', str(self.goal_status), 
+            'score:', str(round(1-self.score,2)), 
+            'num_queries:', str(self.num_queries),
+            'perturbed_num:', str(self.perturbed_num),
+            'word_num:', str(len(self.attacked_text.words)),
+        ])

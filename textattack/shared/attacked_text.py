@@ -242,9 +242,31 @@ class AttackedText:
         indices = set()
         w1 = self.words
         w2 = other_attacked_text.words
-        for i in range(min(len(w1), len(w2))):
-            if w1[i] != w2[i]:
-                indices.add(i)
+        # for i in range(min(len(w1), len(w2))):
+        #     if w1[i] != w2[i]:
+        #         indices.add(i)
+        
+        w1_dict={}
+        w2_dict={}
+        for i in range(len(w1)):
+            if w1[i] in w1_dict:
+                w1_dict[w1[i]]+=1
+            else:
+                w1_dict[w1[i]]=1
+        for i in range(len(w2)):
+            if w2[i] in w2_dict:
+                w2_dict[w2[i]]+=1
+            else:
+                w2_dict[w2[i]]=1
+        j=0
+        for idx in w1_dict:
+            if idx in w2_dict: 
+                if w1_dict[idx] != w2_dict[idx]:
+                    indices.add(j)
+                    j+=1
+            elif idx in w2_dict:
+                indices.add(j)
+                j+=1
         return indices
 
     def ith_word_diff(self, other_attacked_text: AttackedText, i: int) -> bool:

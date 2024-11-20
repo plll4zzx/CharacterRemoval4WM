@@ -13,6 +13,7 @@ from textattack.constraints.pre_transformation import (
     StopwordModification,
 )
 from textattack.constraints.semantics.sentence_encoders import UniversalSentenceEncoder
+from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.goal_functions import UntargetedClassification, UntargetedSemantic
 from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import (
@@ -36,7 +37,7 @@ class TextBuggerLi2018(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
         #
@@ -85,7 +86,8 @@ class TextBuggerLi2018(AttackSem):
         # ... "Furthermore, the semantic similarity threshold \eps is set
         # as 0.8 to guarantee a good trade-off between quality and
         # strength of the generated adversarial text."
-        constraints.append(UniversalSentenceEncoder(threshold=0.8))
+        # constraints.append(UniversalSentenceEncoder(threshold=0.8))
+        constraints.append(LevenshteinEditDistance(edit_distance))
         #
         # Goal is untargeted classification
         #

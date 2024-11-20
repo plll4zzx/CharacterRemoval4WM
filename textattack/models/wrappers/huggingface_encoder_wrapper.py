@@ -104,11 +104,16 @@ class HuggingFaceEncoderWrapper(PyTorchModelWrapper):
             truncation=True,
         )
         input_dict.to(model_device)
-        predictions = self.model(**input_dict).logits
+        predictions = self.model(**input_dict)
+        last_hidden_state=predictions.last_hidden_state
 
         try:
-            labels = predictions.argmax(dim=1)
-            loss = self.model(**input_dict, labels=labels)[0]
+            labels = last_hidden_state+torch.normal(0, 0.1, size=last_hidden_state.shape).to(self.model.device)
+            loss = torch.nn.functional.cosine_embedding_loss(
+                last_hidden_state.reshape(last_hidden_state.shape[1:]), 
+                labels.reshape(last_hidden_state.shape[1:]), 
+                -torch.ones(last_hidden_state.shape[1]).to(self.model.device)
+            )
         except TypeError:
             raise TypeError(
                 f"{type(self.model)} class does not take in `labels` to calculate loss. "

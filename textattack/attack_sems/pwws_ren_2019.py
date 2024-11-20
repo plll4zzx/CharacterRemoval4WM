@@ -14,6 +14,7 @@ from textattack.constraints.pre_transformation import (
 )
 from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import WordSwapWordNet
+from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.goal_functions import UntargetedClassification, SemanticGoalFunction, UntargetedSemantic
 
 from .attack_sem import AttackSem
@@ -35,9 +36,10 @@ class PWWSRen2019(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10):
         transformation = WordSwapWordNet()
         constraints = [RepeatModification(), StopwordModification()]
+        constraints.append(LevenshteinEditDistance(edit_distance))
         goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
         # search over words based on a combination of their saliency score, and how efficient the WordSwap transform is
         search_method = GreedyWordSwapWIR("weighted-saliency")

@@ -202,14 +202,17 @@ class Attacker:
             if not self.attack_args.disable_stdout and not self.attack_args.silent:
                 print("\n")
             num_results += 1
-            self.result_list.append(
-                {
-                    'origin_text': result.original_result.attacked_text.text,
-                    'attacked_text': result.perturbed_result.attacked_text.text,
-                    'num_queries': result.perturbed_result.num_queries,
-                    'cos_score': result.perturbed_result.score
-                }
-            )
+            try:
+                self.result_list.append(
+                    {
+                        'origin_text': result.original_result.attacked_text.text,
+                        'attacked_text': result.perturbed_result.attacked_text.text,
+                        'num_queries': result.perturbed_result.num_queries,
+                        'cos_score': result.perturbed_result.score
+                    }
+                )
+            except:
+                print("Not Semantic")
 
             if isinstance(result, SkippedAttackResult):
                 num_skipped += 1
@@ -378,14 +381,18 @@ class Attacker:
                 pbar.update()
 
             self.attack_log_manager.log_result(result)
-            self.result_list.append(
-                {
-                    'origin_text': result.original_result.attacked_text.text,
-                    'attacked_text': result.perturbed_result.attacked_text.text,
-                    'num_queries': result.perturbed_result.num_queries,
-                    'cos_score': result.perturbed_result.score
-                }
-            )
+            try:
+                self.result_list.append(
+                    {
+                        'origin_text': result.original_result.attacked_text.text,
+                        'attacked_text': result.perturbed_result.attacked_text.text,
+                        'num_queries': result.perturbed_result.num_queries,
+                        'cos_score': result.perturbed_result.score,
+                        'perturbed_num': result.perturbed_num,
+                    }
+                )
+            except:
+                print("Not Semantic")
             num_results += 1
 
             if isinstance(result, SkippedAttackResult):

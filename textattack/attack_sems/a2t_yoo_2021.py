@@ -14,7 +14,8 @@ from textattack.constraints.pre_transformation import (
 )
 from textattack.constraints.semantics import WordEmbeddingDistance
 from textattack.constraints.semantics.sentence_encoders import SBERT
-from textattack.goal_functions import UntargetedClassification
+from textattack.goal_functions import UntargetedClassification, UntargetedSemantic
+from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import WordSwapEmbedding, WordSwapMaskedLM
 
@@ -30,7 +31,7 @@ class A2TYoo2021(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, mlm=False):
+    def build(model_wrapper, mlm=False, target_cos=0.7, edit_distance=10):
         """Build attack recipe.
 
         Args:
@@ -49,10 +50,11 @@ class A2TYoo2021(AttackSem):
         constraints.append(input_column_modification)
         constraints.append(PartOfSpeech(allow_verb_noun_swap=False))
         constraints.append(MaxModificationRate(max_rate=0.1, min_threshold=4))
-        sent_encoder = SBERT(
-            model_name="stsb-distilbert-base", threshold=0.9, metric="cosine"
-        )
-        constraints.append(sent_encoder)
+        constraints.append(LevenshteinEditDistance(edit_distance))
+        # sent_encoder = SBERT(
+        #     model_name="stsb-distilbert-base", threshold=0.9, metric="cosine"
+        # )
+        # constraints.append(sent_encoder)
 
         if mlm:
             transformation = transformation = WordSwapMaskedLM(
@@ -65,7 +67,8 @@ class A2TYoo2021(AttackSem):
         #
         # Goal is untargeted classification
         #
-        goal_function = UntargetedClassification(model_wrapper, model_batch_size=32)
+        # goal_function = UntargetedClassification(model_wrapper, model_batch_size=32)
+        goal_function = UntargetedSemantic(model_wrapper, model_batch_size=32, target_cos=target_cos)
         #
         # Greedily swap words with "Word Importance Ranking".
         #
@@ -76,7 +79,8 @@ class A2TYoo2021(AttackSem):
             model_wrapper.model.config.max_position_embeddings - 2,
         )
         search_method = GreedyWordSwapWIR(
-            wir_method="gradient", truncate_words_to=max_len
+            wir_method="gradient", 
+            # truncate_words_to=max_len
         )
 
         return Attack(goal_function, constraints, transformation, search_method)

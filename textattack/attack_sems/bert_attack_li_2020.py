@@ -18,7 +18,8 @@ from textattack.constraints.pre_transformation import (
     StopwordModification,
 )
 from textattack.constraints.semantics.sentence_encoders import UniversalSentenceEncoder
-from textattack.goal_functions import UntargetedClassification
+from textattack.goal_functions import UntargetedClassification, UntargetedSemantic
+from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import WordSwapMaskedLM
 
@@ -36,7 +37,7 @@ class BERTAttackLi2020(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10):
         # [from correspondence with the author]
         # Candidate size K is set to 48 for all data-sets.
         transformation = WordSwapMaskedLM(method="bert-attack", max_candidates=48)
@@ -71,17 +72,18 @@ class BERTAttackLi2020(AttackSem):
         # Since the threshold in the real world can't be determined from the training
         # data, the TextAttack implementation uses a fixed threshold - determined to
         # be 0.2 to be most fair.
-        use_constraint = UniversalSentenceEncoder(
-            threshold=0.2,
-            metric="cosine",
-            compare_against_original=True,
-            window_size=None,
-        )
-        constraints.append(use_constraint)
+        # use_constraint = UniversalSentenceEncoder(
+        #     threshold=0.2,
+        #     metric="cosine",
+        #     compare_against_original=True,
+        #     window_size=None,
+        # )
+        # constraints.append(use_constraint)
+        constraints.append(LevenshteinEditDistance(edit_distance))
         #
         # Goal is untargeted classification.
         #
-        goal_function = UntargetedClassification(model_wrapper)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
         #
         # "We first select the words in the sequence which have a high significance
         # influence on the final output logit. Let S = [w0, ··· , wi ··· ] denote

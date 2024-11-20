@@ -14,8 +14,9 @@ from textattack.constraints.pre_transformation import (
     StopwordModification,
 )
 from textattack.constraints.semantics.sentence_encoders import UniversalSentenceEncoder
-from textattack.goal_functions import UntargetedClassification
+from textattack.goal_functions import UntargetedClassification, UntargetedSemantic
 from textattack.search_methods import GreedySearch
+from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.transformations import (
     CompositeTransformation,
     WordInsertionMaskedLM,
@@ -39,7 +40,7 @@ class CLARE2020(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10):
         # "This paper presents CLARE, a ContextuaLized AdversaRial Example generation model
         # that produces fluent and grammatical outputs through a mask-then-infill procedure.
         # CLARE builds on a pre-trained masked language model and modifies the inputs in a context-aware manner.
@@ -88,18 +89,19 @@ class CLARE2020(AttackSem):
         # "A  common  choice  of sim(·,·) is to encode sentences using neural networks,
         # and calculate their cosine similarity in the embedding space (Jin et al., 2020)."
         # The original implementation uses similarity of 0.7.
-        use_constraint = UniversalSentenceEncoder(
-            threshold=0.7,
-            metric="cosine",
-            compare_against_original=True,
-            window_size=15,
-            skip_text_shorter_than_window=True,
-        )
-        constraints.append(use_constraint)
+        # use_constraint = UniversalSentenceEncoder(
+        #     threshold=0.7,
+        #     metric="cosine",
+        #     compare_against_original=True,
+        #     window_size=15,
+        #     skip_text_shorter_than_window=True,
+        # )
+        # constraints.append(use_constraint)
+        constraints.append(LevenshteinEditDistance(edit_distance))
 
         # Goal is untargeted classification.
         # "The score is then the negative probability of predicting the gold label from f, using [x_{adv}] as the input"
-        goal_function = UntargetedClassification(model_wrapper)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
 
         # "To achieve this,  we iteratively apply the actions,
         #  and first select those minimizing the probability of outputting the gold label y from f."
