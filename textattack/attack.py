@@ -8,6 +8,7 @@ from typing import List, Union
 
 import lru
 import torch
+from tqdm import tqdm
 
 import textattack
 from textattack.attack_results import (
@@ -456,15 +457,18 @@ class Attack:
             self.goal_function.model.tokenizer.decode(example_ids[idx:idx+window_size])
             for idx in range(0, len(example_ids),step_ize)
         ]
-        result_list=[
-            self.attack(tmp_ex, ground_truth_output)
-            for tmp_ex in example_list
-        ]
+        
+        result_list=[]
+        for tmp_ex in tqdm(example_list, leave=True, ncols=100):
+            result_list.append(self.attack(tmp_ex, ground_truth_output))
+            
         rlt_text=''
         for tmp in result_list:
             tmp_text=tmp.perturbed_result.attacked_text.text
             if tmp_text[0:2]=='##':
                 rlt_text=rlt_text+tmp_text[2:]
+            elif tmp_text[0]==' ' or rlt_text=='' or rlt_text[-1]==' ':
+                rlt_text=rlt_text+tmp_text
             else:
                 rlt_text=rlt_text+' '+tmp_text
         result={
@@ -472,7 +476,15 @@ class Attack:
             'score':[
                 1-tmp.perturbed_result.score
                 for tmp in result_list
-            ]
+            ],
+            'num_queries':[
+                tmp.perturbed_result.num_queries
+                for tmp in result_list
+            ],
+            'budget':[
+                tmp.original_result.attacked_text.words_diff_num(tmp.perturbed_result.attacked_text)
+                for tmp in result_list
+            ],
         }
         return result
 

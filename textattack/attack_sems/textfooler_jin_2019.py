@@ -33,7 +33,7 @@ class TextFoolerJin2019(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7, edit_distance=10):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10, query_budget=100):
         #
         # Swap words with their 50 closest embedding nearest-neighbors.
         # Embedding: Counter-fitted PARAGRAM-SL999 vectors.
@@ -85,7 +85,7 @@ class TextFoolerJin2019(AttackSem):
         #
         # Goal is untargeted classification
         #
-        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos, query_budget=query_budget)
         #
         # Greedily swap words with "Word Importance Ranking".
         #

@@ -37,7 +37,7 @@ class BERTAttackLi2020(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7, edit_distance=10):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10, query_budget=100):
         # [from correspondence with the author]
         # Candidate size K is set to 48 for all data-sets.
         transformation = WordSwapMaskedLM(method="bert-attack", max_candidates=48)
@@ -83,7 +83,7 @@ class BERTAttackLi2020(AttackSem):
         #
         # Goal is untargeted classification.
         #
-        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos, query_budget=query_budget)
         #
         # "We first select the words in the sequence which have a high significance
         # influence on the final output logit. Let S = [w0, ··· , wi ··· ] denote

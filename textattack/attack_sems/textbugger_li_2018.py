@@ -26,7 +26,7 @@ from textattack.transformations import (
 )
 
 from .attack_sem import AttackSem
-
+import string
 
 class TextBuggerLi2018(AttackSem):
     """Li, J., Ji, S., Du, T., Li, B., and Wang, T. (2018).
@@ -37,10 +37,12 @@ class TextBuggerLi2018(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7, edit_distance=10):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10, query_budget=100):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
         #
+        unprintable_char=''.join([chr(i) for i in range(1000) if chr(i).isprintable()==False])[0:10]
+        special_char=''.join([chr(i) for i in range(0,500,10) if chr(i).isprintable() and chr(i) not in string.printable])[0:10]
         transformation = CompositeTransformation(
             [
                 # (1) Insert: Insert a space into the word.
@@ -48,7 +50,8 @@ class TextBuggerLi2018(AttackSem):
                 # we can deceive classifiers by inserting spaces into words.
                 WordSwapRandomCharacterInsertion(
                     random_one=True,
-                    letters_to_insert=" ",
+                    # letters_to_insert=string.punctuation,#+string.octdigits+string.whitespace,
+                    letters_to_insert=unprintable_char+special_char+string.whitespace,
                     skip_first_char=True,
                     skip_last_char=True,
                 ),
@@ -91,7 +94,7 @@ class TextBuggerLi2018(AttackSem):
         #
         # Goal is untargeted classification
         #
-        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos, query_budget=query_budget)
         #
         # Greedily swap words with "Word Importance Ranking".
         #

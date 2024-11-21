@@ -33,10 +33,17 @@ class LLM_WM:
         # Load watermark algorithm
         self.wm_model = AutoWatermark.load(f'{self.wm_name}', algorithm_config=f'MarkLLM/config/{self.wm_name}.json', transformers_config=self.transformers_config)
     
-    def generate(self, prompt):
+    def generate(self, prompt, un_wm_flag=False, wm_seed=None, un_wm_seed=None):
         # Generate text
+        if wm_seed is not None:
+            torch.manual_seed(wm_seed)
         wm_text = self.wm_model.generate_watermarked_text(prompt)
-        un_wm_text = self.wm_model.generate_unwatermarked_text(prompt)
+        if un_wm_seed is not None:
+            torch.manual_seed(un_wm_seed)
+        if un_wm_flag:
+            un_wm_text = self.wm_model.generate_unwatermarked_text(prompt)
+        else:
+            un_wm_text=''
         return wm_text, un_wm_text
 
     def detect_wm(self, text):
@@ -47,7 +54,7 @@ class LLM_WM:
 if __name__=="__main__":
     
     file_num=10
-    file_data_num=2
+    file_data_num=100
     dataset_name='../../dataset/c4/realnewslike'
     file_num=int(file_num)
 
@@ -58,45 +65,62 @@ if __name__=="__main__":
 
     wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SIR')
     
-    target_cos=0.5
-    edit_distance=10
+    target_cos=0.3
+    edit_distance=3
+    query_budget=500
     attack_name = 'TextBuggerLi2018'
-    victim_name = 'sentence-transformers/all-mpnet-base-v2'
+    victim_name = 'sentence-transformers/all-distilroberta-v1'#'sentence-transformers/all-mpnet-base-v2'#
     model = transformers.AutoModel.from_pretrained(victim_name)
     tokenizer = transformers.AutoTokenizer.from_pretrained(victim_name)
     model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(model, tokenizer)
-    attack = getattr(textattack.attack_sems, attack_name).build(model_wrapper, target_cos=target_cos, edit_distance=edit_distance)
-    # attack_args = textattack.AttackArgs(
-    #     num_examples=int(file_num*file_data_num),
-    #     attack_name=attack_name,
-    #     dataset_name=dataset_name.replace('/','_'),
-    #     victim_name=victim_name,
-    #     query_budget=1000,
-    #     disable_stdout=False,
-    #     parallel=False
-    # )
-    # attacker = textattack.Attacker(attack, [], attack_args)
+    attack = getattr(textattack.attack_sems, attack_name).build(
+        model_wrapper, 
+        target_cos=target_cos, 
+        edit_distance=edit_distance, 
+        query_budget=query_budget
+    )
+    
     count_num=0
     base_num=0
-    for idx in range(10):
-        wm_text, un_wm_text = wm_scheme.generate(c4_dataset.data[1+idx][0][0:500])
-        wm_text=wm_text[0:1000]
-        un_wm_text=un_wm_text[0:1000]
-        print('wm_text')
-        print(wm_text)
-        wm_rlt=wm_scheme.detect_wm(wm_text)
-        print(wm_rlt)
-        un_wm_rlt=wm_scheme.detect_wm(un_wm_text)
-        print(un_wm_rlt)
-        attacked=attack.step_attack(wm_text, 0, window_size=10, step_ize=10)
-        print(round(np.mean(attacked['score']),4))
-        print('attacked_text')
-        print(attacked['text'])
-        attacked_rlt=wm_scheme.detect_wm(attacked['text'])
-        print(attacked_rlt)
+    simi_score_l=[]
+    num_queries_l=[]
+    budget_l=[]
+    for idx in range(0,200,1):
+        wm_text, un_wm_text = wm_scheme.generate(c4_dataset.data[1+idx][0][0:500], wm_seed=123)
+        wm_text=wm_text[0:500]
+        un_wm_text=un_wm_text[0:500]
 
-        if wm_rlt['is_watermarked']==True and un_wm_rlt['is_watermarked']==False:
+        wm_rlt=wm_scheme.detect_wm(wm_text)
+        # un_wm_rlt=wm_scheme.detect_wm(un_wm_text)
+        print(idx)
+        if wm_rlt['is_watermarked']==True:# and un_wm_rlt['is_watermarked']==False:
             base_num+=1
-            if attacked_rlt['is_watermarked']==False:
-                count_num+=1
-    print(count_num, base_num)
+        else:
+            continue
+        print('WM_TEXT:', wm_text.replace('\n',' '))
+        print('wm', wm_rlt)
+        # print('un', un_wm_rlt)
+
+        attacked=attack.step_attack(wm_text, 0, window_size=40, step_ize=40)
+        simi_score=round(np.mean(attacked['score']),4)
+        num_queries=round(np.mean(attacked['num_queries']),3)
+        budget=np.sum(attacked['budget'])
+        print('ATTACKED:', attacked['text'].replace('\n',' '))
+        print('simi_score', simi_score, '; num_queries', num_queries, '; budget', budget)
+        attacked_rlt=wm_scheme.detect_wm(attacked['text'])
+        print('attacked',attacked_rlt)
+        print()
+
+
+        simi_score_l.append(simi_score)
+        num_queries_l.append(num_queries)
+        budget_l.append(budget)
+
+        if attacked_rlt['is_watermarked']==False:
+            count_num+=1
+        
+        if base_num%25==0 and base_num>0:
+            print(count_num, base_num)
+            print('simi_score', round(np.mean(simi_score_l),4))
+            print('num_queries', round(np.mean(num_queries_l),3))
+            print('budget', round(np.mean(budget_l),3))

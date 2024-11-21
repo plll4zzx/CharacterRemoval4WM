@@ -35,7 +35,7 @@ class DeepWordBugGao2018(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, use_all_transformations=True, target_cos=0.7, edit_distance=10):
+    def build(model_wrapper, use_all_transformations=True, target_cos=0.7, edit_distance=10, query_budget=100):
         #
         # Swap characters out from words. Choose the best of four potential transformations.
         #
@@ -70,7 +70,7 @@ class DeepWordBugGao2018(AttackSem):
         #
         # Goal is untargeted classification
         #
-        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos, query_budget=query_budget)
         #
         # Greedily swap words with "Word Importance Ranking".
         #

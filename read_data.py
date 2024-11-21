@@ -20,8 +20,9 @@ class c4:
     
     def load_data(self, text_len=50):
         def count_loc(text, words, word_num):
-            if word_num>len(words):
+            if word_num>=len(words):
                 word_num=-1
+                return len(text)
             word0=words[max(word_num-1,0)]
             word=words[word_num]
             word1=words[min(word_num+1, len(words)-1)]

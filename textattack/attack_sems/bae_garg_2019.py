@@ -38,7 +38,7 @@ class BAEGarg2019(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7, edit_distance=10):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10, query_budget=100):
         # "In this paper, we present a simple yet novel technique: BAE (BERT-based
         # Adversarial Examples), which uses a language model (LM) for token
         # replacement to best fit the overall context. We perturb an input sentence
@@ -108,7 +108,7 @@ class BAEGarg2019(AttackSem):
         #
         # Goal is untargeted classification.
         #
-        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos, query_budget=query_budget)
         #
         # "We estimate the token importance Ii of each token
         # t_i ∈ S = [t1, . . . , tn], by deleting ti from S and computing the
