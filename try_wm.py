@@ -9,6 +9,7 @@ import transformers
 import textattack
 from read_data import c4
 import textattack.attack_sems
+import numpy as np
 
 class LLM_WM:
 
@@ -56,13 +57,10 @@ if __name__=="__main__":
     c4_dataset.load_data(text_len)
 
     wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SIR')
-    wm_text, un_wm_text = wm_scheme.generate(c4_dataset.data[0][0][0:500])
-    wm_text=wm_text[0:500]
-    un_wm_text=un_wm_text[0:500]
     
-    target_cos=0.7
-    edit_distance=100
-    attack_name = 'TextFoolerJin2019'
+    target_cos=0.5
+    edit_distance=10
+    attack_name = 'TextBuggerLi2018'
     victim_name = 'sentence-transformers/all-mpnet-base-v2'
     model = transformers.AutoModel.from_pretrained(victim_name)
     tokenizer = transformers.AutoTokenizer.from_pretrained(victim_name)
@@ -78,13 +76,27 @@ if __name__=="__main__":
     #     parallel=False
     # )
     # attacker = textattack.Attacker(attack, [], attack_args)
-    result=attack.step_attack(wm_text, 0, window_size=10, step_ize=10)
-    
-    print(result['score'])
-    print(wm_scheme.detect_wm(wm_text))
-    print(wm_scheme.detect_wm(result['text']))
-    print(wm_scheme.detect_wm(un_wm_text))
-    print('wm_text')
-    print(wm_text)
-    print('attacked_text')
-    print(result['text'])
+    count_num=0
+    base_num=0
+    for idx in range(10):
+        wm_text, un_wm_text = wm_scheme.generate(c4_dataset.data[1+idx][0][0:500])
+        wm_text=wm_text[0:1000]
+        un_wm_text=un_wm_text[0:1000]
+        print('wm_text')
+        print(wm_text)
+        wm_rlt=wm_scheme.detect_wm(wm_text)
+        print(wm_rlt)
+        un_wm_rlt=wm_scheme.detect_wm(un_wm_text)
+        print(un_wm_rlt)
+        attacked=attack.step_attack(wm_text, 0, window_size=10, step_ize=10)
+        print(round(np.mean(attacked['score']),4))
+        print('attacked_text')
+        print(attacked['text'])
+        attacked_rlt=wm_scheme.detect_wm(attacked['text'])
+        print(attacked_rlt)
+
+        if wm_rlt['is_watermarked']==True and un_wm_rlt['is_watermarked']==False:
+            base_num+=1
+            if attacked_rlt['is_watermarked']==False:
+                count_num+=1
+    print(count_num, base_num)

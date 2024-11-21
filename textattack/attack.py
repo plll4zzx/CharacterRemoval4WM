@@ -8,7 +8,6 @@ from typing import List, Union
 
 import lru
 import torch
-import numpy as np
 
 import textattack
 from textattack.attack_results import (
@@ -470,7 +469,10 @@ class Attack:
                 rlt_text=rlt_text+' '+tmp_text
         result={
             'text': rlt_text,
-            'score':round(np.mean(result['score']),4)
+            'score':[
+                1-tmp.perturbed_result.score
+                for tmp in result_list
+            ]
         }
         return result
 

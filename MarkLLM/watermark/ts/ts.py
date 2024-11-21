@@ -19,14 +19,14 @@
 
 import torch
 from functools import partial
-from watermark.base import BaseWatermark
-from utils.utils import load_config_file
-from utils.transformers_config import TransformersConfig
-from exceptions.exceptions import AlgorithmNameMismatchError
+from MarkLLM.watermark.base import BaseWatermark
+from MarkLLM.utils.utils import load_config_file
+from MarkLLM.utils.transformers_config import TransformersConfig
+from MarkLLM.exceptions.exceptions import AlgorithmNameMismatchError
 from transformers import LogitsProcessor, LogitsProcessorList
-from visualize.data_for_visualization import DataForVisualization
+from MarkLLM.visualize.data_for_visualization import DataForVisualization
 from transformers import OPTForCausalLM, AutoTokenizer, LogitsProcessorList
-from watermark.ts.TS_networks import DeltaNetwork, GammaNetwork
+from MarkLLM.watermark.ts.TS_networks import DeltaNetwork, GammaNetwork
 
 class TSConfig:
     """Config class for KGW algorithm, load config file and initialize parameters."""
@@ -95,7 +95,7 @@ class TSUtils:
 
         if len(ckpt_path) > 0:
             print("checkpoint_load")
-            checkpoint = torch.load(ckpt_path)
+            checkpoint = torch.load('MarkLLM/'+ckpt_path)
             layer_delta = sum(1 for key in checkpoint['delta_state_dict'] if "weight" in key)  # Counting only weight keys as layers
             layer_gamma = sum(1 for key in checkpoint['gamma_state_dict'] if "weight" in key)  # Counting only weight keys as layers
 
