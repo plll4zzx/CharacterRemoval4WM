@@ -2,7 +2,15 @@ import json
 import logging
 from logging import handlers
 
-
+def to_string(inputs):
+    output_str=''
+    for input in inputs:
+        if isinstance(input, str):
+            output_str+=input
+        else:
+            output_str+=str(input)
+        output_str+=' '
+    return output_str
 
 def load_json(file_path):
     with open(file_path, 'r') as file:

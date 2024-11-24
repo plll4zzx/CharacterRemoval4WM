@@ -10,105 +10,10 @@ import textattack
 from read_data import c4
 import textattack.attack_sems
 import numpy as np
-from textattack.utils import Logger
+from textattack.utils import Logger, to_string
 import datetime
-
-class LLM_WM:
-
-    def __init__(self, model_name = "facebook/opt-1.3b", device = "cuda", wm_name='KGW'):
-        self.model_name = model_name
-        self.wm_name=wm_name
-        self.device = device if torch.cuda.is_available() else "cpu"
-
-        # Transformers config
-        self.transformers_config = TransformersConfig(
-            model=AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device),
-            tokenizer=AutoTokenizer.from_pretrained(self.model_name),
-            vocab_size=50272,
-            device=self.device,
-            max_new_tokens=200,
-            min_length=230,
-            do_sample=True,
-            no_repeat_ngram_size=4
-        )
-
-        # Load watermark algorithm
-        self.wm_model = AutoWatermark.load(f'{self.wm_name}', algorithm_config=f'MarkLLM/config/{self.wm_name}.json', transformers_config=self.transformers_config)
-    
-    def generate(self, prompt, un_wm_flag=False, wm_seed=None, un_wm_seed=None):
-        # Generate text
-        if wm_seed is not None:
-            torch.manual_seed(wm_seed)
-        wm_text = self.wm_model.generate_watermarked_text(prompt)
-        if un_wm_seed is not None:
-            torch.manual_seed(un_wm_seed)
-        if un_wm_flag:
-            un_wm_text = self.wm_model.generate_unwatermarked_text(prompt)
-        else:
-            un_wm_text=''
-        return wm_text, un_wm_text
-
-    def detect_wm(self, text):
-        # Detect
-        result = self.wm_model.detect_watermark(text)
-        return result
-    
-class SemanticAttack:
-
-    def __init__(
-        self,
-        target_cos=0.3,
-        edit_distance=3,
-        query_budget=500,
-        attack_name = 'TextBuggerLi2018',
-        victim_name = 'sentence-transformers/all-distilroberta-v1',#'sentence-transformers/all-mpnet-base-v2'#
-        logger=None,
-    ):
-        self.target_cos=target_cos
-        self.edit_distance=edit_distance
-        self.query_budget=query_budget
-        self.attack_name=attack_name
-        self.victim_name=victim_name
-
-        self.model = transformers.AutoModel.from_pretrained(self.victim_name)
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.victim_name)
-        self.model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(self.model, self.tokenizer)
-        self.attack = getattr(textattack.attack_sems, self.attack_name).build(
-            self.model_wrapper, 
-            target_cos=self.target_cos, 
-            edit_distance=self.edit_distance, 
-            query_budget=self.query_budget
-        )
-        
-        if logger is None:
-            self.log=Logger(
-                'attack_log/SemanticAttack'+'-'+str(datetime.datetime.now().date())+'.log',
-                level='debug', 
-                screen=False
-            )
-        else:
-            self.log=logger
-        self.log_info('\n')
-
-        self.result_list=[]
-
-    def log_info(self, info):
-        if isinstance(info, list):
-            info=
-        self.log.logger.info(info)
-        print(info)
-
-    def get_adv(self, sentence, ground_truth_output=0, window_size=10, step_ize=10):
-        attacked=self.attack.step_attack(sentence, ground_truth_output, window_size=window_size, step_ize=step_ize)
-        simi_score=round(np.mean(attacked['score']),4)
-        num_queries=round(np.mean(attacked['num_queries']),3)
-        budget=np.sum(attacked['budget'])
-        print('ATTACKED:', attacked['text'].replace('\n',' '))
-        print('simi_score', simi_score, '; num_queries', num_queries, '; budget', budget)
-        attacked_rlt=wm_scheme.detect_wm(attacked['text'])
-        print('attacked',attacked_rlt)
-        print()
-
+from llm_wm import LLM_WM
+from semantic_attack import SemanticAttack
 
 
 if __name__=="__main__":
@@ -131,6 +36,7 @@ if __name__=="__main__":
         query_budget=500,
         attack_name = 'TextBuggerLi2018',
         victim_name = 'sentence-transformers/all-distilroberta-v1',
+        wm_detector=wm_scheme.detect_wm,
     )
     
     count_num=0
@@ -141,35 +47,23 @@ if __name__=="__main__":
     for idx in range(0,200,1):
         wm_text, un_wm_text = wm_scheme.generate(c4_dataset.data[1+idx][0][0:500], wm_seed=123)
         wm_text=wm_text[0:500]
-        un_wm_text=un_wm_text[0:500]
 
         wm_rlt=wm_scheme.detect_wm(wm_text)
-        # un_wm_rlt=wm_scheme.detect_wm(un_wm_text)
         print(idx)
-        if wm_rlt['is_watermarked']==True:# and un_wm_rlt['is_watermarked']==False:
+        if wm_rlt['is_watermarked']==True:
             base_num+=1
         else:
             continue
         print('WM_TEXT:', wm_text.replace('\n',' '))
         print('wm', wm_rlt)
-        # print('un', un_wm_rlt)
 
-        attacked=attack.step_attack(wm_text, 0, window_size=30, step_ize=30)
-        simi_score=round(np.mean(attacked['score']),4)
-        num_queries=round(np.mean(attacked['num_queries']),3)
-        budget=np.sum(attacked['budget'])
-        print('ATTACKED:', attacked['text'].replace('\n',' '))
-        print('simi_score', simi_score, '; num_queries', num_queries, '; budget', budget)
-        attacked_rlt=wm_scheme.detect_wm(attacked['text'])
-        print('attacked',attacked_rlt)
-        print()
-
+        is_watermarked, simi_score, num_queries, budget=sem_attack.get_adv(wm_text, 0, window_size=30, step_ize=30)
 
         simi_score_l.append(simi_score)
         num_queries_l.append(num_queries)
         budget_l.append(budget)
 
-        if attacked_rlt['is_watermarked']==False:
+        if is_watermarked==False:
             count_num+=1
         
         if base_num%25==0 and base_num>0:
