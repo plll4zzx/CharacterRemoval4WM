@@ -2,6 +2,8 @@ import json
 import logging
 from logging import handlers
 
+
+
 def load_json(file_path):
     with open(file_path, 'r') as file:
         dict_list=json.load(file)

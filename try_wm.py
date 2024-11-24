@@ -90,8 +90,24 @@ class SemanticAttack:
             self.log=logger
         self.log_info('\n')
 
+        self.result_list=[]
+
     def log_info(self, info):
+        if isinstance(info, list):
+            info=
         self.log.logger.info(info)
+        print(info)
+
+    def get_adv(self, sentence, ground_truth_output=0, window_size=10, step_ize=10):
+        attacked=self.attack.step_attack(sentence, ground_truth_output, window_size=window_size, step_ize=step_ize)
+        simi_score=round(np.mean(attacked['score']),4)
+        num_queries=round(np.mean(attacked['num_queries']),3)
+        budget=np.sum(attacked['budget'])
+        print('ATTACKED:', attacked['text'].replace('\n',' '))
+        print('simi_score', simi_score, '; num_queries', num_queries, '; budget', budget)
+        attacked_rlt=wm_scheme.detect_wm(attacked['text'])
+        print('attacked',attacked_rlt)
+        print()
 
 
 
@@ -109,19 +125,12 @@ if __name__=="__main__":
 
     wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SIR')
     
-    target_cos=0.3
-    edit_distance=2
-    query_budget=500
-    attack_name = 'TextBuggerLi2018'
-    victim_name = 'sentence-transformers/all-distilroberta-v1'#'sentence-transformers/all-mpnet-base-v2'#
-    model = transformers.AutoModel.from_pretrained(victim_name)
-    tokenizer = transformers.AutoTokenizer.from_pretrained(victim_name)
-    model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(model, tokenizer)
-    attack = getattr(textattack.attack_sems, attack_name).build(
-        model_wrapper, 
-        target_cos=target_cos, 
-        edit_distance=edit_distance, 
-        query_budget=query_budget
+    sem_attack=SemanticAttack(
+        target_cos=0.3,
+        edit_distance=2,
+        query_budget=500,
+        attack_name = 'TextBuggerLi2018',
+        victim_name = 'sentence-transformers/all-distilroberta-v1',
     )
     
     count_num=0
