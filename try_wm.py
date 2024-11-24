@@ -10,6 +10,8 @@ import textattack
 from read_data import c4
 import textattack.attack_sems
 import numpy as np
+from textattack.utils import Logger
+import datetime
 
 class LLM_WM:
 
@@ -50,6 +52,48 @@ class LLM_WM:
         # Detect
         result = self.wm_model.detect_watermark(text)
         return result
+    
+class SemanticAttack:
+
+    def __init__(
+        self,
+        target_cos=0.3,
+        edit_distance=3,
+        query_budget=500,
+        attack_name = 'TextBuggerLi2018',
+        victim_name = 'sentence-transformers/all-distilroberta-v1',#'sentence-transformers/all-mpnet-base-v2'#
+        logger=None,
+    ):
+        self.target_cos=target_cos
+        self.edit_distance=edit_distance
+        self.query_budget=query_budget
+        self.attack_name=attack_name
+        self.victim_name=victim_name
+
+        self.model = transformers.AutoModel.from_pretrained(self.victim_name)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.victim_name)
+        self.model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(self.model, self.tokenizer)
+        self.attack = getattr(textattack.attack_sems, self.attack_name).build(
+            self.model_wrapper, 
+            target_cos=self.target_cos, 
+            edit_distance=self.edit_distance, 
+            query_budget=self.query_budget
+        )
+        
+        if logger is None:
+            self.log=Logger(
+                'attack_log/SemanticAttack'+'-'+str(datetime.datetime.now().date())+'.log',
+                level='debug', 
+                screen=False
+            )
+        else:
+            self.log=logger
+        self.log_info('\n')
+
+    def log_info(self, info):
+        self.log.logger.info(info)
+
+
 
 if __name__=="__main__":
     
