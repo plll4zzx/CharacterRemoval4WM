@@ -65,6 +65,7 @@ class HuggingFaceEncoderWrapper(PyTorchModelWrapper):
         with torch.no_grad():
             outputs = self.model(**inputs_dict)
         sentence_embeddings = mean_pooling(outputs, inputs_dict['attention_mask'])
+        # sentence_embeddings = sentence_embeddings +torch.normal(mean=0, std=0.01, size=sentence_embeddings.shape)
         sentence_embeddings = torch.nn.functional.normalize(sentence_embeddings, p=2, dim=1)
         
         return sentence_embeddings

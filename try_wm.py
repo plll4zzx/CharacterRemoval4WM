@@ -66,7 +66,7 @@ if __name__=="__main__":
     wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SIR')
     
     target_cos=0.3
-    edit_distance=3
+    edit_distance=2
     query_budget=500
     attack_name = 'TextBuggerLi2018'
     victim_name = 'sentence-transformers/all-distilroberta-v1'#'sentence-transformers/all-mpnet-base-v2'#
@@ -101,7 +101,7 @@ if __name__=="__main__":
         print('wm', wm_rlt)
         # print('un', un_wm_rlt)
 
-        attacked=attack.step_attack(wm_text, 0, window_size=40, step_ize=40)
+        attacked=attack.step_attack(wm_text, 0, window_size=30, step_ize=30)
         simi_score=round(np.mean(attacked['score']),4)
         num_queries=round(np.mean(attacked['num_queries']),3)
         budget=np.sum(attacked['budget'])
@@ -124,3 +124,8 @@ if __name__=="__main__":
             print('simi_score', round(np.mean(simi_score_l),4))
             print('num_queries', round(np.mean(num_queries_l),3))
             print('budget', round(np.mean(budget_l),3))
+    
+    print(count_num, base_num)
+    print('simi_score', round(np.mean(simi_score_l),4))
+    print('num_queries', round(np.mean(num_queries_l),3))
+    print('budget', round(np.mean(budget_l),3))

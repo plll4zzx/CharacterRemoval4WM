@@ -39,6 +39,7 @@ class UntargetedSemantic(SemanticGoalFunction):
 
     def _get_score(self, model_output, initial_attacked_text):
         gt_embedding = self.model(initial_attacked_text.tokenizer_input)
+        # gt_embedding = gt_embedding.cpu()+torch.normal(mean=0, std=0.1, size=gt_embedding.shape)
         cos_score = cos_sim(model_output, gt_embedding.cpu())
         return 1-cos_score
 

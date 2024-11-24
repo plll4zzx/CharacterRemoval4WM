@@ -22,7 +22,7 @@ class WordSwapHomoglyphSwap(WordSwap):
     >>> augmenter.augment(s)
     """
 
-    def __init__(self, random_one=False, **kwargs):
+    def __init__(self, random_one=False, random_num=1,**kwargs):
         super().__init__(**kwargs)
         self.homos = {
             "-": "˗",

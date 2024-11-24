@@ -29,12 +29,13 @@ class WordSwapNeighboringCharacterSwap(WordSwap):
     """
 
     def __init__(
-        self, random_one=True, skip_first_char=False, skip_last_char=False, **kwargs
+        self, random_one=True, skip_first_char=False, skip_last_char=False, random_num=1, **kwargs
     ):
         super().__init__(**kwargs)
         self.random_one = random_one
         self.skip_first_char = skip_first_char
         self.skip_last_char = skip_last_char
+        self.random_num=random_num
 
     def _get_replacement_words(self, word):
         """Returns a list containing all possible words with 1 pair of
@@ -52,15 +53,16 @@ class WordSwapNeighboringCharacterSwap(WordSwap):
             return []
 
         if self.random_one:
-            i = np.random.randint(start_idx, end_idx)
-            candidate_word = word[:i] + word[i + 1] + word[i] + word[i + 2 :]
-            candidate_words.append(candidate_word)
+            for _ in range(self.random_num):
+                i = np.random.randint(start_idx, end_idx)
+                candidate_word = word[:i] + word[i + 1] + word[i] + word[i + 2 :]
+                candidate_words.append(candidate_word)
         else:
             for i in range(start_idx, end_idx):
                 candidate_word = word[:i] + word[i + 1] + word[i] + word[i + 2 :]
                 candidate_words.append(candidate_word)
 
-        return candidate_words
+        return list(set(candidate_words))
 
     @property
     def deterministic(self):

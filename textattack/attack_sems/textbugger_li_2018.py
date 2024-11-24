@@ -37,7 +37,7 @@ class TextBuggerLi2018(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7, edit_distance=10, query_budget=100):
+    def build(model_wrapper, target_cos=0.7, edit_distance=10, query_budget=100, random_num=5, random_one=True,):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
         #
@@ -49,22 +49,26 @@ class TextBuggerLi2018(AttackSem):
                 # Generally, words are segmented by spaces in English. Therefore,
                 # we can deceive classifiers by inserting spaces into words.
                 WordSwapRandomCharacterInsertion(
-                    random_one=True,
+                    random_one=random_one,
                     # letters_to_insert=string.punctuation,#+string.octdigits+string.whitespace,
-                    letters_to_insert=unprintable_char+special_char+string.whitespace,
+                    # letters_to_insert=unprintable_char+special_char+string.whitespace,
+                    letters_to_insert=string.printable,
                     skip_first_char=True,
                     skip_last_char=True,
+                    random_num=random_num
                 ),
                 # (2) Delete: Delete a random character of the word except for the first
                 # and the last character.
                 WordSwapRandomCharacterDeletion(
-                    random_one=True, skip_first_char=True, skip_last_char=True
+                    random_one=random_one, skip_first_char=True, skip_last_char=True,
+                    random_num=random_num,
                 ),
                 # (3) Swap: Swap random two adjacent letters in the word but do not
                 # alter the first or last letter. This is a common occurrence when
                 # typing quickly and is easy to implement.
                 WordSwapNeighboringCharacterSwap(
-                    random_one=True, skip_first_char=True, skip_last_char=True
+                    random_one=random_one, skip_first_char=True, skip_last_char=True,
+                    random_num=random_num,
                 ),
                 # (4) Substitute-C (Sub-C): Replace characters with visually similar
                 # characters (e.g., replacing “o” with “0”, “l” with “1”, “a” with “@”)
