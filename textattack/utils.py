@@ -25,9 +25,21 @@ def load_jsonl(file_path):
     return dict_list
 
 def save_json(data, file_path):
-    json_data = json.dumps(data)
-    with open(file_path, 'w') as file:
-        file.write(json_data)
+    # json_data = json.dumps(data)
+    # with open(file_path, 'w', encoding='utf-8') as file:
+    #     file.write(json_data)
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
+
+
+def save_jsonl(data, file_path):
+    with open(file_path, 'w', encoding='utf-8') as file:
+        for d in data:
+            try:
+                json.dump(d, file, ensure_ascii=False, indent=4)
+            except:
+                print('WARING')
+                print(d)
 
 def get_advtext_filename(
         attack_name='',
@@ -69,3 +81,16 @@ class Logger(object):
         if screen:
             self.logger.addHandler(sh) #把对象加到logger里
         self.logger.addHandler(th)
+
+if __name__=='__main__':
+    a=[]
+    for idx in range (10):
+        a.append({
+            '1':idx,
+            '2':str(idx)
+        })
+        if idx==4:
+            a[-1]['3']=True
+    save_json(a, 'saved_data/tmp.jspn')
+    a=load_json('saved_data/tmp.jspn')
+    print()

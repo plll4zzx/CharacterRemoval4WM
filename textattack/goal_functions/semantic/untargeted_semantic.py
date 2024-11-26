@@ -27,6 +27,8 @@ class UntargetedSemantic(SemanticGoalFunction):
     def __init__(self, *args, target_cos=0.0, **kwargs):
         self.target_cos = target_cos
         super().__init__(*args, **kwargs)
+        self.gt_embedding=None
+        self.gt_tokenizer_input=''
 
     def clear_cache(self):
         if self.use_cache:
@@ -38,9 +40,18 @@ class UntargetedSemantic(SemanticGoalFunction):
         return neg_cos_score >= (1-self.target_cos) - UntargetedSemantic.EPS
 
     def _get_score(self, model_output, initial_attacked_text):
-        gt_embedding = self.model(initial_attacked_text.tokenizer_input)
-        # gt_embedding = gt_embedding.cpu()+torch.normal(mean=0, std=0.1, size=gt_embedding.shape)
-        cos_score = cos_sim(model_output, gt_embedding.cpu())
+        if isinstance(model_output,str) and isinstance(initial_attacked_text,str):
+            cos_score = cos_sim(
+                self.model(model_output), 
+                self.model(initial_attacked_text)
+            )
+        else:
+            if initial_attacked_text.tokenizer_input!=self.gt_tokenizer_input:
+                gt_embedding = self.model(initial_attacked_text.tokenizer_input)
+                self.gt_tokenizer_input=initial_attacked_text.tokenizer_input
+                self.gt_embedding = gt_embedding.cpu()
+            # gt_embedding = gt_embedding.cpu()+torch.normal(mean=0, std=0.1, size=gt_embedding.shape)
+            cos_score = cos_sim(model_output, self.gt_embedding)
         return 1-cos_score
 
 

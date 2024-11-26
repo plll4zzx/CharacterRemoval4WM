@@ -15,7 +15,7 @@ from textattack.constraints.pre_transformation import (
 from textattack.constraints.semantics.sentence_encoders import UniversalSentenceEncoder
 from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.goal_functions import UntargetedClassification, UntargetedSemantic
-from textattack.search_methods import GreedyWordSwapWIR
+from textattack.search_methods import GreedyWordSwapWIR, SampleWordSwapWIR
 from textattack.transformations import (
     CompositeTransformation,
     WordSwapEmbedding,
@@ -37,12 +37,17 @@ class TextBuggerLi2018(AttackSem):
     """
 
     @staticmethod
-    def build(model_wrapper, target_cos=0.7, edit_distance=10, query_budget=100, random_num=5, random_one=True,):
+    def build(
+        model_wrapper, 
+        target_cos=0.7, edit_distance=10, query_budget=100, 
+        random_num=5, random_one=True, 
+        temperature=30
+    ):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
         #
-        unprintable_char=''.join([chr(i) for i in range(1000) if chr(i).isprintable()==False])[0:10]
-        special_char=''.join([chr(i) for i in range(0,500,10) if chr(i).isprintable() and chr(i) not in string.printable])[0:10]
+        # unprintable_char=''.join([chr(i) for i in range(1000) if chr(i).isprintable()==False])[0:10]
+        # special_char=''.join([chr(i) for i in range(0,500,10) if chr(i).isprintable() and chr(i) not in string.printable])[0:10]
         transformation = CompositeTransformation(
             [
                 # (1) Insert: Insert a space into the word.
@@ -52,7 +57,7 @@ class TextBuggerLi2018(AttackSem):
                     random_one=random_one,
                     # letters_to_insert=string.punctuation,#+string.octdigits+string.whitespace,
                     # letters_to_insert=unprintable_char+special_char+string.whitespace,
-                    letters_to_insert=string.printable,
+                    letters_to_insert=string.printable,#string.whitespace,#
                     skip_first_char=True,
                     skip_last_char=True,
                     random_num=random_num
@@ -102,6 +107,6 @@ class TextBuggerLi2018(AttackSem):
         #
         # Greedily swap words with "Word Importance Ranking".
         #
-        search_method = GreedyWordSwapWIR(wir_method="delete")
+        search_method = SampleWordSwapWIR(wir_method="delete", temperature=temperature)
 
         return Attack(goal_function, constraints, transformation, search_method)

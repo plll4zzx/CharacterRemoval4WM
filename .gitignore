@@ -1,6 +1,7 @@
 # cache for test output
 .cache
-
+*.log
+*.json
 # compiled python files
 __pycache__/
 

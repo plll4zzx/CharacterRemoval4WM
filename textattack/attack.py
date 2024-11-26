@@ -471,12 +471,14 @@ class Attack:
                 rlt_text=rlt_text+tmp_text
             else:
                 rlt_text=rlt_text+' '+tmp_text
+        
         result={
             'text': rlt_text,
             'score':[
                 1-tmp.perturbed_result.score
                 for tmp in result_list
             ],
+            'overall_score':1-self.goal_function._get_score(rlt_text, example).item(),
             'num_queries':[
                 tmp.perturbed_result.num_queries
                 for tmp in result_list
