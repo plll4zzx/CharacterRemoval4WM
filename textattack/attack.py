@@ -451,16 +451,33 @@ class Attack:
             result = self._attack(goal_function_result)
             return result
     
-    def step_attack(self, example, ground_truth_output, window_size=10, step_ize=10):
+    def step_attack(
+        self, example, ground_truth_output, 
+        window_size=10, step_ize=10,
+        rept_times=10, rept_thr=0.7,
+    ):
         example_ids=self.goal_function.model.tokenizer.encode(example)[1:-1]
-        example_list=[
+        sub_example_list=[
             self.goal_function.model.tokenizer.decode(example_ids[idx:idx+window_size])
             for idx in range(0, len(example_ids),step_ize)
         ]
         
         result_list=[]
-        for tmp_ex in tqdm(example_list, leave=True, ncols=100):
-            result_list.append(self.attack(tmp_ex, ground_truth_output))
+        for idx in tqdm(range(len(sub_example_list)), leave=True, ncols=100):
+            sub_ex=sub_example_list[idx]
+            cos_score=1.1
+            atk_count=0
+            ul_sub_rlt=None
+            while atk_count<rept_times and cos_score>rept_thr:
+                sub_result=self.attack(sub_ex, ground_truth_output)
+                tmp_cos_score=round(1-sub_result.perturbed_result.score,4)
+                if tmp_cos_score<cos_score:
+                    ul_sub_rlt=sub_result
+                    cos_score=tmp_cos_score
+                if atk_count>=1:
+                    print(idx, atk_count,tmp_cos_score)
+                atk_count+=1
+            result_list.append(ul_sub_rlt)
             
         rlt_text=''
         for tmp in result_list:

@@ -30,13 +30,17 @@ if __name__=="__main__":
 
     wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SIR')
     
+    'MarkLLM/watermark/sir/model/compositional-bert-large-uncased'
     sem_attack=SemanticAttack(
         target_cos=0.3,
         edit_distance=2,
         query_budget=100,
-        temperature=20,
+        temperature=10,
+        random_num=5, 
+        random_one=True,
         attack_name = 'TextBuggerLi2018',
-        victim_name = 'sentence-transformers/all-distilroberta-v1',
+        victim_name = 'MarkLLM/watermark/sir/model/compositional-bert-large-uncased',
+        # victim_name = 'bert-base-uncased',
         llm_name="facebook/opt-1.3b",
         wm_name='SIR',
         wm_detector=wm_scheme.detect_wm,
@@ -62,8 +66,8 @@ if __name__=="__main__":
 
         is_watermarked, simi_score, num_queries, budget=sem_attack.get_adv(
             wm_text, wm_rlt, 1, 
-            window_size=30, step_ize=30,
-            attack_times=10
+            window_size=30, step_ize=30, attack_times=10,
+            rept_times=1, rept_thr=0.8
         )
 
         simi_score_l.append(simi_score)
