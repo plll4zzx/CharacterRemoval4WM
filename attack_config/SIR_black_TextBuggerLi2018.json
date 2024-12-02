@@ -1,0 +1,14 @@
+{
+    "target_cos": 0.3,
+    "edit_distance": 2,
+    "query_budget": 100,
+    "temperature": 10,
+    "attack_name" : "TextBuggerLi2018",
+    "victim_name" : "sentence-transformers/all-distilroberta-v1",
+    "ground_truth_output" : 1, 
+    "window_size": 30, 
+    "step_ize": 30, 
+    "attack_times": 10,
+    "rept_times": 1, 
+    "rept_thr": 0.8
+}

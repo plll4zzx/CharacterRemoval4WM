@@ -2,6 +2,7 @@
 .cache
 *.log
 *.json
+!attack_config/*
 # compiled python files
 __pycache__/
 
