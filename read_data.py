@@ -4,12 +4,32 @@ import os
 import numpy as np
 from textattack.shared.utils import device, words_from_text
 
+def count_loc(text, words, word_num):
+    if word_num>=len(words):
+        word_num=-1
+        return len(text)
+    word0=words[max(word_num-1,0)]
+    word=words[word_num]
+    word1=words[min(word_num+1, len(words)-1)]
+    word_len=len(word)
+    word_len0=len(word0)
+    word_len1=len(word1)
+    text_len=len(text)
+    for idx in range(text_len-1, 0, -1):
+        tmp=text[idx-word_len:idx]
+        tmp0=text[idx-word_len-word_len0-3:idx-word_len]
+        tmp1=text[idx:min(idx+word_len1+3, text_len)]
+        if tmp==word and tmp0.find(word0)>-1 and tmp1.find(word1)>-1:
+            return min(idx, int(word_num*10))
+    return int(word_num*10)
+
 class c4:
 
     def __init__(self, dir_path, file_num=50, file_data_num=10):
         self.dir_path=dir_path
-        self.file_num=file_num
-        self.file_data_num=file_data_num
+        self.file_num=int(file_num)
+        self.file_data_num=int(file_data_num)
+        self.data_num=int(file_num*file_data_num)
         self.all_file_list=np.array(os.listdir(self.dir_path))
         # np.random.randint(0, len(self.file_list), self.file_num)
         np.random.seed(123)
@@ -19,24 +39,6 @@ class c4:
         self.data=[]
     
     def load_data(self, text_len=50):
-        def count_loc(text, words, word_num):
-            if word_num>=len(words):
-                word_num=-1
-                return len(text)
-            word0=words[max(word_num-1,0)]
-            word=words[word_num]
-            word1=words[min(word_num+1, len(words)-1)]
-            word_len=len(word)
-            word_len0=len(word0)
-            word_len1=len(word1)
-            text_len=len(text)
-            for idx in range(text_len-1, 0, -1):
-                tmp=text[idx-word_len:idx]
-                tmp0=text[idx-word_len-word_len0-3:idx-word_len]
-                tmp1=text[idx:min(idx+word_len1+3, text_len)]
-                if tmp==word and tmp0.find(word0)>-1 and tmp1.find(word1)>-1:
-                    return min(idx, int(word_num*10))
-            return int(word_num*10)
         for file_name in self.file_list:
             file_path=os.path.join(self.dir_path, file_name)
             json_file = gzip.open(file_path, 'rb')

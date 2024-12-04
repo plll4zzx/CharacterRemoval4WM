@@ -6,7 +6,7 @@
     "random_num":5, 
     "random_one":true,
     "attack_name" : "TextBuggerLi2018",
-    "victim_name" : "sentence-transformers/all-distilroberta-v1",
+    "victim_name" : "MarkLLM/watermark/sir/model/compositional-bert-large-uncased",
     "ground_truth_output" : 1, 
     "window_size": 30, 
     "step_ize": 30, 

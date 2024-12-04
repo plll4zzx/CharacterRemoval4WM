@@ -28,9 +28,9 @@ if __name__=="__main__":
     c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num)
     c4_dataset.load_data(text_len)
 
-    wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SIR')
+    wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SemStamp')
     
-    'MarkLLM/watermark/sir/model/compositional-bert-large-uncased'
+    
     sem_attack=SemanticAttack(
         target_cos=0.3,
         edit_distance=2,
@@ -39,10 +39,9 @@ if __name__=="__main__":
         random_num=5, 
         random_one=True,
         attack_name = 'TextBuggerLi2018',
-        victim_name = 'MarkLLM/watermark/sir/model/compositional-bert-large-uncased',
-        # victim_name = 'bert-base-uncased',
+        victim_name = 'sentence-transformers/all-distilroberta-v1',
         llm_name="facebook/opt-1.3b",
-        wm_name='SIR',
+        wm_name='SemStamp',
         wm_detector=wm_scheme.detect_wm,
     )
     
@@ -52,8 +51,13 @@ if __name__=="__main__":
     num_queries_l=[]
     budget_l=[]
     for idx in range(0,200,1):
-        wm_text, un_wm_text = wm_scheme.generate(c4_dataset.data[1+idx][0][0:500], wm_seed=123)
+        wm_text, un_wm_text = wm_scheme.generate(
+            c4_dataset.data[1+idx][0][0:500], 
+            wm_seed=123, 
+            # un_wm_flag=True
+        )
         wm_text=wm_text[0:500]
+        # un_wm_text=un_wm_text[0:500]
 
         wm_rlt=wm_scheme.detect_wm(wm_text)
         sem_attack.log_info(str(idx))
@@ -62,7 +66,9 @@ if __name__=="__main__":
         else:
             continue
         sem_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
-        sem_attack.log_info(['wm_detect', wm_rlt])
+        sem_attack.log_info(['wm_detect:', wm_rlt])
+        # un_rlt=wm_scheme.detect_wm(un_wm_text)
+        # sem_attack.log_info(['un_detect:', un_rlt])
 
         is_watermarked, simi_score, num_queries, budget=sem_attack.get_adv(
             wm_text, wm_rlt, 1, 
