@@ -1,0 +1,14 @@
+{
+    "algorithm_name": "SemStamp",
+    "gamma": 0.25,
+    "delta": 4.0,
+    "hash_key": 15485863,
+    "prefix_length": 1,
+    "z_threshold": 4.0,
+    "f_scheme": "time",
+    "window_scheme": "left",
+    "embedder":"sentence-transformers/all-distilroberta-v1",
+    "device":"cuda",
+    "lsh_dim":4,
+    "sbert_type":"base"
+}

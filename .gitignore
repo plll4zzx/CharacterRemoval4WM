@@ -54,3 +54,4 @@ tests/test_command_line/attack_log.txt
 textattack/=22.3.0
 *.pth
 MarkLLM/watermark/sir/model/*
+!MarkLLM/config/*
