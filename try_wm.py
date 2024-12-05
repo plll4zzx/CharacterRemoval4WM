@@ -10,7 +10,7 @@
 from read_data import c4
 # import textattack.attack_sems
 import numpy as np
-# from textattack.utils import Logger, to_string
+from textattack.utils import Logger, to_string, load_json
 # import datetime
 from llm_wm import LLM_WM
 from semantic_attack import SemanticAttack
@@ -18,24 +18,25 @@ from semantic_attack import SemanticAttack
 
 if __name__=="__main__":
     
-    file_num=10
-    file_data_num=100
-    dataset_name='../../dataset/c4/realnewslike'
-    file_num=int(file_num)
+    # file_num=10
+    # file_data_num=100
+    # dataset_name='../../dataset/c4/realnewslike'
+    # file_num=int(file_num)
 
+    # text_len=50
+    # c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num)
+    # c4_dataset.load_data(text_len)
 
-    text_len=50
-    c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num)
-    c4_dataset.load_data(text_len)
+    # wm_data=load_json("saved_data/SemStamp_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_200.json")
+    wm_data=load_json("saved_data/SemStamp_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_200.json")
 
     wm_scheme=LLM_WM(model_name = "facebook/opt-1.3b", device = "cuda", wm_name='SemStamp')
     
-    
     sem_attack=SemanticAttack(
         target_cos=0.3,
-        edit_distance=2,
+        edit_distance=5,
         query_budget=100,
-        temperature=10,
+        temperature=50,
         random_num=5, 
         random_one=True,
         attack_name = 'TextBuggerLi2018',
@@ -50,12 +51,13 @@ if __name__=="__main__":
     simi_score_l=[]
     num_queries_l=[]
     budget_l=[]
-    for idx in range(0,200,1):
-        wm_text, un_wm_text = wm_scheme.generate(
-            c4_dataset.data[1+idx][0][0:500], 
-            wm_seed=123, 
-            # un_wm_flag=True
-        )
+    for idx in range(len(wm_data)):
+        # wm_text, un_wm_text = wm_scheme.generate(
+        #     c4_dataset.data[1+idx][0][0:500], 
+        #     wm_seed=123, 
+        #     # un_wm_flag=True
+        # )
+        wm_text=wm_data[idx]['wm_text']
         wm_text=wm_text[0:500]
         # un_wm_text=un_wm_text[0:500]
 
@@ -72,7 +74,7 @@ if __name__=="__main__":
 
         is_watermarked, simi_score, num_queries, budget=sem_attack.get_adv(
             wm_text, wm_rlt, 1, 
-            window_size=30, step_ize=30, attack_times=10,
+            window_size=30, step_ize=30, attack_times=1,
             rept_times=1, rept_thr=0.8
         )
 

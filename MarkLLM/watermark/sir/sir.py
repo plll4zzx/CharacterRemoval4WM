@@ -261,7 +261,7 @@ class SIR(BaseWatermark):
         z_score = np.mean(all_value)
 
         # Determine if the z_score indicates a watermark
-        is_watermarked = z_score > self.config.z_threshold
+        is_watermarked = bool(z_score > self.config.z_threshold)
 
         # Return results based on the return_dict flag
         if return_dict:

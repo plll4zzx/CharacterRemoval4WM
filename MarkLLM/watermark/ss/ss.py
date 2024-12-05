@@ -361,7 +361,7 @@ class SemStamp(BaseWatermark):
         z_score, _ = self.utils.score_sequence(encoded_text)
 
         # Determine if the z_score indicates a watermark
-        is_watermarked = z_score > self.config.z_threshold
+        is_watermarked = bool(z_score > self.config.z_threshold)
 
         # Return results based on the return_dict flag
         if return_dict:

@@ -9,20 +9,18 @@ from semantic_attack import SemanticAttack
 import os
 from tqdm import tqdm
 
-if __name__=="__main__":
-    
-    file_num=10
-    file_data_num=20
-    dataset_name='../../dataset/c4/realnewslike'
-
-    text_len=50
+def get_wm_data(
+    file_num=10,
+    file_data_num=20,
+    dataset_name='../../dataset/c4/realnewslike',
+    text_len=50,
+    wm_name='SIR',#'SemStamp'
+    model_name = "facebook/opt-1.3b",
+):
     c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num)
     c4_dataset.load_data(text_len)
 
-    wm_name='SemStamp'
-    model_name = "facebook/opt-1.3b"
     wm_scheme=LLM_WM(model_name = model_name, device = "cuda", wm_name=wm_name)
-    
     
     count_num=0
     base_num=0
@@ -31,7 +29,7 @@ if __name__=="__main__":
     budget_l=[]
     result_list=[]
     batch_size=1
-    for idx in tqdm(range(0,c4_dataset.data_num,batch_size), ncols=100):
+    for idx in tqdm(range(0, c4_dataset.data_num, batch_size), ncols=100):#c4_dataset.data_num
         prompt=c4_dataset.data[idx][0]#[0:500]
         wm_text, un_wm_text = wm_scheme.generate(
             prompt, 
@@ -71,3 +69,24 @@ if __name__=="__main__":
     ])+'.json'
     file_path=os.path.join('saved_data', filename)
     save_json(data=result_list, file_path=file_path)
+
+if __name__=="__main__":
+    
+    file_num=10
+    file_data_num=300
+    dataset_name='../../dataset/c4/realnewslike'
+
+    text_len = 50
+    wm_name = 'SIR'#'SemStamp'
+    model_name = "facebook/opt-1.3b"
+
+    for wm_name in ['TS', 'SIR', 'SemStamp', ]:
+        get_wm_data(
+            file_num=file_num, 
+            file_data_num=file_data_num, 
+            dataset_name=dataset_name, 
+            text_len=text_len, 
+            wm_name=wm_name, 
+            model_name=model_name
+        )
+    

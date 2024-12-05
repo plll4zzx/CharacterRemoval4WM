@@ -51,4 +51,6 @@ class LLM_WM:
     def detect_wm(self, text):
         # Detect
         result = self.wm_model.detect_watermark(text)
+        if not isinstance(result['is_watermarked'], bool):
+            result['is_watermarked']=bool(result['is_watermarked'])
         return result
