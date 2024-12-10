@@ -113,7 +113,7 @@ class SampleWordSwapWIR(GreedyWordSwapWIR):
             distri = softmax(
                     torch.Tensor(index_scores*self.temperature), dim=0
                 ).numpy()
-            tmp_order=np.random.choice(len(distri), size=10, p=distri, replace=False)
+            tmp_order=np.random.choice(len(distri), size=min(10, int(len(distri)/2)), p=distri, replace=False)
             index_order=np.zeros_like(tmp_order)
             for idx in range(len(tmp_order)):
                 index_order[idx]=indices_to_order[tmp_order[idx]]

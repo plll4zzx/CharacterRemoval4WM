@@ -240,12 +240,12 @@ class SemanticAttack:
 
         self.result_list.append({
             'raw_text': sentence,
-            'raw_detect': (str(sen_detect['is_watermarked']), round(sen_detect['score'],4)),
+            'raw_detect': sen_detect, #(sen_detect['is_watermarked'], round(sen_detect['score'],4)),
             'adv_text': attacked['text'],
             'overall_score': attacked['overall_score'],
             'simi_score': attacked['score'],
             'num_queries': attacked['num_queries'],
             'budget': attacked['budget'],
-            'adv_detect': (str(attacked_rlt['is_watermarked']), round(attacked_rlt['score'],4))
+            'adv_detect': attacked_rlt, #(attacked_rlt['is_watermarked'], round(attacked_rlt['score'],4))
         })
-        return attacked_rlt['is_watermarked'], attacked['overall_score'], num_queries, budget
+        return attacked_rlt, attacked['overall_score'], num_queries, budget

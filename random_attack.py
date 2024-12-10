@@ -87,9 +87,9 @@ class RandomAttack:
             info=to_string(info)
         self.log.logger.info(info)
 
-    def truncation(self, text, token_num=100):
-        new_text=truncation(text, self.tokenizer, token_num)
-        return new_text
+    def truncation(self, text, max_token_num=100):
+        new_text, token_num=truncation(text, self.tokenizer, max_token_num)
+        return new_text, token_num
 
     def substitute(self, token):
         if self.gensimi is None:
