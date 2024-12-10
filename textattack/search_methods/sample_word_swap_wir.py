@@ -109,11 +109,13 @@ class SampleWordSwapWIR(GreedyWordSwapWIR):
 
 
         if self.wir_method != "random":
-            index_order = np.array(indices_to_order)[(-index_scores).argsort()]
-        else:
+            # index_order = np.array(indices_to_order)[(-index_scores).argsort()]
             distri = softmax(
                     torch.Tensor(index_scores*self.temperature), dim=0
                 ).numpy()
-            index_order=np.random.choice(len(distri), size=10, p=distri, replace=False)
+            tmp_order=np.random.choice(len(distri), size=10, p=distri, replace=False)
+            index_order=np.zeros_like(tmp_order)
+            for idx in range(len(tmp_order)):
+                index_order[idx]=indices_to_order[tmp_order[idx]]
 
         return index_order, search_over

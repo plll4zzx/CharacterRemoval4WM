@@ -15,7 +15,7 @@ from textattack.constraints.pre_transformation import (
 from textattack.constraints.semantics.sentence_encoders import UniversalSentenceEncoder
 from textattack.constraints.overlap import LevenshteinEditDistance
 from textattack.goal_functions import UntargetedClassification, UntargetedSemantic
-from textattack.search_methods import GreedyWordSwapWIR, SampleWordSwapWIR
+from textattack.search_methods import GreedyWordSwapWIR, SampleWordSwapWIR, SlidingWindowWSample
 from textattack.transformations import (
     CompositeTransformation,
     WordSwapEmbedding,
@@ -41,7 +41,7 @@ class TextBuggerLi2018(AttackSem):
         model_wrapper, 
         target_cos=0.7, edit_distance=10, query_budget=100, 
         random_num=5, random_one=True, 
-        temperature=30
+        temperature=30, max_single_query=20, slide_flag=True
     ):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
@@ -103,10 +103,13 @@ class TextBuggerLi2018(AttackSem):
         #
         # Goal is untargeted classification
         #
-        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos, query_budget=query_budget)
+        goal_function = UntargetedSemantic(model_wrapper, target_cos=target_cos, query_budget=query_budget, max_single_query=max_single_query)
         #
         # Greedily swap words with "Word Importance Ranking".
         #
-        search_method = SampleWordSwapWIR(wir_method="delete", temperature=temperature)
+        if slide_flag:
+            search_method = SlidingWindowWSample(wir_method="delete", temperature=temperature)
+        else:
+            search_method = SampleWordSwapWIR(wir_method="delete", temperature=temperature)
 
         return Attack(goal_function, constraints, transformation, search_method)

@@ -10,7 +10,7 @@ import textattack
 from read_data import c4
 import textattack.attack_sems
 import numpy as np
-from textattack.utils import Logger, to_string, save_json, save_jsonl
+from textattack.utils import Logger, to_string, save_json, save_jsonl, truncation
 import datetime
 from llm_wm import LLM_WM
 import os
@@ -45,6 +45,8 @@ class SemanticAttack:
         logger=None,
         wm_detector=None,
         temperature=30,
+        max_single_query=20,
+        slide_flag=True
     ):
         self.target_cos=target_cos
         self.edit_distance=edit_distance
@@ -56,6 +58,8 @@ class SemanticAttack:
         self.temperature=temperature
         self.random_num=random_num 
         self.random_one=random_one
+        self.max_single_query=max_single_query
+        self.slide_flag=slide_flag
 
         self.model = transformers.AutoModel.from_pretrained(
             self.victim_name, 
@@ -70,8 +74,10 @@ class SemanticAttack:
             edit_distance=self.edit_distance, 
             query_budget=self.query_budget,
             temperature=self.temperature,
+            max_single_query=self.max_single_query,
             random_num=self.random_num, 
             random_one=self.random_one,
+            slide_flag=slide_flag
         )
         
         if logger is None:
@@ -99,7 +105,12 @@ class SemanticAttack:
         self.log_info(['llm_name', self.llm_name])
         self.log_info(['wm_name', self.wm_name])
         self.log_info(['temperature', self.temperature])
+        self.log_info(['max_single_query', self.max_single_query])
+        self.log_info(['slide_flag', self.slide_flag])
 
+    def truncation(self, text, max_token_num=100):
+        new_text, token_num=self.attack.truncation(text, max_token_num)
+        return new_text, token_num
     
     def save(self):
         filename=get_advtext_filename(
@@ -132,8 +143,8 @@ class SemanticAttack:
             sub_result_dict[idx]=[]
             sub_sentence=sub_sentence_list[idx]
             atk_count=0
-            cos_score=1
-            ul_sub_rlt=None
+            # cos_score=1
+            # ul_sub_rlt=None
             # for idy in tqdm(range(attack_times), leave=True, ncols=100):
             while atk_count<attack_times:# and cos_score>step_target:
                 sub_result=self.attack.attack(sub_sentence, ground_truth_output)

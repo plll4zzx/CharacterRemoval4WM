@@ -148,10 +148,10 @@ class TSUtils:
             delta = self.delta
             gamma = self.gamma
 
-        if process == 'process':
+        # if process == 'process':
         # get every token's gamma value and delta value
-          self.gamma_list = torch.cat([self.gamma_list, gamma])
-          self.delta_list = torch.cat([self.delta_list, delta])
+        self.gamma_list = torch.cat([self.gamma_list, gamma])
+        self.delta_list = torch.cat([self.delta_list, delta])
 
         # generate greenlist, every token have different greenlist_id
         greenlist_size = int(self.vocab_size * gamma)
@@ -210,7 +210,8 @@ class TSUtils:
         self.gamma_list = self.gamma_list[self.config.prefix_length:]
 
         z_score = self._compute_z_score(green_token_count, num_tokens_scored)
-
+        if z_score<-5:
+            print()
         return z_score, green_token_mask
 
 
@@ -278,6 +279,8 @@ class TS(BaseWatermark):
     def generate_watermarked_text(self, prompt: str, *args, **kwargs) -> str:
         """Generate watermarked text."""
 
+        self.utils.gamma_list = torch.empty(0, dtype=torch.float).to(self.utils.device)
+        self.utils.delta_list = torch.empty(0, dtype=torch.float).to(self.utils.device)
         # Configure generate_with_watermark
         generate_with_watermark = partial(
             self.config.generation_model.generate,
@@ -300,6 +303,8 @@ class TS(BaseWatermark):
     def generate_unwatermarked_text(self, prompt: str, *args, **kwargs) -> str:
         """Generate unwatermarked text."""
 
+        self.utils.gamma_list = torch.empty(0, dtype=torch.float).to(self.utils.device)
+        self.utils.delta_list = torch.empty(0, dtype=torch.float).to(self.utils.device)
         # Encode prompt
         encoded_prompt = self.config.generation_tokenizer(prompt, return_tensors="pt", add_special_tokens=True).to(self.config.device)
 
@@ -314,6 +319,8 @@ class TS(BaseWatermark):
     def detect_watermark(self, text: str, return_dict: bool = True, *args, **kwargs):
         """Detect watermark in the text."""
 
+        self.utils.gamma_list = torch.empty(0, dtype=torch.float).to(self.utils.device)
+        self.utils.delta_list = torch.empty(0, dtype=torch.float).to(self.utils.device)
         # Encode the text
         encoded_text = self.config.generation_tokenizer(text, return_tensors="pt", add_special_tokens=False)["input_ids"][0].to(self.config.device)
 

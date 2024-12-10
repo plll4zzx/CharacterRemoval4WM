@@ -24,6 +24,7 @@ from textattack.models.wrappers import ModelWrapper
 from textattack.search_methods import SearchMethod
 from textattack.shared import AttackedText, utils
 from textattack.transformations import CompositeTransformation, Transformation
+from textattack.utils import truncation
 
 
 class Attack:
@@ -506,6 +507,10 @@ class Attack:
             ],
         }
         return result
+    
+    def truncation(self, text, max_token_num=100):
+        new_text, token_num=truncation(text, self.goal_function.model.tokenizer, max_token_num)
+        return new_text, token_num
 
     def __repr__(self):
         """Prints attack parameters in a human-readable string.

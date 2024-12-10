@@ -345,10 +345,11 @@ class SemStamp(BaseWatermark):
             prompt, return_tensors="pt", add_special_tokens=True, 
             # padding=True, truncation=True
         ).to(self.config.device)
+        prefix_length = encoded_prompt['input_ids'].shape[1]
         # Generate watermarked text
         encoded_watermarked_text = generate_with_watermark(**encoded_prompt)
         # Decode
-        watermarked_text = self.config.generation_tokenizer.batch_decode(encoded_watermarked_text, skip_special_tokens=True)[0]
+        watermarked_text = self.config.generation_tokenizer.batch_decode(encoded_watermarked_text[:,prefix_length:], skip_special_tokens=True)[0]
         return watermarked_text
     
     def detect_watermark(self, text: str, return_dict: bool = True, *args, **kwargs):

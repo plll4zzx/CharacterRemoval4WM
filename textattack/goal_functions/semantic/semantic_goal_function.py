@@ -6,7 +6,6 @@ Goal Function for Semantic
 import numpy as np
 import torch
 
-from textattack.goal_function_results import ClassificationGoalFunctionResult
 from textattack.goal_function_results import SemanticGoalFunctionResult
 from textattack.goal_functions import GoalFunction
 
@@ -82,7 +81,11 @@ class SemanticGoalFunction(GoalFunction):
         results = []
         if self.query_budget < float("inf"):
             queries_left = self.query_budget - self.num_queries
-            attacked_text_list = attacked_text_list[:queries_left]
+            if hasattr(self, 'max_single_query'):
+                max_single_query=getattr(self, 'max_single_query')
+                attacked_text_list = attacked_text_list[:min(queries_left, max_single_query)]
+            else:
+                attacked_text_list = attacked_text_list[:queries_left]
         self.num_queries += len(attacked_text_list)
         model_outputs = self._call_model(attacked_text_list)
         for attacked_text, raw_output in zip(attacked_text_list, model_outputs):

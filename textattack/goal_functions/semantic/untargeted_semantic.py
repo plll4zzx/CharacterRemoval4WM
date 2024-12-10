@@ -24,11 +24,12 @@ class UntargetedSemantic(SemanticGoalFunction):
 
     EPS = 1e-10
 
-    def __init__(self, *args, target_cos=0.0, **kwargs):
+    def __init__(self, *args, target_cos=0.0, max_single_query=100,**kwargs):
         self.target_cos = target_cos
         super().__init__(*args, **kwargs)
         self.gt_embedding=None
         self.gt_tokenizer_input=''
+        self.max_single_query=max_single_query
 
     def clear_cache(self):
         if self.use_cache:

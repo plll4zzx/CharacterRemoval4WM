@@ -2,7 +2,7 @@
 import gensim.downloader
 from tqdm import tqdm
 import numpy as np
-from textattack.utils import Logger, to_string
+from textattack.utils import Logger, to_string, truncation
 import datetime
 from copy import deepcopy
 
@@ -86,6 +86,10 @@ class RandomAttack:
         if not isinstance(info, str):
             info=to_string(info)
         self.log.logger.info(info)
+
+    def truncation(self, text, token_num=100):
+        new_text=truncation(text, self.tokenizer, token_num)
+        return new_text
 
     def substitute(self, token):
         if self.gensimi is None:

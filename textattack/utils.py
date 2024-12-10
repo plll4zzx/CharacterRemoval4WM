@@ -53,6 +53,14 @@ def get_advtext_filename(
         attack_name, dataset_name.replace('/','_'), victim_name.replace('/','_'), str(num_examples)
     ])+file_type
 
+def truncation(text, tokenizer, max_token_num=100, min_num=80):
+    text_ids=tokenizer.encode(text)[1:-1]
+    if len(text_ids)<min_num:
+        return '', 0
+    new_text=tokenizer.decode(text_ids[:max_token_num])
+    token_num=len(text_ids[:max_token_num])
+    return new_text, token_num
+
 class Logger(object):
     level_relations = {
         'debug':logging.DEBUG,

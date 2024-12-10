@@ -40,13 +40,16 @@ if __name__=="__main__":
     
     count_num=0
     base_num=0
+    token_num=120
     edit_dist_l=[]
     num_queries_l=[]
     budget_l=[]
     for idx in range(len(wm_data)):
         
         wm_text=wm_data[idx]['wm_text']
-        wm_text=wm_text[0:500]
+        wm_text=rand_attack.truncation(wm_text, token_num=token_num)
+        if len(wm_text)==0:
+            continue
 
         wm_rlt=wm_scheme.detect_wm(wm_text)
         rand_attack.log_info(str(idx))

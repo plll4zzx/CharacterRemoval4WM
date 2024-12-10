@@ -16,3 +16,4 @@ from .alzantot_genetic_algorithm import AlzantotGeneticAlgorithm
 from .improved_genetic_algorithm import ImprovedGeneticAlgorithm
 from .particle_swarm_optimization import ParticleSwarmOptimization
 from .sample_word_swap_wir import SampleWordSwapWIR
+from .sw_sample_word_swap import SlidingWindowWSample

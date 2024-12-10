@@ -486,7 +486,7 @@ class AttackedText:
                         original_text = original_text[1:]
                 else:
                     # If a word other than the first was deleted, take a preceding space.
-                    if perturbed_text[-1] == " ":
+                    if len(perturbed_text)>0 and perturbed_text[-1] == " ":
                         perturbed_text = perturbed_text[:-1]
             # Add substitute word(s) to new sentence.
             perturbed_text += adv_word_seq

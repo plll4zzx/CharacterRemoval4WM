@@ -35,18 +35,23 @@ def get_wm_data(
             prompt, 
             # [tmp[0][0:500] for tmp in c4_dataset.data[idx:idx+batch_size]],
             wm_seed=123, 
+            un_wm_seed=123, 
             un_wm_flag=True
         )
-        wm_text=wm_text[len(prompt):]#[0:500]
+
+        if wm_text[0:len(prompt)]==prompt:
+            wm_text=wm_text[len(prompt):]
+        if un_wm_text[0:len(prompt)]==prompt:
+            un_wm_text=un_wm_text[len(prompt):]
+        
         if wm_text[0]==' ':
             wm_text=wm_text[1:]
-        un_wm_text=un_wm_text[len(prompt):]#[0:500]
         if un_wm_text[0]==' ':
             un_wm_text=un_wm_text[1:]
 
+        
         wm_rlt=wm_scheme.detect_wm(wm_text)
         un_rlt=wm_scheme.detect_wm(un_wm_text)
-        
         if wm_rlt['is_watermarked']==True and un_rlt['is_watermarked']==False:
             base_num+=1
         else:
@@ -73,14 +78,14 @@ def get_wm_data(
 if __name__=="__main__":
     
     file_num=10
-    file_data_num=300
+    file_data_num=500
     dataset_name='../../dataset/c4/realnewslike'
 
     text_len = 50
     wm_name = 'SIR'#'SemStamp'
     model_name = "facebook/opt-1.3b"
 
-    for wm_name in ['TS', 'SIR', 'SemStamp', ]:
+    for wm_name in ['TS', ]:#'SIR', 'SemStamp', 
         get_wm_data(
             file_num=file_num, 
             file_data_num=file_data_num, 

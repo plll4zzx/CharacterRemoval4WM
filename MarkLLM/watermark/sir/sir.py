@@ -219,8 +219,9 @@ class SIR(BaseWatermark):
         encoded_prompt = self.config.generation_tokenizer(prompt, return_tensors="pt", add_special_tokens=True).to(self.config.device)
         # generate watermarked text
         encoded_watermarked_text = generate_with_watermark(**encoded_prompt)
+        prefix_length = encoded_prompt['input_ids'].shape[1]
         # decode
-        watermarked_text = self.config.generation_tokenizer.batch_decode(encoded_watermarked_text, skip_special_tokens=True)[0]
+        watermarked_text = self.config.generation_tokenizer.batch_decode(encoded_watermarked_text[:,prefix_length:], skip_special_tokens=True)[0]
         return watermarked_text
     
     def detect_watermark(self, text: str, return_dict: bool = True, *args, **kwargs):
