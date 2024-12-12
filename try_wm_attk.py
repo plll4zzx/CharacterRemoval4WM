@@ -16,7 +16,7 @@ from llm_wm import LLM_WM
 from semantic_attack import SemanticAttack
 import argparse
 
-def test_sam_attack(wm_name, query_budget, slide_flag):
+def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distance=5, max_token_num=80):
     llm_name="facebook/opt-1.3b"
     dataset_name='../../dataset/c4/realnewslike'
 
@@ -26,7 +26,8 @@ def test_sam_attack(wm_name, query_budget, slide_flag):
     
     sem_attack=SemanticAttack(
         target_cos=0.3,
-        edit_distance=5,
+        edit_distance=edit_distance,
+        sep_size=sep_size,
         query_budget=query_budget,
         temperature=50,
         random_num=5, 
@@ -39,8 +40,8 @@ def test_sam_attack(wm_name, query_budget, slide_flag):
         max_single_query=50,
         slide_flag=slide_flag
     )
+    sem_attack.log_info(['max_token_num:', max_token_num])
     
-    max_token_num=120
     count_num=0
     base_num=0
     simi_score_l=[]
@@ -48,7 +49,8 @@ def test_sam_attack(wm_name, query_budget, slide_flag):
     budget_l=[]
     token_num_l=[]
     wm_score_l=[]
-    for idx in range(200):#len(wm_data)
+    wm_score_drop_rate_l=[]
+    for idx in range(32):#len(wm_data)
         
         wm_text=wm_data[idx]['wm_text']
         wm_text, token_num=sem_attack.truncation(wm_text, max_token_num=max_token_num)
@@ -67,7 +69,8 @@ def test_sam_attack(wm_name, query_budget, slide_flag):
 
         attk_rlt, simi_score, num_queries, budget=sem_attack.get_adv(
             wm_text, wm_rlt, 1, 
-            window_size=30, step_ize=30, attack_times=1,
+            # sep_size=sep_size, 
+            attack_times=1,
             rept_times=1, rept_thr=0.8
         )
 
@@ -76,19 +79,21 @@ def test_sam_attack(wm_name, query_budget, slide_flag):
         budget_l.append(budget)
         token_num_l.append(token_num)
         wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
+        wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
 
         if attk_rlt['is_watermarked']==False:
             count_num+=1
         
-        if count_num%25==0 and count_num>0:
+        if base_num%25==0 and base_num>0:
             sem_attack.log_info('******')
             sem_attack.log_info(['ASR', round(count_num/base_num,4)])
             sem_attack.log_info(['simi_score', round(np.mean(simi_score_l),4)])
             sem_attack.log_info(['num_queries', round(np.mean(num_queries_l),3)])
             sem_attack.log_info(['budget', round(np.mean(budget_l),3)])
             sem_attack.log_info(['token_num', round(np.mean(token_num_l),3)])
-            sem_attack.log_info(['budget rate', round(np.mean(budget_l)/np.mean(token_num_l),3)])
+            sem_attack.log_info(['budget rate', round(np.mean(budget_l)/np.mean(token_num_l),4)])
             sem_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),3)])
+            sem_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
             sem_attack.log_info('******')
     
     sem_attack.log_info('******')
@@ -97,20 +102,31 @@ def test_sam_attack(wm_name, query_budget, slide_flag):
     sem_attack.log_info(['num_queries', round(np.mean(num_queries_l),3)])
     sem_attack.log_info(['budget', round(np.mean(budget_l),3)])
     sem_attack.log_info(['token_num', round(np.mean(token_num_l),3)])
-    sem_attack.log_info(['budget rate', round(np.mean(budget_l)/np.mean(token_num_l),3)])
+    sem_attack.log_info(['budget rate', round(np.mean(budget_l)/np.mean(token_num_l),4)])
     sem_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),3)])
+    sem_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
     sem_attack.log_info('******')
     sem_attack.save()
 
 if __name__=="__main__":
     
-    wm_name='TS'
-    query_budget=500
-    slide_flag=True
+    # wm_name='TS'
+    # query_budget=500
+    # slide_flag=True
     parser = argparse.ArgumentParser(description='test_sam_attack')
     parser.add_argument('--wm_name', type=str, default='TS')
     parser.add_argument('--query_budget', type=int, default=500)
     parser.add_argument('--slide_flag', type=str, default='True')
+    parser.add_argument('--sep_size', type=int, default=20)
+    parser.add_argument('--edit_distance', type=int, default=5)
+    parser.add_argument('--max_token_num', type=int, default=120)
     
     args = parser.parse_args()
-    test_sam_attack(args.wm_name, args.query_budget, args.slide_flag=='True')
+    test_sam_attack(
+        wm_name=args.wm_name, 
+        query_budget=args.query_budget, 
+        slide_flag=args.slide_flag=='True',
+        sep_size=args.sep_size,
+        edit_distance=args.edit_distance,
+        max_token_num=args.max_token_num
+    )

@@ -123,7 +123,8 @@ class RandomAttack:
         token_list=[self.tokenizer.decode(t, skip_special_tokens=True) for t in token_ids]
         token_num=len(token_list)
         
-        rand_tokens=np.random.choice(token_num, int(token_num*max_edit_rate), replace=False)
+        max_edit_dist=round(token_num*max_edit_rate)
+        rand_tokens=np.random.choice(token_num, max_edit_dist*3, replace=False)
 
         edit_dist=0
         new_token_list=deepcopy(token_list)
@@ -133,6 +134,10 @@ class RandomAttack:
             if len(tmp_subst)>0:
                 new_token_list[token_id]=tmp_subst[0]
                 edit_dist+=1
+            # else:
+            #     print()
+            if edit_dist>=max_edit_dist:
+                break
 
         new_sentence=''.join(new_token_list)
 

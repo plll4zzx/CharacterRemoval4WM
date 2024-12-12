@@ -454,13 +454,13 @@ class Attack:
     
     def step_attack(
         self, example, ground_truth_output, 
-        window_size=10, step_ize=10,
+        window_size=10, step_size=10,
         rept_times=10, rept_thr=0.7,
     ):
         example_ids=self.goal_function.model.tokenizer.encode(example)[1:-1]
         sub_example_list=[
             self.goal_function.model.tokenizer.decode(example_ids[idx:idx+window_size])
-            for idx in range(0, len(example_ids),step_ize)
+            for idx in range(0, len(example_ids),step_size)
         ]
         
         result_list=[]

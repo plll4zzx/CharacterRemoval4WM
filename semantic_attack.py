@@ -36,6 +36,7 @@ class SemanticAttack:
         self,
         target_cos=0.3,
         edit_distance=3,
+        sep_size=None,
         query_budget=500,
         random_num=5, random_one=True,
         attack_name = 'TextBuggerLi2018',
@@ -50,6 +51,7 @@ class SemanticAttack:
     ):
         self.target_cos=target_cos
         self.edit_distance=edit_distance
+        self.sep_size=sep_size
         self.query_budget=query_budget
         self.attack_name=attack_name
         self.victim_name=victim_name
@@ -60,6 +62,9 @@ class SemanticAttack:
         self.random_one=random_one
         self.max_single_query=max_single_query
         self.slide_flag=slide_flag
+
+        if not self.slide_flag:
+            self.max_single_query=self.query_budget
 
         self.model = transformers.AutoModel.from_pretrained(
             self.victim_name, 
@@ -99,6 +104,7 @@ class SemanticAttack:
 
         self.log_info(['target_cos', self.target_cos])
         self.log_info(['edit_distance', self.edit_distance])
+        self.log_info(['sep_size', self.sep_size])
         self.log_info(['query_budget', self.query_budget])
         self.log_info(['attack_name', self.attack_name])
         self.log_info(['victim_name', self.victim_name])
@@ -209,13 +215,17 @@ class SemanticAttack:
     def get_adv(
         self, 
         sentence, sen_detect={}, ground_truth_output=0, 
-        window_size=10, step_ize=10, attack_times=3,
+        sep_size=None, step_size=None, attack_times=3,
         rept_times=10, rept_thr=0.7,
     ):
+        if sep_size is None:
+            sep_size=self.sep_size
+        if step_size is None:
+            step_size=sep_size
         for idx in range(attack_times):
             attacked=self.attack.step_attack(
                 sentence, ground_truth_output, 
-                window_size=window_size, step_ize=step_ize,
+                window_size=sep_size, step_size=step_size,
                 rept_times=rept_times, rept_thr=rept_thr
             )
             overall_score=round(np.mean(attacked['overall_score']),4)
@@ -225,7 +235,7 @@ class SemanticAttack:
             attacked_rlt=self.wm_detector(attacked['text'])
             if attacked_rlt['is_watermarked']==False:
                 break
-            else:
+            elif attack_times>1:
                 self.log_info(['Failed', idx, 'simi_score', attacked['score']])
                 self.log_info(['Failed', idx, 'adv_detect',attacked_rlt])
 
@@ -236,6 +246,8 @@ class SemanticAttack:
         self.log_info(['num_queries', num_queries])
         self.log_info(['budget', budget])
         self.log_info(['adv_detect',attacked_rlt])
+        self.log_info(['wm_score drop', round(sen_detect['score']-attacked_rlt['score'], 4)])
+        self.log_info(['wm_score drop rate', round((sen_detect['score']-attacked_rlt['score'])/sen_detect['score'], 4)])
         self.log_info()
 
         self.result_list.append({
