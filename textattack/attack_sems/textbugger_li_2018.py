@@ -41,7 +41,8 @@ class TextBuggerLi2018(AttackSem):
         model_wrapper, 
         target_cos=0.7, edit_distance=10, query_budget=100, 
         random_num=5, random_one=True, 
-        temperature=30, max_single_query=20, slide_flag=True
+        temperature=30, max_single_query=20, slide_flag=True,
+        window_size=3
     ):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
@@ -57,7 +58,7 @@ class TextBuggerLi2018(AttackSem):
                     random_one=random_one,
                     # letters_to_insert=string.punctuation,#+string.octdigits+string.whitespace,
                     # letters_to_insert=unprintable_char+special_char+string.whitespace,
-                    letters_to_insert=string.printable,#string.whitespace,#
+                    letters_to_insert=string.whitespace,#string.printable,#
                     skip_first_char=True,
                     skip_last_char=True,
                     random_num=random_num
@@ -108,7 +109,7 @@ class TextBuggerLi2018(AttackSem):
         # Greedily swap words with "Word Importance Ranking".
         #
         if slide_flag:
-            search_method = SlidingWindowWSample(wir_method="delete", temperature=temperature)
+            search_method = SlidingWindowWSample(wir_method="delete", temperature=temperature, window_size=window_size, step_size=1)
         else:
             search_method = SampleWordSwapWIR(wir_method="delete", temperature=temperature)
 

@@ -40,7 +40,8 @@ class SemanticAttack:
         query_budget=500,
         random_num=5, random_one=True,
         attack_name = 'TextBuggerLi2018',
-        victim_name = 'sentence-transformers/all-distilroberta-v1',#'sentence-transformers/all-mpnet-base-v2'#
+        victim_model = 'sentence-transformers/all-distilroberta-v1',#'sentence-transformers/all-mpnet-base-v2'#
+        victim_tokenizer = None,
         llm_name="facebook/opt-1.3b",
         wm_name='TS',
         logger=None,
@@ -54,7 +55,6 @@ class SemanticAttack:
         self.sep_size=sep_size
         self.query_budget=query_budget
         self.attack_name=attack_name
-        self.victim_name=victim_name
         self.llm_name=llm_name
         self.wm_name=wm_name
         self.temperature=temperature
@@ -62,15 +62,21 @@ class SemanticAttack:
         self.random_one=random_one
         self.max_single_query=max_single_query
         self.slide_flag=slide_flag
+        
+        self.victim_model=victim_model
+        if victim_tokenizer is None:
+            self.victim_tokenizer=victim_model
+        else:
+            self.victim_tokenizer=victim_tokenizer
 
         if not self.slide_flag:
             self.max_single_query=self.query_budget
 
         self.model = transformers.AutoModel.from_pretrained(
-            self.victim_name, 
+            self.victim_model, 
             # torch_dtype=torch.float16
         )
-        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.victim_name)
+        self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.victim_tokenizer)
         self.model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(self.model, self.tokenizer)
         self.temperature=temperature
         self.attack = getattr(textattack.attack_sems, self.attack_name).build(
@@ -107,7 +113,7 @@ class SemanticAttack:
         self.log_info(['sep_size', self.sep_size])
         self.log_info(['query_budget', self.query_budget])
         self.log_info(['attack_name', self.attack_name])
-        self.log_info(['victim_name', self.victim_name])
+        self.log_info(['victim_name', self.victim_model])
         self.log_info(['llm_name', self.llm_name])
         self.log_info(['wm_name', self.wm_name])
         self.log_info(['temperature', self.temperature])
@@ -123,7 +129,7 @@ class SemanticAttack:
             wm_name=self.wm_name,
             llm_name=self.llm_name,
             attack_name=self.attack_name,
-            victim_name=self.victim_name,
+            victim_name=self.victim_model,
             num_examples=len(self.result_list)
         )
         file_path=os.path.join('saved_data', filename)
@@ -225,7 +231,7 @@ class SemanticAttack:
         for idx in range(attack_times):
             attacked=self.attack.step_attack(
                 sentence, ground_truth_output, 
-                window_size=sep_size, step_size=step_size,
+                sep_size=sep_size, step_size=step_size,
                 rept_times=rept_times, rept_thr=rept_thr
             )
             overall_score=round(np.mean(attacked['overall_score']),4)

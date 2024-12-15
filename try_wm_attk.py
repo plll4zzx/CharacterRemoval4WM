@@ -30,14 +30,14 @@ def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distanc
         sep_size=sep_size,
         query_budget=query_budget,
         temperature=50,
-        random_num=5, 
+        random_num=50, 
         random_one=True,
         attack_name = 'TextBuggerLi2018',
         victim_name = 'sentence-transformers/all-distilroberta-v1',
         llm_name=llm_name,
         wm_name=wm_name,
         wm_detector=wm_scheme.detect_wm,
-        max_single_query=50,
+        max_single_query=100,
         slide_flag=slide_flag
     )
     sem_attack.log_info(['max_token_num:', max_token_num])
@@ -114,12 +114,12 @@ if __name__=="__main__":
     # query_budget=500
     # slide_flag=True
     parser = argparse.ArgumentParser(description='test_sam_attack')
-    parser.add_argument('--wm_name', type=str, default='TS')
+    parser.add_argument('--wm_name', type=str, default='SIR')
     parser.add_argument('--query_budget', type=int, default=500)
     parser.add_argument('--slide_flag', type=str, default='True')
-    parser.add_argument('--sep_size', type=int, default=20)
-    parser.add_argument('--edit_distance', type=int, default=5)
-    parser.add_argument('--max_token_num', type=int, default=120)
+    parser.add_argument('--sep_size', type=int, default=12)
+    parser.add_argument('--edit_distance', type=int, default=2)
+    parser.add_argument('--max_token_num', type=int, default=100)
     
     args = parser.parse_args()
     test_sam_attack(

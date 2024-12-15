@@ -82,10 +82,10 @@ if __name__=="__main__":
     dataset_name='../../dataset/c4/realnewslike'
 
     text_len = 50
-    wm_name = 'SIR'#'SemStamp'
+    # wm_name = 'SIR'#'SemStamp'
     model_name = "facebook/opt-1.3b"
 
-    for wm_name in ['TS', ]:#'SIR', 'SemStamp', 
+    for wm_name in ['Unbiased', 'KGW', 'Unigram']:#'SIR', 'SemStamp', 
         get_wm_data(
             file_num=file_num, 
             file_data_num=file_data_num, 

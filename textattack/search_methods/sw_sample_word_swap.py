@@ -34,21 +34,39 @@ class SlidingWindowWSample(GreedyWordSwapWIR):
                     tmp_text=tmp_text.generate_new_attacked_text(tmp_words)
                     leave_one_texts[idx].append(tmp_text)
             elif idx<self.window_size:
-                tmp_words=deepcopy(initial_text.words)
-                for idz in range(len(tmp_words)):
-                    if idz not in range(0,self.window_size):
-                        tmp_words[idz]=''
-                tmp_text=initial_text.generate_new_attacked_text(tmp_words)
-                tmp_text=tmp_text.delete_word_at_index(idx)
-                leave_one_texts[idx]=[tmp_text]
+                leave_one_texts[idx]=[]
+                for idy in range(idx+1):
+                    tmp_text=initial_text.delete_word_at_index(idx)
+                    tmp_words=deepcopy(tmp_text.words)
+                    for idz in range(len(tmp_text.words)):
+                        if idz not in range(idx-idy, idx+self.window_size-idy):
+                            tmp_words[idz]=''
+                    tmp_text=tmp_text.generate_new_attacked_text(tmp_words)
+                    leave_one_texts[idx].append(tmp_text)
+                # tmp_words=deepcopy(initial_text.words)
+                # for idz in range(len(tmp_words)):
+                #     if idz not in range(0,self.window_size):
+                #         tmp_words[idz]=''
+                # tmp_text=initial_text.generate_new_attacked_text(tmp_words)
+                # tmp_text=tmp_text.delete_word_at_index(idx)
+                # leave_one_texts[idx]=[tmp_text]
             elif idx>(len_words-self.window_size):
-                tmp_text=initial_text.delete_word_at_index(idx)
-                tmp_words=deepcopy(tmp_text.words)
-                for idz in range(len(tmp_text.words)):
-                    if idz not in range(-(self.window_size-1), len(tmp_words)):
-                        tmp_words[idz]=''
-                tmp_text=tmp_text.generate_new_attacked_text(tmp_words)
-                leave_one_texts[idx]=[tmp_text]
+                leave_one_texts[idx]=[]
+                for idy in range(len_words-idx):
+                    tmp_text=initial_text.delete_word_at_index(idx)
+                    tmp_words=deepcopy(tmp_text.words)
+                    for idz in range(len(tmp_text.words)):
+                        if idz not in range(idx-self.window_size+idy-1, len_words):
+                            tmp_words[idz]=''
+                    tmp_text=tmp_text.generate_new_attacked_text(tmp_words)
+                    leave_one_texts[idx].append(tmp_text)
+            #     tmp_text=initial_text.delete_word_at_index(idx)
+            #     tmp_words=deepcopy(tmp_text.words)
+            #     for idz in range(len(tmp_text.words)):
+            #         if idz not in range(-(self.window_size-1), len(tmp_words)):
+            #             tmp_words[idz]=''
+            #     tmp_text=tmp_text.generate_new_attacked_text(tmp_words)
+            #     leave_one_texts[idx]=[tmp_text]
         return leave_one_texts
 
     def _get_index_order(self, initial_text, max_len=-1):
