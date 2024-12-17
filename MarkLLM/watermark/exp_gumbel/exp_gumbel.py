@@ -21,11 +21,11 @@ import scipy
 import torch
 from math import log
 from ..base import BaseWatermark
-from utils.utils import load_config_file
+from MarkLLM.utils.utils import load_config_file
 from transformers import LogitsProcessor
-from utils.transformers_config import TransformersConfig
-from exceptions.exceptions import AlgorithmNameMismatchError
-from visualize.data_for_visualization import DataForVisualization
+from MarkLLM.utils.transformers_config import TransformersConfig
+from MarkLLM.exceptions.exceptions import AlgorithmNameMismatchError
+from MarkLLM.visualize.data_for_visualization import DataForVisualization
 
 class EXPGumbelConfig:
     """Config class for EXPGumbel algorithm, load config file and initialize parameters."""
