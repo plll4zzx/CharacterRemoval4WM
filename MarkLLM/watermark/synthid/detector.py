@@ -24,7 +24,7 @@ import json
 import torch
 import numpy as np
 from .detector_bayesian_torch import RawBayesianDetector
-from evaluation.dataset import C4Dataset
+from MarkLLM.evaluation.dataset import C4Dataset
 
 
 class SynthIDDetector(abc.ABC):

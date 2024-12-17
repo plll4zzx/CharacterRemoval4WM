@@ -1,0 +1,3 @@
+python collect_wm_text.py --wm_name "SynthID" --dataset_name "../../dataset/c4/realnewslike" --model_name "facebook/opt-1.3b" --file_num 1 --file_data_num 1
+python collect_wm_text.py --wm_name "DIP" --dataset_name "../../dataset/c4/realnewslike" --model_name "facebook/opt-1.3b" --file_num 1 --file_data_num 1
+python collect_wm_text.py --wm_name "EXPEdit" --dataset_name "../../dataset/c4/realnewslike" --model_name "facebook/opt-1.3b" --file_num 1 --file_data_num 1

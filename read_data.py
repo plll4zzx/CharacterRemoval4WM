@@ -25,14 +25,14 @@ def count_loc(text, words, word_num):
 
 class c4:
 
-    def __init__(self, dir_path, file_num=50, file_data_num=10):
+    def __init__(self, dir_path, file_num=50, file_data_num=10, rand_seed=123):
         self.dir_path=dir_path
         self.file_num=int(file_num)
         self.file_data_num=int(file_data_num)
         self.data_num=int(file_num*file_data_num)
         self.all_file_list=np.array(os.listdir(self.dir_path))
         # np.random.randint(0, len(self.file_list), self.file_num)
-        np.random.seed(123)
+        np.random.seed(rand_seed)
         self.file_index=np.random.choice(len(self.all_file_list), self.file_num).tolist()
         self.file_list=self.all_file_list[self.file_index].tolist()
         

@@ -25,11 +25,11 @@ def load_jsonl(file_path):
     return dict_list
 
 def save_json(data, file_path):
+    with open(file_path, 'w', encoding='utf-8') as file:
+        json.dump(data, file, ensure_ascii=False, indent=4)
     # json_data = json.dumps(data)
     # with open(file_path, 'w', encoding='utf-8') as file:
     #     file.write(json_data)
-    with open(file_path, 'w', encoding='utf-8') as file:
-        json.dump(data, file, ensure_ascii=False, indent=4)
 
 
 def save_jsonl(data, file_path):

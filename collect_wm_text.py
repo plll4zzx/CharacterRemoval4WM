@@ -8,6 +8,7 @@ from llm_wm import LLM_WM
 from semantic_attack import SemanticAttack
 import os
 from tqdm import tqdm
+import argparse
 
 def get_wm_data(
     file_num=10,
@@ -16,8 +17,9 @@ def get_wm_data(
     text_len=50,
     wm_name='SIR',#'SemStamp'
     model_name = "facebook/opt-1.3b",
+    rand_seed=123,
 ):
-    c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num)
+    c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num, rand_seed=rand_seed)
     c4_dataset.load_data(text_len)
 
     wm_scheme=LLM_WM(model_name = model_name, device = "cuda", wm_name=wm_name)
@@ -80,18 +82,30 @@ if __name__=="__main__":
     file_num=10
     file_data_num=500
     dataset_name='../../dataset/c4/realnewslike'
+    model_name = "facebook/opt-1.3b"
 
     text_len = 50
     # wm_name = 'SIR'#'SemStamp'
-    model_name = "facebook/opt-1.3b"
+    rand_seed=123
 
-    for wm_name in ['Unbiased', 'KGW', 'Unigram']:#'SIR', 'SemStamp', 
-        get_wm_data(
-            file_num=file_num, 
-            file_data_num=file_data_num, 
-            dataset_name=dataset_name, 
-            text_len=text_len, 
-            wm_name=wm_name, 
-            model_name=model_name
-        )
+    parser = argparse.ArgumentParser(description='collect wm data')
+    parser.add_argument('--dataset_name', type=str, default='../../dataset/c4/realnewslike')
+    parser.add_argument('--model_name', type=str, default="facebook/opt-1.3b")
+    parser.add_argument('--wm_name', type=str, default="KGW")
+    parser.add_argument('--file_num', type=int, default=1)
+    parser.add_argument('--file_data_num', type=int, default=1)
+    parser.add_argument('--text_len', type=int, default=50)
+    parser.add_argument('--rand_seed', type=int, default=123)
+
+    args = parser.parse_args()
+    # for wm_name in ['Unbiased', 'KGW', 'Unigram']:#'SIR', 'SemStamp', 
+    get_wm_data(
+        file_num=args.file_num, 
+        file_data_num=args.file_data_num, 
+        dataset_name=args.dataset_name, 
+        text_len=args.text_len, 
+        wm_name=args.wm_name, 
+        model_name=args.model_name,
+        rand_seed=args.rand_seed
+    )
     

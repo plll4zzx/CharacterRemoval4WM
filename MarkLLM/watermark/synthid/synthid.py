@@ -21,11 +21,11 @@ import torch
 from math import sqrt
 from functools import partial
 from ..base import BaseWatermark
-from utils.utils import load_config_file
-from utils.transformers_config import TransformersConfig
-from exceptions.exceptions import AlgorithmNameMismatchError
+from MarkLLM.utils.utils import load_config_file
+from MarkLLM.utils.transformers_config import TransformersConfig
+from MarkLLM.exceptions.exceptions import AlgorithmNameMismatchError
 from transformers import LogitsProcessor, LogitsProcessorList
-from visualize.data_for_visualization import DataForVisualization
+from MarkLLM.visualize.data_for_visualization import DataForVisualization
 from typing import Dict, Tuple, Union
 import numpy as np
 from .detector import get_detector
