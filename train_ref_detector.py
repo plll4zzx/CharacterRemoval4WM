@@ -1,7 +1,7 @@
 
 from textattack.utils import load_json, save_json
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification
 from torch.optim import AdamW, SGD, Adam
 from torch.utils.data import Dataset, DataLoader
 import torch
@@ -112,10 +112,6 @@ class RefDetector:
         print(wm_name, llm_name)
         self.train_flag=False
 
-    # def __del__(self):
-    #     if self.train_flag:
-    #         self.save_model()
-
     def load_data(self, dataset_name, data_num, text_len=None):
         self.dataset_name=dataset_name
         if text_len is None:
@@ -131,7 +127,6 @@ class RefDetector:
                 self.dataset=WMDataset(data_path, data_num, self.tokenizer, text_len=text_len, wm_detector=wm_scheme.detect_wm)
 
     def train_epoch(self):
-        # progress_bar = range(len(train_dataloader)))
         loss_l=[]
         self.model.train()
         for batch in tqdm(self.train_dataloader, ncols=100):
@@ -147,7 +142,7 @@ class RefDetector:
             self.optimizer.step()
             self.optimizer.zero_grad()
             
-        print('loss', np.round(np.mean(loss_l),6))
+        print('loss', np.round(np.mean(loss_l), 6))
     
     def test_epoch(self):
         self.model.eval()
@@ -193,14 +188,13 @@ class RefDetector:
         # for name, param in self.model.named_parameters():
         #     print(f"{name}: requires_grad={param.requires_grad}")
 
-    def train_init(self, model_path="bert-base-uncased", train_split=0.8, text_len=150, lr_init=1e-5):
-        self.train_flag=True
-        
+    def dataloader_init(self, train_split=0.8, text_len=150):
         def collate_fn(batch):
             list_input_ids = []
             list_attention_mask = []
             list_token_type_ids=[]
             list_labels=[]
+            token_type_flag=False
             
             for i in range(len(batch)):
                 tmp_d=self.tokenizer(
@@ -209,15 +203,25 @@ class RefDetector:
                 )
                 list_input_ids.append(tmp_d['input_ids'])
                 list_attention_mask.append(tmp_d['attention_mask'])
-                list_token_type_ids.append(tmp_d['token_type_ids'])
                 list_labels.append(batch[i]["labels"])
+                if 'token_type_ids' in tmp_d:
+                    token_type_flag=True
+                    list_token_type_ids.append(tmp_d['token_type_ids'])
             
-            return {
-                "input_ids": torch.tensor(list_input_ids),
-                "attention_mask":  torch.tensor(list_attention_mask),
-                'token_type_ids': torch.tensor(list_token_type_ids),
-                'labels': torch.tensor(list_labels)
-            }
+            if token_type_flag:
+                return {
+                    "input_ids": torch.tensor(list_input_ids),
+                    "attention_mask":  torch.tensor(list_attention_mask),
+                    'token_type_ids': torch.tensor(list_token_type_ids),
+                    'labels': torch.tensor(list_labels)
+                }
+            else:
+                return {
+                    "input_ids": torch.tensor(list_input_ids),
+                    "attention_mask":  torch.tensor(list_attention_mask),
+                    'labels': torch.tensor(list_labels)
+                }
+
 
         train_num=round(self.dataset.__len__()*train_split)
         self.train_dataloader = DataLoader(
@@ -228,6 +232,9 @@ class RefDetector:
             self.dataset[train_num+1:], shuffle=True, batch_size=16, 
             collate_fn=collate_fn
         )
+
+    def train_init(self, model_path="bert-base-uncased", lr_init=1e-5):
+        self.train_flag=True
 
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_path, 
@@ -241,19 +248,20 @@ class RefDetector:
 
         self.model.to(self.device)
 
-    def start_train(self, num_epochs=3):
+    def start_train(self, num_epochs=3, lr_step=8):
         # loss_fn = torch.nn.CrossEntropyLoss()
         for epoch in range(num_epochs):
-            if epoch%8==0 and epoch>0:
+            if epoch%lr_step==0 and epoch>0:
                 self.lr_scheduler.step()
                 print('lr', self.optimizer.param_groups[0]['lr'])
             print('epoch:', epoch)
             self.train_epoch()
             self.test_epoch()
     
-    def save_model(self):
+    def save_model(self, name='RefDetector'):
         model_path=os.path.join(
             'saved_model', '_'.join([
+                name,
                 self.wm_name,
                 self.dataset_name.replace('/', '_'), 
                 self.llm_name.replace('/', '_'), 
@@ -267,17 +275,20 @@ class RefDetector:
 if __name__=='__main__':
     llm_name="facebook/opt-1.3b"
     dataset_name='../../dataset/c4/realnewslike'
-    ref_model=RefDetector(llm_name=llm_name, wm_name='SIR')
+    ref_model=RefDetector(llm_name=llm_name, wm_name='TS')
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
         text_len=200
     )
+    ref_model.dataloader_init(
+        train_split=0.8,
+        text_len=200, 
+    )
     ref_model.train_init(
         # model_path='saved_model/KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-16',
-        text_len=200, 
         lr_init=5e-5
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()
     ref_model.start_train(num_epochs=10)
-    ref_model.save_model()
+    ref_model.save_model(name='RefDetector')
