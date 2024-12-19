@@ -70,16 +70,16 @@ class RefAttack:
         else:
             self.victim_tokenizer=victim_tokenizer
 
-        if not self.slide_flag:
-            self.max_single_query=self.query_budget
+        # if not self.slide_flag:
+        #     self.max_single_query=self.query_budget
 
-        self.model = transformers.AutoModel.from_pretrained(
+        self.model = transformers.AutoModelForSequenceClassification.from_pretrained(
             self.victim_model, 
             # torch_dtype=torch.float16
         )
         self.tokenizer = transformers.AutoTokenizer.from_pretrained(self.victim_tokenizer)
-        self.model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(self.model, self.tokenizer)
-        self.attack = getattr(textattack.attack_recipes, self.attack_name).build()
+        self.model_wrapper = textattack.models.wrappers.HuggingFaceModelWrapper(self.model, self.tokenizer)
+        self.attack = getattr(textattack.attack_recipes, self.attack_name).build(self.model_wrapper)
         
         if logger is None:
             self.log=Logger(
@@ -137,31 +137,30 @@ class RefAttack:
         sep_size=None, step_size=None, attack_times=3,
         rept_times=10, rept_thr=0.7,
     ):
-        if sep_size is None:
-            sep_size=self.sep_size
-        if step_size is None:
-            step_size=sep_size
-        for idx in range(attack_times):
-            attacked=self.attack.step_attack(
-                sentence, ground_truth_output, 
-                sep_size=sep_size, step_size=step_size,
-                rept_times=rept_times, rept_thr=rept_thr
-            )
-            overall_score=round(np.mean(attacked['overall_score']),4)
-            simi_score=round(np.mean(attacked['score']),4)
-            num_queries=round(np.mean(attacked['num_queries']),3)
-            budget=np.sum(attacked['budget'])
-            attacked_rlt=self.wm_detector(attacked['text'])
-            if attacked_rlt['is_watermarked']==False:
-                break
-            elif attack_times>1:
-                self.log_info(['Failed', idx, 'simi_score', attacked['score']])
-                self.log_info(['Failed', idx, 'adv_detect',attacked_rlt])
+        # if sep_size is None:
+        #     sep_size=self.sep_size
+        # if step_size is None:
+        #     step_size=sep_size
+        # for idx in range(attack_times):
+        attacked=self.attack.attack(
+            sentence, ground_truth_output, 
+        )
+        # overall_score=round(np.mean(attacked['overall_score']),4)
+        simi_score=round(1-attacked.perturbed_result.score,4)
+        num_queries=attacked.perturbed_result.num_queries
+        budget=attacked.original_result.attacked_text.words_diff_num(attacked.perturbed_result.attacked_text)
+        attacked_text=attacked.perturbed_result.attacked_text.text
+        attacked_rlt=self.wm_detector(attacked_text)
+        # if attacked_rlt['is_watermarked']==False:
+        #     break
+        # elif attack_times>1:
+        #     self.log_info(['Failed', idx, 'simi_score', attacked['score']])
+        #     self.log_info(['Failed', idx, 'adv_detect',attacked_rlt])
 
 
-        self.log_info(['adv_text:', attacked['text'].replace('\n',' ')])
-        self.log_info(['overall_score', overall_score])
-        self.log_info(['simi_score', attacked['score']])
+        self.log_info(['adv_text:', attacked_text.replace('\n',' ')])
+        # self.log_info(['overall_score', overall_score])
+        self.log_info(['simi_score', simi_score])
         self.log_info(['num_queries', num_queries])
         self.log_info(['budget', budget])
         self.log_info(['adv_detect',attacked_rlt])
@@ -172,11 +171,11 @@ class RefAttack:
         self.result_list.append({
             'raw_text': sentence,
             'raw_detect': sen_detect, #(sen_detect['is_watermarked'], round(sen_detect['score'],4)),
-            'adv_text': attacked['text'],
-            'overall_score': attacked['overall_score'],
-            'simi_score': attacked['score'],
-            'num_queries': attacked['num_queries'],
-            'budget': attacked['budget'],
+            'adv_text': attacked_text,
+            # 'overall_score': attacked['overall_score'],
+            'simi_score': simi_score,
+            'num_queries':num_queries,
+            'budget': budget,
             'adv_detect': attacked_rlt, #(attacked_rlt['is_watermarked'], round(attacked_rlt['score'],4))
         })
-        return attacked_rlt, attacked['overall_score'], num_queries, budget
+        return attacked_rlt, simi_score, num_queries, budget

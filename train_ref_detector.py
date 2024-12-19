@@ -233,7 +233,7 @@ class RefDetector:
             collate_fn=collate_fn
         )
 
-    def train_init(self, model_path="bert-base-uncased", lr_init=1e-5):
+    def train_init(self, model_path="bert-base-uncased", lr_init=1e-5, gamma=0.2):
         self.train_flag=True
 
         self.model = AutoModelForSequenceClassification.from_pretrained(
@@ -244,7 +244,7 @@ class RefDetector:
         # self.optimizer = AdamW(self.model.parameters(), lr=lr_init, weight_decay=0.8)
         self.optimizer = Adam(self.model.parameters(), lr=lr_init)
 
-        self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=0.2)
+        self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=gamma)
 
         self.model.to(self.device)
 

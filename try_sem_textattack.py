@@ -44,7 +44,7 @@ def main(
     model = transformers.AutoModel.from_pretrained(victim_name)
     tokenizer = transformers.AutoTokenizer.from_pretrained(victim_name)
     model_wrapper = textattack.models.wrappers.HuggingFaceEncoderWrapper(model, tokenizer)
-    attack = getattr(textattack.attack_sems, attack_name).build(model_wrapper, target_cos=target_cos, edit_distance=edit_distance)
+    attack = getattr(textattack.attack_recipes, attack_name).build(model_wrapper, target_cos=target_cos, edit_distance=edit_distance)
 
     attack_args = textattack.AttackArgs(
         num_examples=int(file_num*file_data_num),
