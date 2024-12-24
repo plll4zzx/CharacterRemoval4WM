@@ -17,7 +17,7 @@ from random_attack import RandomAttack
 import argparse
 
 
-def test_rand_attack(wm_name, max_edit_rate, max_token_num=80):
+def test_rand_attack(wm_name, max_edit_rate, max_token_num=80, atk_style='char'):
     
     llm_name="facebook/opt-1.3b"
     dataset_name='../../dataset/c4/realnewslike'
@@ -58,9 +58,14 @@ def test_rand_attack(wm_name, max_edit_rate, max_token_num=80):
         rand_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
         rand_attack.log_info(['wm_detect:', wm_rlt])
 
-        attk_text, edit_dist=rand_attack.wm_wipe(
-            wm_text, max_edit_rate=max_edit_rate
-        )
+        if atk_style=='char':
+            attk_text, edit_dist=rand_attack.char_attack(
+                wm_text, max_edit_rate=max_edit_rate
+            )
+        else:
+            attk_text, edit_dist=rand_attack.token_attack(
+                wm_text, max_edit_rate=max_edit_rate
+            )
 
         attk_rlt=wm_scheme.detect_wm(attk_text)
         rand_attack.log_info(['attk_detect:', attk_rlt])
@@ -94,16 +99,17 @@ def test_rand_attack(wm_name, max_edit_rate, max_token_num=80):
 
 if __name__=="__main__":
     
-    
-    parser = argparse.ArgumentParser(description='test_sam_attack')
-    parser.add_argument('--wm_name', type=str, default='TS')
-    parser.add_argument('--max_edit_rate', type=float, default=0.11)
-    parser.add_argument('--max_token_num', type=int, default=120)
+    parser = argparse.ArgumentParser(description='test_rand_attack')
+    parser.add_argument('--wm_name', type=str, default='KGW')
+    parser.add_argument('--max_edit_rate', type=float, default=0.2)
+    parser.add_argument('--max_token_num', type=int, default=100)
+    parser.add_argument('--atk_style', type=str, default='char')
     
     args = parser.parse_args()
     test_rand_attack(
         wm_name=args.wm_name, 
         max_edit_rate=args.max_edit_rate,
-        max_token_num=args.max_token_num
+        max_token_num=args.max_token_num,
+        atk_style=args.atk_style
     )
     

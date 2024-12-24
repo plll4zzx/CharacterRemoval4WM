@@ -17,7 +17,7 @@ class CompositeTransformation(Transformation):
         transformations: The list of ``Transformation`` to apply.
     """
 
-    def __init__(self, transformations):
+    def __init__(self, transformations, max_trans_num=5):
         if not (
             isinstance(transformations, list) or isinstance(transformations, tuple)
         ):
@@ -25,6 +25,7 @@ class CompositeTransformation(Transformation):
         elif not len(transformations):
             raise ValueError("transformations cannot be empty")
         self.transformations = transformations
+        self.max_trans_num=max_trans_num
 
     def _get_transformations(self, *_):
         """Placeholder method that would throw an error if a user tried to
@@ -37,7 +38,11 @@ class CompositeTransformation(Transformation):
         new_attacked_texts = set()
         for transformation in self.transformations:
             new_attacked_texts.update(transformation(*args, **kwargs))
-        return list(new_attacked_texts)
+        if 'return_indices' in kwargs:
+            new_attacked_texts=list(new_attacked_texts)
+        else:
+            new_attacked_texts=list(new_attacked_texts)#[:self.max_trans_num]
+        return new_attacked_texts
 
     def __repr__(self):
         main_str = "CompositeTransformation" + "("

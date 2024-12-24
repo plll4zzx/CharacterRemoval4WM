@@ -89,7 +89,7 @@ class TextBuggerLi2018(AttackRecipe):
         #
         # Goal is untargeted classification
         #
-        goal_function = UntargetedClassification(model_wrapper)
+        goal_function = UntargetedClassification(model_wrapper, target_max_score=0.1)#
         #
         # Greedily swap words with "Word Importance Ranking".
         #

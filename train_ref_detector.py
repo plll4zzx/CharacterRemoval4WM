@@ -31,7 +31,8 @@ class WMDataset(Dataset):
                 if tokenizer is not None and text_len is not None:
                     tmp_ids=tokenizer.encode(tmp_text, add_special_tokens=False)[0:text_len]
                     tmp_text=tokenizer.decode(tmp_ids, skip_special_tokens=True)
-                    wm_flag=wm_detector(tmp_text)['is_watermarked']
+                    wm_rlt=wm_detector(tmp_text)
+                    wm_flag=wm_rlt['is_watermarked']
                     if wm_flag==False:
                         count_un+=1
                         tmp_labels=0
@@ -41,6 +42,7 @@ class WMDataset(Dataset):
                     self.dataset.append({
                         'text':tmp_text,
                         'labels': tmp_labels,
+                        'score': wm_rlt['score']
                     })
                     # for idx in range(0, len(tmp_ids), text_len):
                     #     tmp_text=tokenizer.decode(tmp_ids[idx:idx+text_len], skip_special_tokens=True)
@@ -75,9 +77,11 @@ class WMDataset(Dataset):
                 if tokenizer is not None and text_len is not None:
                     tmp_ids=tokenizer.encode(tmp_text, add_special_tokens=False)[0:text_len]
                     tmp_text=tokenizer.decode(tmp_ids, skip_special_tokens=True)
+                    wm_rlt=wm_detector(tmp_text)
                     self.dataset.append({
                         'text':tmp_text,
                         'labels': 0,
+                        'score': wm_rlt['score']
                     })
             #         for idx in range(0, len(tmp_ids), text_len):
             #             tmp_text=tokenizer.decode(tmp_ids[idx:idx+text_len], skip_special_tokens=True)
@@ -275,14 +279,14 @@ class RefDetector:
 if __name__=='__main__':
     llm_name="facebook/opt-1.3b"
     dataset_name='../../dataset/c4/realnewslike'
-    ref_model=RefDetector(llm_name=llm_name, wm_name='TS')
+    ref_model=RefDetector(llm_name=llm_name, wm_name='KGW')
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
-        text_len=200
+        text_len=100
     )
     ref_model.dataloader_init(
         train_split=0.8,
-        text_len=200, 
+        text_len=100, 
     )
     ref_model.train_init(
         # model_path='saved_model/KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-16',
@@ -290,5 +294,5 @@ if __name__=='__main__':
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()
-    ref_model.start_train(num_epochs=10)
+    ref_model.start_train(num_epochs=10, lr_step=5)
     ref_model.save_model(name='RefDetector')

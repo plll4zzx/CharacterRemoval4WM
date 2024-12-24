@@ -131,35 +131,84 @@ class RefAttack:
         self.log.logger.info(info)
         # print(info)
 
+    def get_gradient(self, input_text, ground_truth_output=0):
+
+        inputs = self.tokenizer(input_text, return_tensors="pt", truncation=True, padding=True)
+
+        # Extract input IDs and enable gradient tracking
+        # input_ids = inputs["input_ids"]
+        # input_ids = input_ids.float().clone().detach().requires_grad_(True)
+        # input_ids_float = inputs["input_ids"].float().clone().detach().requires_grad_(True)
+        # embeddings = self.model.get_input_embeddings()(input_ids_float.long())
+
+        embeddings = self.model.get_input_embeddings()(inputs["input_ids"])
+        embeddings = embeddings.clone().detach().requires_grad_(True)
+
+        # Forward pass through the model
+        outputs = self.model(inputs_embeds=embeddings)
+        logits = outputs.logits
+
+        # Select the target class (e.g., the predicted class)
+        # target_class = torch.argmax(logits, dim=1)
+
+        # Compute gradients w.r.t. the input IDs
+        target_score = logits[:, ground_truth_output].squeeze()
+        target_score.backward()#retain_graph=True
+
+        # Extract gradients
+        gradients = embeddings.grad
+        token_importance = gradients.norm(dim=-1).squeeze()
+
+        del embeddings
+        del gradients
+        del outputs
+        # torch.cuda.empty_cache()
+        return token_importance
+    
+    def gradient_match(self, wm_text, token_importance, green_token_flags, wm_tokenizer, ref_tokenizer):
+        
+        token_id_wm=wm_tokenizer.encode(wm_text, add_special_tokens=False)
+        token_wm={wm_tokenizer.decode(id):green_token_flags[idx]  for idx, id in enumerate(token_id_wm)}
+        
+        token_id_ref=ref_tokenizer.encode(wm_text)
+        token_ref={ref_tokenizer.decode(id):token_importance[idx].item()  for idx, id in enumerate(token_id_ref)}
+
+        wm_ref={}
+        for token in token_ref:
+            if (token in token_wm):
+                wm_ref[token]=(token_wm[token], token_ref[token])
+            elif (' '+token in token_wm):
+                wm_ref[token]=(token_wm[' '+token], token_ref[token])
+        
+        thr=np.percentile(token_importance.cpu().numpy(), 90)
+        # for thr in range(0,45):
+        count1=0
+        count2=0
+        for token in wm_ref:
+            if wm_ref[token][1]>=thr:
+                count2+=1
+                if wm_ref[token][0]==1:
+                    count1+=1
+        ref_acc=(count1/count2, count1, count2)
+        return ref_acc
+
     def get_adv(
         self, 
         sentence, sen_detect={}, ground_truth_output=0, 
         sep_size=None, step_size=None, attack_times=3,
         rept_times=10, rept_thr=0.7,
     ):
-        # if sep_size is None:
-        #     sep_size=self.sep_size
-        # if step_size is None:
-        #     step_size=sep_size
-        # for idx in range(attack_times):
         attacked=self.attack.attack(
             sentence, ground_truth_output, 
         )
-        # overall_score=round(np.mean(attacked['overall_score']),4)
+        
         simi_score=round(1-attacked.perturbed_result.score,4)
         num_queries=attacked.perturbed_result.num_queries
         budget=attacked.original_result.attacked_text.words_diff_num(attacked.perturbed_result.attacked_text)
         attacked_text=attacked.perturbed_result.attacked_text.text
         attacked_rlt=self.wm_detector(attacked_text)
-        # if attacked_rlt['is_watermarked']==False:
-        #     break
-        # elif attack_times>1:
-        #     self.log_info(['Failed', idx, 'simi_score', attacked['score']])
-        #     self.log_info(['Failed', idx, 'adv_detect',attacked_rlt])
-
 
         self.log_info(['adv_text:', attacked_text.replace('\n',' ')])
-        # self.log_info(['overall_score', overall_score])
         self.log_info(['simi_score', simi_score])
         self.log_info(['num_queries', num_queries])
         self.log_info(['budget', budget])
@@ -170,12 +219,11 @@ class RefAttack:
 
         self.result_list.append({
             'raw_text': sentence,
-            'raw_detect': sen_detect, #(sen_detect['is_watermarked'], round(sen_detect['score'],4)),
+            'raw_detect': sen_detect, 
             'adv_text': attacked_text,
-            # 'overall_score': attacked['overall_score'],
             'simi_score': simi_score,
             'num_queries':num_queries,
             'budget': budget,
-            'adv_detect': attacked_rlt, #(attacked_rlt['is_watermarked'], round(attacked_rlt['score'],4))
+            'adv_detect': attacked_rlt, 
         })
         return attacked_rlt, simi_score, num_queries, budget

@@ -248,14 +248,14 @@ class KGW(BaseWatermark):
         encoded_text = self.config.generation_tokenizer(text, return_tensors="pt", add_special_tokens=False)["input_ids"][0].to(self.config.device)
 
         # Compute z_score using a utility method
-        z_score, _ = self.utils.score_sequence(encoded_text)
+        z_score, green_token_flags = self.utils.score_sequence(encoded_text)
 
         # Determine if the z_score indicates a watermark
         is_watermarked = z_score > self.config.z_threshold
 
         # Return results based on the return_dict flag
         if return_dict:
-            return {"is_watermarked": is_watermarked, "score": z_score}
+            return {"is_watermarked": is_watermarked, "score": z_score, "green_token_flags": green_token_flags}
         else:
             return (is_watermarked, z_score)
         
