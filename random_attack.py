@@ -154,7 +154,7 @@ class RandomAttack:
         
         max_edit_dist=round(token_num*max_edit_rate)
         rand_tokens=np.random.choice(token_num, min(token_num, max_edit_dist*3), replace=False)
-        rand_opt=np.random.randint(0, 3, min(token_num, max_edit_dist*3))
+        rand_opt=np.random.randint(0, 4, min(token_num, max_edit_dist*3))
 
         edit_dist=0
         new_token_ids_dict=deepcopy(token_ids_dict)
@@ -173,6 +173,8 @@ class RandomAttack:
                 tmp_token=tmp_token[0:rand_idx]+rand_char+tmp_token[rand_idx:]
             elif tmp_opt==2: # substitute
                 tmp_token=tmp_token[0:rand_idx]+rand_char+tmp_token[rand_idx+1:]
+            elif tmp_opt==3: # reorder
+                tmp_token=tmp_token[0:rand_idx-1]+tmp_token[rand_idx+1]+tmp_token[rand_idx]+tmp_token[rand_idx+2:]
 
             new_token_ids_dict[token_idx]=self.tokenizer.encode(tmp_token, add_special_tokens=False)
             edit_dist+=1
