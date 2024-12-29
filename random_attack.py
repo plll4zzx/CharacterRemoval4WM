@@ -2,7 +2,7 @@
 import gensim.downloader
 from tqdm import tqdm
 import numpy as np
-from textattack.utils import Logger, to_string, truncation
+from textattack.utils import Logger, to_string, truncation,find_homo
 import datetime
 from copy import deepcopy
 import string
@@ -160,19 +160,23 @@ class RandomAttack:
         new_token_ids_dict=deepcopy(token_ids_dict)
         for ids, token_idx in enumerate(rand_tokens):
             tmp_token=token_dict[token_idx]
-            if len(tmp_token)<5:
+            
+            half_token_len=len(tmp_token)//2
+            if half_token_len<=1:
                 continue
-            tmp_opt=rand_opt[ids]
-
+            
+            tmp_opt=2#rand_opt[ids]
             rand_idx=np.random.randint(2, len(tmp_token)-1)
             rand_char_id=np.random.choice(len(self.special_char))
             rand_char=self.special_char[rand_char_id]
+            
             if tmp_opt==0: # delete
                 tmp_token=tmp_token[0:rand_idx]+tmp_token[rand_idx+1:]
             elif tmp_opt==1: # insert
                 tmp_token=tmp_token[0:rand_idx]+rand_char+tmp_token[rand_idx:]
             elif tmp_opt==2: # substitute
-                tmp_token=tmp_token[0:rand_idx]+rand_char+tmp_token[rand_idx+1:]
+                tmp_char=tmp_token[rand_idx]
+                tmp_token=tmp_token[0:rand_idx]+find_homo(tmp_char)+tmp_token[rand_idx+1:]
             elif tmp_opt==3: # reorder
                 tmp_token=tmp_token[0:rand_idx-1]+tmp_token[rand_idx+1]+tmp_token[rand_idx]+tmp_token[rand_idx+2:]
 

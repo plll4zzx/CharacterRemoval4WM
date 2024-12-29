@@ -44,34 +44,6 @@ class WMDataset(Dataset):
                         'labels': tmp_labels,
                         'score': wm_rlt['score']
                     })
-                    # for idx in range(0, len(tmp_ids), text_len):
-                    #     tmp_text=tokenizer.decode(tmp_ids[idx:idx+text_len], skip_special_tokens=True)
-                    #     tmp_text=tmp_d['wm_text'][0:len(tmp_text)]
-                    #     wm_flag=wm_detector(tmp_text)['is_watermarked']
-                    #     # wm_flag1=wm_detector(tmp_d['wm_text'][0:len(tmp_text)])['is_watermarked']
-                    #     # if wm_flag1!=wm_flag:
-                    #     #     print()
-                    #     if wm_flag==False:
-                    #         tmp_labels=0
-                    #         count_un+=1
-                    #     else:
-                    #         tmp_labels=1
-                    #         count_wm+=1
-                    #     self.dataset.append({
-                    #         'text':tmp_text,
-                    #         'labels': tmp_labels,
-                    #     })
-                # else:
-                #     if wm_detector is not None:
-                #         wm_flag=wm_detector(tmp_text)['is_watermarked']
-                #         if wm_flag==False:
-                #             tmp_labels=0
-                #         else:
-                #             tmp_labels=1
-                #     self.dataset.append({
-                #         'text':tmp_text,
-                #         'labels': tmp_labels,
-                #     })
             if tmp_d['un_detect']['is_watermarked']==False:
                 tmp_text=tmp_d['un_text']
                 if tokenizer is not None and text_len is not None:
@@ -83,18 +55,6 @@ class WMDataset(Dataset):
                         'labels': 0,
                         'score': wm_rlt['score']
                     })
-            #         for idx in range(0, len(tmp_ids), text_len):
-            #             tmp_text=tokenizer.decode(tmp_ids[idx:idx+text_len], skip_special_tokens=True)
-            #             tmp_text=tmp_d['wm_text'][0:len(tmp_text)]
-            #             self.dataset.append({
-            #                 'text':tmp_text,
-            #                 'labels': 0,
-            #             })
-            #     else:
-            #         self.dataset.append({
-            #             'text':tmp_text,
-            #             'labels': 0,
-            #         })
         random.shuffle(self.dataset)
         print(count_wm, count_un)
         if wm_detector is not None:

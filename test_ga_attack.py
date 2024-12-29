@@ -60,14 +60,13 @@ def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
             base_num+=1
         else:
             continue
-        ga_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
-        ga_attack.log_info(['wm_detect:', wm_rlt])
 
+        ga_attack.log_info(['wm_detect:', wm_rlt])
         
         ori_fitness=ga_attack.evaluate_fitness(wm_text, target_class)
         ga_attack.log_info(['ori_fitness:', ori_fitness])
 
-        attk_text, edit_dist,attk_score=ga_attack.get_adv(
+        attk_text, edit_dist, attk_score=ga_attack.get_adv(
             wm_text, target_class,
             max_edit_rate=max_edit_rate,
             num_generations=num_generations,
@@ -75,6 +74,8 @@ def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
 
         attk_rlt=wm_scheme.detect_wm(attk_text)
         ga_attack.log_info(['attk_detect:', attk_rlt])
+        ga_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
+        ga_attack.log_info(['attk_text:', attk_text.replace('\n',' ')])
         edit_dist_l.append(edit_dist)
         token_num_l.append(token_num)
         wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
@@ -85,7 +86,7 @@ def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
         
         if idx%25==0 and idx>0:
             ga_attack.log_info('******')
-            ga_attack.log_info(['ASR', round(count_num/base_num,4)])
+            ga_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
             ga_attack.log_info(['edit_dist', round(np.mean(edit_dist_l),4)])
             ga_attack.log_info(['token_num', round(np.mean(token_num_l),4)])
             ga_attack.log_info(['budget rate', round(np.mean(edit_dist_l)/np.mean(token_num_l),4)])
@@ -108,7 +109,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='test_ga_attack')
     parser.add_argument('--wm_name', type=str, default='KGW')
     parser.add_argument('--max_edit_rate', type=float, default=0.1)
-    parser.add_argument('--max_token_num', type=int, default=100)
+    parser.add_argument('--max_token_num', type=int, default=200)
     parser.add_argument('--num_generations', type=int, default=5)
     
     args = parser.parse_args()

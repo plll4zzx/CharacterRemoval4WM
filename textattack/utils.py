@@ -2,6 +2,52 @@ import json
 import logging
 from logging import handlers
 
+def find_homo(input_char):
+    homos = {
+        "-": "˗",
+        "9": "৭",
+        "8": "Ȣ",
+        "7": "𝟕",
+        "6": "б",
+        "5": "Ƽ",
+        "4": "Ꮞ",
+        "3": "Ʒ",
+        "2": "ᒿ",
+        "1": "l",
+        "0": "O",
+        "'": "`",
+        "a": "ɑ",
+        "b": "Ь",
+        "c": "ϲ",
+        "d": "ԁ",
+        "e": "е",
+        "f": "𝚏",
+        "g": "ɡ",
+        "h": "հ",
+        "i": "і",
+        "j": "ϳ",
+        "k": "𝒌",
+        "l": "ⅼ",
+        "m": "ｍ",
+        "n": "ո",
+        "o": "о",
+        "p": "р",
+        "q": "ԛ",
+        "r": "ⲅ",
+        "s": "ѕ",
+        "t": "𝚝",
+        "u": "ս",
+        "v": "ѵ",
+        "w": "ԝ",
+        "x": "×",
+        "y": "у",
+        "z": "ᴢ",
+    }
+    if input_char in homos:
+        return homos[input_char]
+    else:
+        return '@'
+
 def to_string(inputs):
     output_str=''
     for input in inputs:
