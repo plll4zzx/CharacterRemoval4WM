@@ -255,7 +255,10 @@ class KGW(BaseWatermark):
 
         # Return results based on the return_dict flag
         if return_dict:
-            return {"is_watermarked": is_watermarked, "score": z_score, "green_token_flags": green_token_flags}
+            return {
+                "is_watermarked": is_watermarked, "score": z_score, 
+                # "green_token_flags": green_token_flags
+            }
         else:
             return (is_watermarked, z_score)
         

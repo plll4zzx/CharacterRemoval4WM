@@ -3,16 +3,47 @@ import numpy as np
 from pygad import GA
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
+from llm_wm import LLM_WM
+from textattack.utils import Logger, to_string, save_json, save_jsonl, truncation
+import datetime
 
 class GA_Attack:
     def __init__(
         self, 
         victim_model = 'bert-base-uncased', 
         victim_tokenizer = 'bert-base-uncased',
+        wm_detector=None,
+        logger=None,
+        wm_name='TS',
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(victim_tokenizer)
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
         self.special_char = ' '
+        self.wm_detector=wm_detector
+        self.wm_name=wm_name
+
+        if logger is None:
+            self.log=Logger(
+                'attack_log/GAAttack'+'-'.join([
+                    self.wm_name, 
+                    # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
+                    # str(self.temperature)
+                ])+'-'+str(datetime.datetime.now())[0:-10]+'.log',
+                level='debug', 
+                screen=False
+            )
+        else:
+            self.log=logger
+        self.log_info('\n')
+
+    def log_info(self, info=''):
+        if not isinstance(info, str):
+            info=to_string(info)
+        self.log.logger.info(info)
+
+    def truncation(self, text, max_token_num=100):
+        new_text, token_num=truncation(text, self.tokenizer, max_token_num)
+        return new_text, token_num
 
     def evaluate_fitness(self, modified_sentence, target_class):
         # Tokenize the modified sentence
@@ -27,34 +58,45 @@ class GA_Attack:
         fitness = predictions[0][target_class].item()
 
         return fitness
-
-    def fitness_function(self, ga_instance, solution, solution_idx):
-        # Decode solution into token indices and operations
+    
+    def modify_sentence(self, solution):
         edited_sentence = list(self.tokens)
         selected_tokens = []
 
         for i, gene in enumerate(solution):
-            if gene == 1 and len(selected_tokens) < self.max_edits:  # Enforce max edits
+            if gene > 0 and len(selected_tokens) < self.max_edits:  # Enforce max edits
                 selected_tokens.append(i)
-                operation = random.choice(["delete", "replace", "insert"])
                 token_index = i
-                if operation == "delete":
+
+                # # Treat operation as part of the solution
+                # operation = solution[len(self.tokens) + i]  # Operation encoded in the extended solution
+                operation=gene
+                # operation = random.choice([1, 2, 3])
+
+                if operation == 1:  # Delete
                     edited_sentence[token_index] = edited_sentence[token_index][:-1]  # Remove last character
-                elif operation == "replace":
+                elif operation == 2:  # Replace
                     edited_sentence[token_index] = self.special_char  # Replace entire token with special character
-                elif operation == "insert":
+                elif operation == 3:  # Insert
                     edited_sentence[token_index] = edited_sentence[token_index] + self.special_char  # Insert special char
 
         # Reconstruct sentence
         modified_sentence = " ".join(edited_sentence)
+        edit_distance=len(selected_tokens)
+        return modified_sentence, edit_distance
+
+    def fitness_function(self, ga_instance, solution, solution_idx):
+        
+        modified_sentence,_ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
         return self.evaluate_fitness(modified_sentence, self.target_class)
 
-    def get_adv(self, sentence, target_class, num_generations=30, num_parents_mating=10, population_size=100):
+    def get_adv(self, sentence, target_class, num_generations=30, num_parents_mating=10, population_size=100, max_edit_rate=0.1, mutation_percent_genes=30):
+        
         self.tokens = sentence.split()
         self.target_class = target_class
-        self.max_edits = max(1, int(len(self.tokens) * 0.3))  # Set max_edits to 30% of the token count
+        self.max_edits = max(1, int(len(self.tokens) * max_edit_rate))  # Set max_edits to 30% of the token count
         n = len(self.tokens)
 
         # Initialize PyGAD
@@ -66,8 +108,8 @@ class GA_Attack:
             num_genes=n,
             gene_type=int,
             init_range_low=0,
-            init_range_high=2,
-            mutation_percent_genes=30,
+            init_range_high=4,  # Operations have three possible values: 0, 1, 2, 3
+            mutation_percent_genes=mutation_percent_genes,
             on_generation=self.on_generation,
         )
 
@@ -76,22 +118,40 @@ class GA_Attack:
 
         # Output the best solution
         best_solution, best_solution_fitness, _ = ga_instance.best_solution()
-        return best_solution, best_solution_fitness
+        best_sentence, edit_distance = self.modify_sentence(best_solution)
+        return best_sentence, edit_distance, best_solution_fitness
 
     def on_generation(self, ga_instance):
         print(f"Generation: {ga_instance.generations_completed}")
-        print(f"Best Fitness: {ga_instance.best_solution()[1]}")
+        (best_solution, best_fitness, _)=ga_instance.best_solution()
+        self.log_info(f"Best Fitness: {best_fitness}")
+        if self.wm_detector is not None:
+            best_sentence,_ = self.modify_sentence(best_solution)
+            wm_rlt=self.wm_detector(best_sentence)
+            self.log_info(f"WM Detect: {wm_rlt}")
 
 # Example usage
 if __name__ == "__main__":
+    llm_name="facebook/opt-1.3b"
+    wm_name="KGW"
     ga_attack = GA_Attack(
         victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-23',
-        victim_tokenizer = 'bert-base-uncased'
+        victim_tokenizer = 'bert-base-uncased',
+        wm_detector=LLM_WM(model_name = llm_name, device = "cuda", wm_name=wm_name).detect_wm
     )
     sentence = "attempt at promotion to english football ’ s second tier. \" having been relegated from the championship ( south preston had struggled at the wrong end ) to this campaign and fighting back through promotion gives us great confidence, \" said lewer – a league one winner with barnsley in 1997, twice a northern irish premier league winner with hamilton and with northampton town, as well as a top - flight player. sign up to our daily newsletter the i newsletter cut through the noise sign up thanks for signing up! sorry, there seem to be some issues. please try again later. submitting... blackpool manager alan lewier gives instructions to his team from the technical area during blackpool v rotherham united match at bloomfield road, blackpool, saturday may 29, 2021. ( photo by tony johnson ). the seasiders kicked off the new league one season with a 1 - 0 success at rotherham, but blackpool's 3 - 3 draw with oldham, with"
+    # sentence = ""
 
     target_class = 1  # Target class index to maximize
-    ga_attack.evaluate_fitness(sentence, target_class)
-    best_solution, best_fitness = ga_attack.get_adv(sentence, target_class)
-    print("Best solution:", best_solution)
-    print("Best fitness:", best_fitness)
+    ori_fitness=ga_attack.evaluate_fitness(sentence, target_class)
+    ori_wm_rlt=ga_attack.wm_detector(sentence)
+    ga_attack.log_info(["Original fitness:", ori_fitness])
+    ga_attack.log_info(["Original WM Detect:", ori_wm_rlt])
+    best_sentence, edit_distance, best_fitness = ga_attack.get_adv(
+        sentence, target_class,
+        max_edit_rate=0.15,
+        num_generations=30,
+    )
+    ga_attack.log_info(["Best solution:", best_sentence])
+    ga_attack.log_info(["edit_distance:", edit_distance])
+    ga_attack.log_info(["Best fitness:", best_fitness])

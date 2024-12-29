@@ -5,6 +5,8 @@ from logging import handlers
 def to_string(inputs):
     output_str=''
     for input in inputs:
+        if isinstance(input, list) and len(input)>20:
+            continue
         if isinstance(input, str):
             output_str+=input
         else:

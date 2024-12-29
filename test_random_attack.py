@@ -101,9 +101,9 @@ if __name__=="__main__":
     
     parser = argparse.ArgumentParser(description='test_rand_attack')
     parser.add_argument('--wm_name', type=str, default='KGW')
-    parser.add_argument('--max_edit_rate', type=float, default=0.2)
+    parser.add_argument('--max_edit_rate', type=float, default=0.1)
     parser.add_argument('--max_token_num', type=int, default=100)
-    parser.add_argument('--atk_style', type=str, default='char')
+    parser.add_argument('--atk_style', type=str, default='token')
     
     args = parser.parse_args()
     test_rand_attack(
