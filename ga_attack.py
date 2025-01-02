@@ -57,7 +57,7 @@ class GA_Attack:
         # Define a fitness value based on the target misclassification
         fitness = predictions[0][target_class].item()
 
-        return fitness#-solu_len
+        return fitness-solu_len*0.3
     
     def modify_sentence(self, solution):
         edited_sentence = list(self.tokens)
@@ -90,7 +90,7 @@ class GA_Attack:
         # Reconstruct sentence
         modified_sentence = " ".join(edited_sentence)
         edit_distance=len(selected_tokens)
-        return modified_sentence, edit_distance, np.mean(solution)
+        return modified_sentence, edit_distance, np.abs(edit_distance-self.max_edits)
 
     def fitness_function(self, ga_instance, solution, solution_idx):
         

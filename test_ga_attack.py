@@ -26,7 +26,7 @@ def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
     wm_scheme=LLM_WM(model_name = llm_name, device = "cuda", wm_name=wm_name)
     
     ga_attack=GA_Attack(
-        victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-23',
+        victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-31',
         victim_tokenizer = 'bert-base-uncased',
         wm_detector=wm_scheme.detect_wm,
         wm_name=wm_name
@@ -105,10 +105,10 @@ def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
     # rand_attack.save()
 
 if __name__=="__main__":
-    
+    # python test_ga_attack.py --num_generations 10 --max_edit_rate 0.2 --max_token_num 200
     parser = argparse.ArgumentParser(description='test_ga_attack')
     parser.add_argument('--wm_name', type=str, default='KGW')
-    parser.add_argument('--max_edit_rate', type=float, default=0.1)
+    parser.add_argument('--max_edit_rate', type=float, default=0.2)
     parser.add_argument('--max_token_num', type=int, default=200)
     parser.add_argument('--num_generations', type=int, default=5)
     

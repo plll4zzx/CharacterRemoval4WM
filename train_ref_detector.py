@@ -1,5 +1,5 @@
 
-from textattack.utils import load_json, save_json
+from textattack.utils import load_json, save_json, find_homo
 from datasets import load_dataset
 from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification
 from torch.optim import AdamW, SGD, Adam
@@ -14,8 +14,44 @@ import datetime
 import random
 from llm_wm import LLM_WM
 
+def char_adv(sentence, rand_char_rate=0.1):
+    tokens = sentence.split()
+    edited_sentence = tokens.copy()
+    selected_tokens = []
+    max_edits=int(len(tokens)*rand_char_rate)
+    solution=np.random.choice(len(tokens), max_edits*2)
+
+    for loc in solution:
+        if  len(selected_tokens) < max_edits:  
+
+            half_token_len=len(edited_sentence[loc])//2
+            if half_token_len<=1:
+                continue
+
+            selected_tokens.append(loc)
+
+            operation = 2 
+
+            tmp_token=edited_sentence[loc]
+
+            if operation == 1:  # Delete
+                edited_sentence[loc] = tmp_token[:half_token_len] + tmp_token[half_token_len+1:]
+            elif operation == 2:  # Replace
+                tmp_char=tmp_token[half_token_len]
+                edited_sentence[loc] = tmp_token[:half_token_len] +find_homo(tmp_char)+ tmp_token[half_token_len+1:] 
+            elif operation == 3:  # Insert
+                edited_sentence[loc] = tmp_token[:half_token_len] +'@'+ tmp_token[half_token_len:]
+
+    # Reconstruct sentence
+    modified_sentence = " ".join(edited_sentence)
+    return modified_sentence
+
 class WMDataset(Dataset):
-    def __init__(self, data_path, data_num, tokenizer=None, text_len=None, wm_detector=None, stored_flag=False):
+    def __init__(
+        self, data_path, data_num, 
+        tokenizer=None, text_len=None, wm_detector=None, stored_flag=False,
+        rand_char_rate=0, rand_times=0,
+    ):
         if stored_flag:
             self.dataset=load_json(data_path)
             return
@@ -44,6 +80,22 @@ class WMDataset(Dataset):
                         'labels': tmp_labels,
                         'score': wm_rlt['score']
                     })
+                    if wm_rlt['score']>=5 and rand_times>0:
+                        for i in range(rand_times):
+                            tmp_text0=char_adv(tmp_text, rand_char_rate)
+                            wm_rlt0=wm_detector(tmp_text0)
+                            wm_flag0=wm_rlt0['is_watermarked']
+                            if wm_flag0==False:
+                                count_un+=1
+                                tmp_labels0=0
+                            else:
+                                count_wm+=1
+                                tmp_labels0=1
+                            self.dataset.append({
+                                'text': tmp_text0,
+                                'labels': tmp_labels0,
+                                'score': wm_rlt0['score']
+                            })
             if tmp_d['un_detect']['is_watermarked']==False:
                 tmp_text=tmp_d['un_text']
                 if tokenizer is not None and text_len is not None:
@@ -58,7 +110,10 @@ class WMDataset(Dataset):
         random.shuffle(self.dataset)
         print(count_wm, count_un)
         if wm_detector is not None:
-            save_json(self.dataset, data_path[0:-5]+'_'+str(text_len)+'.json')
+            if rand_times>0:
+                save_json(self.dataset, data_path[0:-5]+'_'+str(text_len)+'_'+str(rand_char_rate)+'_'+str(rand_times)+'.json')
+            else:
+                save_json(self.dataset, data_path[0:-5]+'_'+str(text_len)+'.json')
 
     def __len__(self):
         return len(self.dataset)
@@ -76,11 +131,22 @@ class RefDetector:
         print(wm_name, llm_name)
         self.train_flag=False
 
-    def load_data(self, dataset_name, data_num, text_len=None):
+    def load_data(
+        self, dataset_name, data_num, text_len=None, 
+        rand_char_rate=0, rand_times=0
+    ):
         self.dataset_name=dataset_name
         if text_len is None:
             data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
             self.dataset=WMDataset(data_path, data_num)
+        elif rand_times>0:
+            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(text_len)+"_"+str(rand_char_rate)+"_"+str(rand_times)+".json"
+            if os.path.exists(data_path):
+                self.dataset=WMDataset(data_path, data_num, stored_flag=True)
+            else:
+                data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
+                wm_scheme=LLM_WM(model_name = self.llm_name, device = "cuda", wm_name=self.wm_name)
+                self.dataset=WMDataset(data_path, data_num, self.tokenizer, text_len=text_len, wm_detector=wm_scheme.detect_wm, rand_char_rate=rand_char_rate, rand_times=rand_times)
         else:
             data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(text_len)+".json"
             if os.path.exists(data_path):
@@ -112,7 +178,7 @@ class RefDetector:
         self.model.eval()
 
         loss_l=[]
-        metric = evaluate.load("accuracy")
+        metric = evaluate.load('/home/plll/python/metrics/accuracy/accuracy.py')
         for idx, batch in enumerate(self.train_dataloader):
             if idx == 20:
                 break
@@ -127,7 +193,7 @@ class RefDetector:
         print('train loss', np.round(np.mean(loss_l),4))
         print('train', result)
         
-        metric = evaluate.load("accuracy")
+        metric = evaluate.load('/home/plll/python/metrics/accuracy/accuracy.py')
         loss_l=[]
         for batch in self.eval_dataloader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -204,13 +270,13 @@ class RefDetector:
             model_path, 
             num_labels=2, torch_dtype="auto"
         )
+        self.model.to(self.device)
 
         # self.optimizer = AdamW(self.model.parameters(), lr=lr_init, weight_decay=0.8)
         self.optimizer = Adam(self.model.parameters(), lr=lr_init)
 
         self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=gamma)
 
-        self.model.to(self.device)
 
     def start_train(self, num_epochs=3, lr_step=8):
         # loss_fn = torch.nn.CrossEntropyLoss()
@@ -242,7 +308,8 @@ if __name__=='__main__':
     ref_model=RefDetector(llm_name=llm_name, wm_name='KGW')
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
-        text_len=100
+        text_len=100,
+        rand_char_rate=0.05, rand_times=5
     )
     ref_model.dataloader_init(
         train_split=0.8,

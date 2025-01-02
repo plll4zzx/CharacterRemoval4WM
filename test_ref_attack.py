@@ -16,7 +16,11 @@ from llm_wm import LLM_WM
 from ref_attack import RefAttack
 import argparse
 
-def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distance=5, max_token_num=80):
+def test_sam_attack(
+    wm_name, 
+    # query_budget, slide_flag, sep_size=30, edit_distance=5, 
+    max_token_num=80
+):
     llm_name="facebook/opt-1.3b"
     dataset_name='../../dataset/c4/realnewslike'
 
@@ -25,9 +29,9 @@ def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distanc
     wm_scheme=LLM_WM(model_name = llm_name, device = "cuda", wm_name=wm_name)
     
     ref_attack=RefAttack(
-        sep_size=sep_size,
-        attack_name = 'TextBuggerLi2018',#'DeepWordBugGao2018',# '
-        victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-23',
+        # sep_size=sep_size,
+        attack_name = 'TextBuggerCharLi2018',
+        victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-31',
         victim_tokenizer = 'bert-base-uncased',
         llm_name=llm_name,
         wm_name=wm_name,
@@ -37,23 +41,23 @@ def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distanc
     
     count_num=0
     base_num=0
-    simi_score_l=[]
+    cls_score_l=[]
     num_queries_l=[]
     budget_l=[]
     token_num_l=[]
     wm_score_l=[]
     wm_score_drop_rate_l=[]
     ref_acc_l=[]
-    for idx in range(10,32,1):#len(wm_data)
+    for idx in range(100):#len(wm_data)
         
-        wm_text=wm_data[idx]['un_text']
+        wm_text=wm_data[idx]['wm_text']
         wm_text, token_num=ref_attack.truncation(wm_text, max_token_num=max_token_num)
         if len(wm_text)==0:
             continue
 
         wm_rlt=wm_scheme.detect_wm(wm_text)
         ref_attack.log_info(str(idx))
-        if wm_rlt['is_watermarked']==False:
+        if wm_rlt['is_watermarked']==True:
             base_num+=1
         else:
             continue
@@ -71,14 +75,14 @@ def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distanc
         # ref_acc_l.append(ref_acc[0])
         # ref_attack.log_info(['ref_acc', ref_acc])
 
-        attk_rlt, simi_score, num_queries, budget=ref_attack.get_adv(
+        attk_rlt, cls_score, num_queries, budget=ref_attack.get_adv(
             wm_text, wm_rlt, ground_truth_output=0, 
             # sep_size=sep_size, 
             attack_times=1,
             rept_times=1, rept_thr=0.8
         )
 
-        simi_score_l.append(simi_score)
+        cls_score_l.append(cls_score)
         num_queries_l.append(num_queries)
         budget_l.append(budget)
         token_num_l.append(token_num)
@@ -91,7 +95,7 @@ def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distanc
         if base_num%25==0 and base_num>0:
             ref_attack.log_info('******')
             ref_attack.log_info(['ASR', round(count_num/base_num,4)])
-            ref_attack.log_info(['simi_score', round(np.mean(simi_score_l),4)])
+            ref_attack.log_info(['cls_score', round(np.mean(cls_score_l),4)])
             ref_attack.log_info(['num_queries', round(np.mean(num_queries_l),3)])
             ref_attack.log_info(['budget', round(np.mean(budget_l),3)])
             ref_attack.log_info(['token_num', round(np.mean(token_num_l),3)])
@@ -102,7 +106,7 @@ def test_sam_attack(wm_name, query_budget, slide_flag, sep_size=30, edit_distanc
     
     ref_attack.log_info('******')
     ref_attack.log_info(['ASR', round(count_num/base_num,4)])
-    ref_attack.log_info(['simi_score', round(np.mean(simi_score_l),4)])
+    ref_attack.log_info(['cls_score', round(np.mean(cls_score_l),4)])
     ref_attack.log_info(['num_queries', round(np.mean(num_queries_l),3)])
     ref_attack.log_info(['budget', round(np.mean(budget_l),3)])
     ref_attack.log_info(['token_num', round(np.mean(token_num_l),3)])
@@ -120,18 +124,18 @@ if __name__=="__main__":
     # slide_flag=True
     parser = argparse.ArgumentParser(description='test_ref_attack')
     parser.add_argument('--wm_name', type=str, default='KGW')
-    parser.add_argument('--query_budget', type=int, default=500)
-    parser.add_argument('--slide_flag', type=str, default='True')
-    parser.add_argument('--sep_size', type=int, default=12)
-    parser.add_argument('--edit_distance', type=int, default=2)
-    parser.add_argument('--max_token_num', type=int, default=100)
+    # parser.add_argument('--query_budget', type=int, default=500)
+    # parser.add_argument('--slide_flag', type=str, default='True')
+    # parser.add_argument('--sep_size', type=int, default=12)
+    # parser.add_argument('--edit_distance', type=int, default=5)
+    parser.add_argument('--max_token_num', type=int, default=200)
     
     args = parser.parse_args()
     test_sam_attack(
         wm_name=args.wm_name, 
-        query_budget=args.query_budget, 
-        slide_flag=args.slide_flag=='True',
-        sep_size=args.sep_size,
-        edit_distance=args.edit_distance,
+        # query_budget=args.query_budget, 
+        # slide_flag=args.slide_flag=='True',
+        # sep_size=args.sep_size,
+        # edit_distance=args.edit_distance,
         max_token_num=args.max_token_num
     )

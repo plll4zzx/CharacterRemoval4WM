@@ -36,7 +36,7 @@ class RefAttack:
         self,
         # target_cos=0.3,
         # edit_distance=3,
-        sep_size=None,
+        # sep_size=None,
         # query_budget=500,
         # random_num=5, random_one=True,
         attack_name = 'TextBuggerLi2018',
@@ -50,7 +50,7 @@ class RefAttack:
         # max_single_query=20,
         # slide_flag=True
     ):
-        self.sep_size=sep_size
+        # self.sep_size=sep_size
         self.attack_name=attack_name
         self.llm_name=llm_name
         self.wm_name=wm_name
@@ -202,14 +202,14 @@ class RefAttack:
             sentence, ground_truth_output, 
         )
         
-        simi_score=round(1-attacked.perturbed_result.score,4)
+        cls_score=round(1-attacked.perturbed_result.score,4)
         num_queries=attacked.perturbed_result.num_queries
         budget=attacked.original_result.attacked_text.words_diff_num(attacked.perturbed_result.attacked_text)
         attacked_text=attacked.perturbed_result.attacked_text.text
         attacked_rlt=self.wm_detector(attacked_text)
 
         self.log_info(['adv_text:', attacked_text.replace('\n',' ')])
-        self.log_info(['simi_score', simi_score])
+        self.log_info(['cls_score', cls_score])
         self.log_info(['num_queries', num_queries])
         self.log_info(['budget', budget])
         self.log_info(['adv_detect',attacked_rlt])
@@ -221,9 +221,9 @@ class RefAttack:
             'raw_text': sentence,
             'raw_detect': sen_detect, 
             'adv_text': attacked_text,
-            'simi_score': simi_score,
+            'cls_score': cls_score,
             'num_queries':num_queries,
             'budget': budget,
             'adv_detect': attacked_rlt, 
         })
-        return attacked_rlt, simi_score, num_queries, budget
+        return attacked_rlt, cls_score, num_queries, budget

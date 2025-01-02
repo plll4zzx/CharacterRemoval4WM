@@ -34,6 +34,7 @@ def test_rand_attack(wm_name, max_edit_rate, max_token_num=80, atk_style='char')
     rand_attack.log_info(['dataset_name:', dataset_name])
     rand_attack.log_info(['max_edit_rate:', max_edit_rate])
     rand_attack.log_info(['max_token_num:', max_token_num])
+    rand_attack.log_info(['atk_style:', atk_style])
     
     count_num=0
     base_num=0
@@ -42,7 +43,7 @@ def test_rand_attack(wm_name, max_edit_rate, max_token_num=80, atk_style='char')
     token_num_l=[]
     wm_score_l=[]
     wm_score_drop_rate_l=[]
-    for idx in range(100):
+    for idx in range(1000):
         
         wm_text=wm_data[idx]['wm_text']
         wm_text, token_num=rand_attack.truncation(wm_text, max_token_num=max_token_num)
@@ -98,7 +99,7 @@ def test_rand_attack(wm_name, max_edit_rate, max_token_num=80, atk_style='char')
     # rand_attack.save()
 
 if __name__=="__main__":
-    
+    # python test_random_attack.py --max_edit_rate 0.2 --atk_style "char" --max_token_num 200
     parser = argparse.ArgumentParser(description='test_rand_attack')
     parser.add_argument('--wm_name', type=str, default='KGW')
     parser.add_argument('--max_edit_rate', type=float, default=0.1)

@@ -1,0 +1,3 @@
+在LLM watermark中，现有的去除水印的攻击方法主要有两种，token-level和sentence-level，token-level的方法主要包括对文本进行随机同义词替换，sentence-level的方法主要指对文本进行paraphrase。当前在评估水印的鲁棒性时，主要采用的也是这两种攻击。但除此以外还有另一种攻击，即character-levelattack，即对文本中的字符进行替换，更改成相似的字符。我们的研究发现character-level的attack的去处水印的能力更强。因此，现有的水印的方法的鲁棒性都被高估了。我提出了一种character-level的水印去除攻击，攻击方法主要包括两个步骤：1.选择重要的token，2.对选中的token中的字符进行替换。选择重要token的方法有三种：1.随机选择，2.基于reference detector进行选择。reference detector的通过收集有水印和无水印的数据，进行训练得到的。基于reference detector的选择方法主要有两种：1.基于梯度信息选择重要token，2.使用遗传算法选择重要token。我们通过研究发现基于遗传算法的reference detector的攻击效果最好。
+
+这是我关于一篇学术论文的introducation的构思，请根据这段话，将它整理成一个逻辑连贯的introducation。请使用简洁流畅的英语
