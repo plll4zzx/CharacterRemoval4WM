@@ -6,6 +6,9 @@ from textattack.utils import Logger, to_string, truncation,find_homo
 import datetime
 from copy import deepcopy
 import string
+import torch
+from transformers import AutoTokenizer, AutoModelForSequenceClassification
+from copy import copy
 
 class GensimModel:
 
@@ -60,14 +63,23 @@ class RandomAttack:
         self,
         tokenizer,
         logger=None,
+        ref_model=None,
+        device='cuda',
     ):
         
         self.gensimi=None 
-        self.tokenizer = tokenizer
-        self.vocab_size=self.tokenizer.vocab_size
         self.token_len_flag=True
         self.simi_num_for_token=5
         self.special_char=string.whitespace
+        self.device=device
+        if isinstance(tokenizer,str):
+            self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
+        else:
+            self.tokenizer = tokenizer
+        self.vocab_size=self.tokenizer.vocab_size
+        if isinstance(ref_model,str):
+            self.ref_model = AutoModelForSequenceClassification.from_pretrained(ref_model)
+            self.ref_model.to(self.device)
         
         if logger is None:
             self.log=Logger(
@@ -113,6 +125,56 @@ class RandomAttack:
                     simi_tokens[idx]=' '+simi_tokens[idx]
         
         return simi_tokens
+    
+    def ref_score(self, sentences, target_class):
+        if self.ref_model is None:
+            return 0
+        inputs = self.tokenizer(sentences, return_tensors="pt", padding=True, truncation=True)
+        batch = {k: v.to(self.device) for k, v in inputs.items()}
+        # Evaluate fitness using the fine-tuned classification model
+        with torch.no_grad():
+            outputs = self.ref_model(**batch)
+        logits = outputs.logits
+        predictions = torch.softmax(logits, dim=1)
+
+        # Define a fitness value based on the target misclassification
+        fitness = predictions[:, target_class]
+
+        return fitness.cpu().detach().numpy()
+
+    def get_adv(
+        self, sentence, atk_style,
+        max_edit_rate=0.3,
+        atk_times=1, target_class=0,
+        batch_size=8
+    ): 
+        adv_sentence_list=[]
+        if atk_style=='char':
+            atk_method=self.char_attack1
+        else:
+            atk_method=self.token_attack
+        if atk_times<=1 or self.ref_model is None:
+            atk_times=1
+        for idx in range(atk_times):
+            adv_sentence, edit_dist=atk_method(
+                sentence, 
+                max_edit_rate=max_edit_rate
+            )
+            tmp_rlt={
+                'sentence':adv_sentence, 
+                'edit_dist':edit_dist,
+                # 'ref_score':self.ref_score(adv_sentence, target_class)
+            }
+            adv_sentence_list.append(tmp_rlt)
+        for idx in range(0, len(adv_sentence_list), batch_size):
+            tmp_batch=adv_sentence_list[idx:idx+batch_size]
+            tmp_sentence=[tmp_batch[idy]['sentence'] for idy in range(len(tmp_batch))]
+            tmp_batch_score=self.ref_score(tmp_sentence, target_class)
+            for idy in range(len(tmp_batch)):
+                adv_sentence_list[idx+idy]['ref_score']=tmp_batch_score[idy]
+        if atk_times>1:
+            adv_sentence_list=sorted(adv_sentence_list, key=lambda x:x['ref_score'], reverse=True)
+        return adv_sentence_list[0]
 
     def token_attack(
         self, sentence, 
@@ -191,4 +253,52 @@ class RandomAttack:
             else:
                 new_token_ids.append(new_token_ids_dict[idx])
         new_sentence=self.tokenizer.decode(new_token_ids)
+        return new_sentence, edit_dist 
+    
+    def char_attack1(
+        self, sentence, 
+        max_edit_rate=0.3,
+    ):
+        tokens = sentence.split()
+        edited_sentence = list(tokens)
+        selected_tokens = []
+        token_num=len(tokens)
+        max_edit_dist=token_num*max_edit_rate
+        solution=np.random.choice(token_num, int(max_edit_dist*2), replace=False)
+
+        for i in solution:
+            if len(selected_tokens) < max_edit_dist:  # Enforce max edits
+
+                len_t=len(edited_sentence[i])
+                sep_len=3
+                m_num=len_t//sep_len
+                if m_num==0:
+                    continue
+                m_locs=[int((m_num/len_t)*(j)*len_t)+(sep_len//2) for j in range(m_num)]
+                # half_token_len=len(edited_sentence[i])//2
+                # if half_token_len<=1:
+                #     continue
+
+                selected_tokens.append(i)
+
+                # # Treat operation as part of the solution
+                # operation = solution[len(self.tokens) + i]  # Operation encoded in the extended solution
+                # operation=gene
+                operation = 2 #random.choice([1, 2, 3])
+
+                tmp_token=copy(edited_sentence[i])
+                for m_loc in m_locs:
+                    if m_loc>=(len_t-1):
+                        continue
+                    if operation == 1:  # Delete
+                        tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1:]
+                    elif operation == 2:  # Replace
+                        tmp_char=tmp_token[m_loc]
+                        tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+ tmp_token[m_loc+1:] 
+                    elif operation == 3:  # Insert
+                        tmp_token = tmp_token[:m_loc] + self.special_char+ tmp_token[m_loc:]
+                edited_sentence[i]=tmp_token
+        # Reconstruct sentence
+        new_sentence = " ".join(edited_sentence)
+        edit_dist=len(selected_tokens)
         return new_sentence, edit_dist 

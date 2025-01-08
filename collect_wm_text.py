@@ -91,7 +91,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='collect wm data')
     parser.add_argument('--dataset_name', type=str, default='../../dataset/c4/realnewslike')
     parser.add_argument('--model_name', type=str, default="facebook/opt-1.3b")
-    parser.add_argument('--wm_name', type=str, default="KGW")
+    parser.add_argument('--wm_name', type=str, default="Unigram")
     parser.add_argument('--file_num', type=int, default=1)
     parser.add_argument('--file_data_num', type=int, default=1)
     parser.add_argument('--text_len', type=int, default=50)

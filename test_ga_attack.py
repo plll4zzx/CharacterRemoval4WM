@@ -17,29 +17,34 @@ from ga_attack import GA_Attack
 import argparse
 
 
-def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
-    
-    llm_name="facebook/opt-1.3b"
+def test_ga_attack(
+    wm_name, max_edit_rate, num_generations, 
+    max_token_num=80, victim_tokenizer = 'bert-base-uncased',
+    victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-31',
+    llm_name="facebook/opt-1.3b",
     dataset_name='../../dataset/c4/realnewslike'
+):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
     wm_scheme=LLM_WM(model_name = llm_name, device = "cuda", wm_name=wm_name)
     
     ga_attack=GA_Attack(
-        victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-31',
-        victim_tokenizer = 'bert-base-uncased',
-        wm_detector=wm_scheme.detect_wm,
-        wm_name=wm_name
+        victim_model = victim_model,
+        victim_tokenizer = victim_tokenizer,
+        wm_detector = wm_scheme.detect_wm,
+        wm_name = wm_name
     )
     
     ga_attack.log_info(['wm_name:', wm_name])
     ga_attack.log_info(['llm_name:', llm_name])
+    ga_attack.log_info(['victim_tokenizer:', victim_tokenizer])
+    ga_attack.log_info(['victim_model:', victim_model])
     ga_attack.log_info(['dataset_name:', dataset_name])
     ga_attack.log_info(['max_edit_rate:', max_edit_rate])
     ga_attack.log_info(['num_generations:', num_generations])
     ga_attack.log_info(['max_token_num:', max_token_num])
     
-    target_class=1
+    target_class=0
     count_num=0
     base_num=0
     edit_dist_l=[]
@@ -47,43 +52,10 @@ def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
     token_num_l=[]
     wm_score_l=[]
     wm_score_drop_rate_l=[]
-    for idx in range(100):
-        
-        wm_text=wm_data[idx]['wm_text']
-        wm_text, token_num=ga_attack.truncation(wm_text, max_token_num=max_token_num)
-        if len(wm_text)==0:
-            continue
 
-        wm_rlt=wm_scheme.detect_wm(wm_text)
+    text_num=300
+    for idx in range(text_num+1):#[79]:#
         ga_attack.log_info(str(idx))
-        if wm_rlt['is_watermarked']==True:
-            base_num+=1
-        else:
-            continue
-
-        ga_attack.log_info(['wm_detect:', wm_rlt])
-        
-        ori_fitness=ga_attack.evaluate_fitness(wm_text, target_class)
-        ga_attack.log_info(['ori_fitness:', ori_fitness])
-
-        attk_text, edit_dist, attk_score=ga_attack.get_adv(
-            wm_text, target_class,
-            max_edit_rate=max_edit_rate,
-            num_generations=num_generations,
-        )
-
-        attk_rlt=wm_scheme.detect_wm(attk_text)
-        ga_attack.log_info(['attk_detect:', attk_rlt])
-        ga_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
-        ga_attack.log_info(['attk_text:', attk_text.replace('\n',' ')])
-        edit_dist_l.append(edit_dist)
-        token_num_l.append(token_num)
-        wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
-        wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
-
-        if attk_rlt['is_watermarked']==False:
-            count_num+=1
-        
         if idx%25==0 and idx>0:
             ga_attack.log_info('******')
             ga_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
@@ -93,30 +65,61 @@ def test_ga_attack(wm_name, max_edit_rate, num_generations ,max_token_num=80):
             ga_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),3)])
             ga_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
             ga_attack.log_info('******')
+            if idx==text_num:
+                break
+        
+        wm_text=wm_data[idx]['wm_text']
+        wm_text, token_num=ga_attack.truncation(wm_text, max_token_num=max_token_num)
+        if len(wm_text)==0:
+            continue
+
+        wm_rlt=wm_scheme.detect_wm(wm_text)
+        if wm_rlt['is_watermarked']==True:
+            base_num+=1
+        else:
+            continue
+        
+        ori_fitness=ga_attack.evaluate_fitness(wm_text, target_class)
+        ga_attack.log_info(['ori_fitness:', ori_fitness])
+        ga_attack.log_info(['wm_detect:', wm_rlt])
+
+        attk_text, edit_dist, attk_score=ga_attack.get_adv(
+            wm_text, target_class, ori_fitness,
+            max_edit_rate=max_edit_rate,
+            num_generations=num_generations,
+        )
+
+        attk_rlt=wm_scheme.detect_wm(attk_text)
+        ga_attack.log_info(['ak_detect:', attk_rlt])
+        ga_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
+        ga_attack.log_info(['ak_text:', attk_text.replace('\n',' ')])
+        edit_dist_l.append(edit_dist)
+        token_num_l.append(token_num)
+        wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
+        wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
+
+        if attk_rlt['is_watermarked']==False:
+            count_num+=1
     
-    ga_attack.log_info('******')
-    ga_attack.log_info(['ASR', round(count_num/base_num,4)])
-    ga_attack.log_info(['edit_dist', round(np.mean(edit_dist_l),4)])
-    ga_attack.log_info(['token_num', round(np.mean(token_num_l),4)])
-    ga_attack.log_info(['budget rate', round(np.mean(edit_dist_l)/np.mean(token_num_l),4)])
-    ga_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),3)])
-    ga_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
-    ga_attack.log_info('******')
-    # rand_attack.save()
+    # ga_attack.save()
 
 if __name__=="__main__":
-    # python test_ga_attack.py --num_generations 10 --max_edit_rate 0.2 --max_token_num 200
+    # python test_ga_attack.py --num_generations 10 --max_edit_rate 0.2 --max_token_num 200 --victim_model --wm_name
     parser = argparse.ArgumentParser(description='test_ga_attack')
     parser.add_argument('--wm_name', type=str, default='KGW')
-    parser.add_argument('--max_edit_rate', type=float, default=0.2)
-    parser.add_argument('--max_token_num', type=int, default=200)
-    parser.add_argument('--num_generations', type=int, default=5)
+    parser.add_argument('--max_edit_rate', type=float, default=0.1)
+    parser.add_argument('--max_token_num', type=int, default=100)
+    parser.add_argument('--num_generations', type=int, default=15)
+    parser.add_argument('--victim_tokenizer', type=str, default='facebook/opt-350m')
+    parser.add_argument('--victim_model', type=str, default='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_facebook_opt-350m_2025-01-08')
     
     args = parser.parse_args()
     test_ga_attack(
         wm_name=args.wm_name, 
         max_edit_rate=args.max_edit_rate,
         max_token_num=args.max_token_num,
-        num_generations=args.num_generations
+        num_generations=args.num_generations,
+        victim_model=args.victim_model,
+        victim_tokenizer=args.victim_tokenizer
     )
     

@@ -56,3 +56,4 @@ textattack/=22.3.0
 MarkLLM/watermark/sir/model/*
 !MarkLLM/config/*
 saved_model/*
+tmp.sh

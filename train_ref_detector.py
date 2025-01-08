@@ -1,7 +1,7 @@
 
 from textattack.utils import load_json, save_json, find_homo
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification, OPTForSequenceClassification
 from torch.optim import AdamW, SGD, Adam
 from torch.utils.data import Dataset, DataLoader
 import torch
@@ -19,7 +19,7 @@ def char_adv(sentence, rand_char_rate=0.1):
     edited_sentence = tokens.copy()
     selected_tokens = []
     max_edits=int(len(tokens)*rand_char_rate)
-    solution=np.random.choice(len(tokens), max_edits*2)
+    solution=np.random.choice(len(tokens), max_edits*2, replace=False)
 
     for loc in solution:
         if  len(selected_tokens) < max_edits:  
@@ -50,65 +50,46 @@ class WMDataset(Dataset):
     def __init__(
         self, data_path, data_num, 
         tokenizer=None, text_len=None, wm_detector=None, stored_flag=False,
-        rand_char_rate=0, rand_times=0,
+        rand_char_rate=0, rand_times=0, wm_threshold=None,
     ):
         if stored_flag:
             self.dataset=load_json(data_path)
             return
         
+        self.wm_detector=wm_detector
+        self.tokenizer=tokenizer
+        self.text_len=text_len
         tmp_dataset=load_json(data_path)[0:data_num]
-        self.dataset=[]
-        count_un=0
-        count_wm=0
+        self.wm_dataset=[]
+        self.un_dataset=[]
         for tmp_d in tqdm(tmp_dataset, ncols=100):
             if tmp_d['wm_detect']['is_watermarked']==True:
                 tmp_text=tmp_d['wm_text']
-                tmp_labels=1
-                if tokenizer is not None and text_len is not None:
-                    tmp_ids=tokenizer.encode(tmp_text, add_special_tokens=False)[0:text_len]
-                    tmp_text=tokenizer.decode(tmp_ids, skip_special_tokens=True)
-                    wm_rlt=wm_detector(tmp_text)
-                    wm_flag=wm_rlt['is_watermarked']
-                    if wm_flag==False:
-                        count_un+=1
-                        tmp_labels=0
-                    else:
-                        count_wm+=1
-                        tmp_labels=1
-                    self.dataset.append({
-                        'text':tmp_text,
-                        'labels': tmp_labels,
-                        'score': wm_rlt['score']
-                    })
-                    if wm_rlt['score']>=5 and rand_times>0:
-                        for i in range(rand_times):
-                            tmp_text0=char_adv(tmp_text, rand_char_rate)
-                            wm_rlt0=wm_detector(tmp_text0)
-                            wm_flag0=wm_rlt0['is_watermarked']
-                            if wm_flag0==False:
-                                count_un+=1
-                                tmp_labels0=0
-                            else:
-                                count_wm+=1
-                                tmp_labels0=1
-                            self.dataset.append({
-                                'text': tmp_text0,
-                                'labels': tmp_labels0,
-                                'score': wm_rlt0['score']
-                            })
+                # tmp_text=self.en_de(tmp_text)
+                self.add_data(tmp_text)
+
+                for i in range(rand_times):
+                    tmp_text0=char_adv(tmp_text, rand_char_rate)
+                    self.add_data(tmp_text0)
+
             if tmp_d['un_detect']['is_watermarked']==False:
                 tmp_text=tmp_d['un_text']
-                if tokenizer is not None and text_len is not None:
-                    tmp_ids=tokenizer.encode(tmp_text, add_special_tokens=False)[0:text_len]
-                    tmp_text=tokenizer.decode(tmp_ids, skip_special_tokens=True)
-                    wm_rlt=wm_detector(tmp_text)
-                    self.dataset.append({
-                        'text':tmp_text,
-                        'labels': 0,
-                        'score': wm_rlt['score']
-                    })
+                # tmp_text=self.en_de(tmp_text)
+                self.add_data(tmp_text)
+
+                for i in range(rand_times):
+                    tmp_text0=char_adv(tmp_text, rand_char_rate)
+                    self.add_data(tmp_text0)
+        
+        wm_d_len=len(self.wm_dataset)
+        un_d_len=len(self.un_dataset)
+        min_d_len=min(wm_d_len, un_d_len)
+        random.shuffle(self.wm_dataset)
+        random.shuffle(self.un_dataset)
+        self.dataset=self.wm_dataset[0:min_d_len]+self.un_dataset[0:min_d_len]
         random.shuffle(self.dataset)
-        print(count_wm, count_un)
+        
+        print(wm_d_len, un_d_len)
         if wm_detector is not None:
             if rand_times>0:
                 save_json(self.dataset, data_path[0:-5]+'_'+str(text_len)+'_'+str(rand_char_rate)+'_'+str(rand_times)+'.json')
@@ -120,6 +101,31 @@ class WMDataset(Dataset):
 
     def __getitem__(self, idx):
         return self.dataset[idx]
+    
+    def en_de(self, text):
+        if self.tokenizer is not None and self.text_len is not None:
+            tmp_ids=self.tokenizer.encode(text, add_special_tokens=False)[0:self.text_len]
+            text=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
+        return text
+
+    def add_data(self, text):
+        wm_rlt=self.wm_detector(text)
+        wm_flag=wm_rlt['is_watermarked']
+        tmp_score=wm_rlt['score']
+        if wm_flag==False:
+            tmp_labels=0
+            self.un_dataset.append({
+                'text':text,
+                'labels': tmp_labels,
+                'score': tmp_score
+            })
+        else:
+            tmp_labels=1
+            self.wm_dataset.append({
+                'text':text,
+                'labels': tmp_labels,
+                'score': tmp_score
+            })
 
 class RefDetector:
 
@@ -127,6 +133,7 @@ class RefDetector:
         self.llm_name=llm_name
         self.wm_name=wm_name
         self.device='cuda'
+        self.tokenizer_path=tokenizer_path
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         print(wm_name, llm_name)
         self.train_flag=False
@@ -146,7 +153,12 @@ class RefDetector:
             else:
                 data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
                 wm_scheme=LLM_WM(model_name = self.llm_name, device = "cuda", wm_name=self.wm_name)
-                self.dataset=WMDataset(data_path, data_num, self.tokenizer, text_len=text_len, wm_detector=wm_scheme.detect_wm, rand_char_rate=rand_char_rate, rand_times=rand_times)
+                self.dataset=WMDataset(
+                    data_path, data_num, self.tokenizer, 
+                    text_len=text_len, wm_detector=wm_scheme.detect_wm, 
+                    rand_char_rate=rand_char_rate, rand_times=rand_times, 
+                    # wm_threshold=wm_scheme.wm_model.utils.config.threshold
+                )
         else:
             data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(text_len)+".json"
             if os.path.exists(data_path):
@@ -162,14 +174,29 @@ class RefDetector:
         for batch in tqdm(self.train_dataloader, ncols=100):
             batch = {k: v.to(self.device) for k, v in batch.items()}
             outputs = self.model(**batch)
-            logits = outputs.logits
+            # logits = outputs.logits
             # labels = batch["labels"]
             # loss = loss_fn(logits.view(-1, logits.size(-1)), labels.view(-1))
             loss = outputs.loss
             loss.backward()
             loss_l.append(loss.item())
+            
+            # torch.nn.utils.clip_grad_norm_(
+            #     self.model.parameters(), max_norm=1, 
+            #     # norm_type='inf'
+            # )
+            
+            # # 打印每一层的参数更新前的统计信息
+            # for name, param in self.model.named_parameters():
+            #     if param.grad is not None:
+            #         print(f"Layer: {name} | Param before update: {param.data.norm()}")
 
             self.optimizer.step()
+
+            # # 打印每一层的参数更新后的统计信息
+            # for name, param in self.model.named_parameters():
+            #     if param.grad is not None:
+            #         print(f"Layer: {name} | Param after update: {param.data.norm()}")
             self.optimizer.zero_grad()
             
         print('loss', np.round(np.mean(loss_l), 6))
@@ -266,14 +293,16 @@ class RefDetector:
     def train_init(self, model_path="bert-base-uncased", lr_init=1e-5, gamma=0.2):
         self.train_flag=True
 
-        self.model = AutoModelForSequenceClassification.from_pretrained(
+        self.model_path=model_path
+        self.model = OPTForSequenceClassification.from_pretrained(
             model_path, 
             num_labels=2, torch_dtype="auto"
         )
         self.model.to(self.device)
 
         # self.optimizer = AdamW(self.model.parameters(), lr=lr_init, weight_decay=0.8)
-        self.optimizer = Adam(self.model.parameters(), lr=lr_init)
+        # self.optimizer = Adam(self.model.parameters(), lr=lr_init)
+        self.optimizer = SGD(self.model.parameters(), lr=lr_init, momentum=0.9)
 
         self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=gamma)
 
@@ -295,6 +324,7 @@ class RefDetector:
                 self.wm_name,
                 self.dataset_name.replace('/', '_'), 
                 self.llm_name.replace('/', '_'), 
+                self.tokenizer_path.replace('/', '_'),
                 str(datetime.datetime.now().date())
             ])
         )    
@@ -305,21 +335,26 @@ class RefDetector:
 if __name__=='__main__':
     llm_name="facebook/opt-1.3b"
     dataset_name='../../dataset/c4/realnewslike'
-    ref_model=RefDetector(llm_name=llm_name, wm_name='KGW')
+    ref_model=RefDetector(
+        llm_name=llm_name, 
+        wm_name='KGW', 
+        tokenizer_path='facebook/opt-350m'
+    )
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
         text_len=100,
-        rand_char_rate=0.05, rand_times=5
+        rand_char_rate=0.05, rand_times=9
     )
     ref_model.dataloader_init(
         train_split=0.8,
         text_len=100, 
     )
     ref_model.train_init(
-        # model_path='saved_model/KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-16',
-        lr_init=5e-5
+        # model_path='facebook/opt-350m',
+        model_path='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2025-01-08',
+        lr_init=5e-5, gamma=0.5
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()
-    ref_model.start_train(num_epochs=10, lr_step=5)
+    ref_model.start_train(num_epochs=15, lr_step=5)
     ref_model.save_model(name='RefDetector')

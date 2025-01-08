@@ -6,6 +6,7 @@ import torch
 from llm_wm import LLM_WM
 from textattack.utils import Logger, to_string, save_json, save_jsonl, truncation, find_homo
 import datetime
+from copy import copy
 
 class GA_Attack:
     def __init__(
@@ -15,12 +16,22 @@ class GA_Attack:
         wm_detector=None,
         logger=None,
         wm_name='TS',
+        fitness_threshold=0.90,
+        device='cuda'
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(victim_tokenizer)
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
+        self.device=device
         self.special_char = '@'
         self.wm_detector=wm_detector
         self.wm_name=wm_name
+        self.fitness_threshold=fitness_threshold
+        self.best_solution=None
+        self.best_fitness=0
+        self.edit_distance=0
+        self.best_sentence=''
+
+        self.model.to(self.device)
 
         if logger is None:
             self.log=Logger(
@@ -45,19 +56,20 @@ class GA_Attack:
         new_text, token_num=truncation(text, self.tokenizer, max_token_num)
         return new_text, token_num
 
-    def evaluate_fitness(self, modified_sentence, target_class, solu_len=0):
+    def evaluate_fitness(self, modified_sentence, target_class):
         # Tokenize the modified sentence
         inputs = self.tokenizer(modified_sentence, return_tensors="pt", padding=True, truncation=True)
-
+        batch = {k: v.to(self.device) for k, v in inputs.items()}
         # Evaluate fitness using the fine-tuned classification model
-        outputs = self.model(**inputs)
+        with torch.no_grad():
+            outputs = self.model(**batch)
         logits = outputs.logits
         predictions = torch.softmax(logits, dim=1)
 
         # Define a fitness value based on the target misclassification
-        fitness = predictions[0][target_class].item()
+        fitness = predictions[0][target_class]
 
-        return fitness-solu_len*0.3
+        return fitness.cpu().detach().numpy()
     
     def modify_sentence(self, solution):
         edited_sentence = list(self.tokens)
@@ -66,9 +78,15 @@ class GA_Attack:
         for i, gene in enumerate(solution):
             if gene > 0 and len(selected_tokens) < self.max_edits:  # Enforce max edits
 
-                half_token_len=len(edited_sentence[i])//2
-                if half_token_len<=1:
+                len_t=len(edited_sentence[i])
+                sep_len=3
+                m_num=len_t//sep_len
+                if m_num==0:
                     continue
+                m_locs=[int((m_num/len_t)*(j)*len_t)+(sep_len//2) for j in range(m_num)]
+                # half_token_len=len(edited_sentence[i])//2
+                # if half_token_len<=1:
+                #     continue
 
                 selected_tokens.append(i)
 
@@ -77,16 +95,18 @@ class GA_Attack:
                 # operation=gene
                 operation = 2 #random.choice([1, 2, 3])
 
-                tmp_token=edited_sentence[i]
-
-                if operation == 1:  # Delete
-                    edited_sentence[i] = tmp_token[:half_token_len] + tmp_token[half_token_len+1:]
-                elif operation == 2:  # Replace
-                    tmp_char=tmp_token[half_token_len]
-                    edited_sentence[i] = tmp_token[:half_token_len] +find_homo(tmp_char)+ tmp_token[half_token_len+1:] 
-                elif operation == 3:  # Insert
-                    edited_sentence[i] = tmp_token[:half_token_len] + self.special_char+ tmp_token[half_token_len:]
-
+                tmp_token=copy(edited_sentence[i])
+                for m_loc in m_locs:
+                    if m_loc>=(len_t-1):
+                        continue
+                    if operation == 1:  # Delete
+                        tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1:]
+                    elif operation == 2:  # Replace
+                        tmp_char=tmp_token[m_loc]
+                        tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+ tmp_token[m_loc+1:] 
+                    elif operation == 3:  # Insert
+                        tmp_token = tmp_token[:m_loc] + self.special_char+ tmp_token[m_loc:]
+                edited_sentence[i]=tmp_token
         # Reconstruct sentence
         modified_sentence = " ".join(edited_sentence)
         edit_distance=len(selected_tokens)
@@ -94,17 +114,29 @@ class GA_Attack:
 
     def fitness_function(self, ga_instance, solution, solution_idx):
         
-        modified_sentence, _ , solu_len= self.modify_sentence(solution)
+        modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
-        return self.evaluate_fitness(modified_sentence, self.target_class, solu_len)
+        return self.evaluate_fitness(modified_sentence, self.target_class)-(solu_len/solution.size)*1.5
 
-    def get_adv(self, sentence, target_class, num_generations=30, num_parents_mating=10, population_size=100, max_edit_rate=0.1, mutation_percent_genes=30):
-        
+    def get_adv(
+        self, sentence, target_class, ori_fitness,
+        num_generations=30, 
+        num_parents_mating=50, 
+        population_size=100, 
+        max_edit_rate=0.1, 
+        mutation_percent_genes=30
+    ):#30,100,50
+        # ori_fitness
         self.tokens = sentence.split()
         self.target_class = target_class
-        self.max_edits = max(1, int(len(self.tokens) * max_edit_rate))  # Set max_edits to 30% of the token count
+        self.max_edits = max(1, int(np.ceil(len(self.tokens) * max_edit_rate)))  # Set max_edits to 30% of the token count
         n = len(self.tokens)
+
+        self.best_solution=None
+        self.best_sentence=''
+        self.edit_distance=0
+        self.best_fitness=0
 
         # Initialize PyGAD
         ga_instance = GA(
@@ -124,19 +156,32 @@ class GA_Attack:
         ga_instance.run()
 
         # Output the best solution
-        best_solution, best_solution_fitness, _ = ga_instance.best_solution()
-        best_sentence, edit_distance, solu_len = self.modify_sentence(best_solution)
-        return best_sentence, edit_distance, best_solution_fitness
+        # best_solution, best_solution_fitness, _ = ga_instance.best_solution()
+        # if best_solution!=self.best_solution:
+        #     print()
+        # best_sentence, edit_distance, solu_len = self.modify_sentence(best_solution)
+        return self.best_sentence, self.edit_distance, self.best_fitness
 
     def on_generation(self, ga_instance):
         # self.log_info(f"Generation: {ga_instance.generations_completed}")
         (best_solution, best_fitness, _)=ga_instance.best_solution()
+        self.best_solution=best_solution
         self.log_info(f"Generation: {ga_instance.generations_completed}, Best Fitness: {best_fitness}")
         if self.wm_detector is not None:
-            best_sentence,_, solu_len = self.modify_sentence(best_solution)
+            best_sentence, edit_distance, solu_len = self.modify_sentence(best_solution)
             wm_rlt=self.wm_detector(best_sentence)
-            self.log_info(f"evl Detect: {wm_rlt}")
-            self.log_info(f"tmp best_sentence: {best_sentence}")
+            self.log_info(f"el_detect: {wm_rlt}, edit_distance: {edit_distance}")
+            self.log_info(f"tp_sentence: {best_sentence}")
+
+        if best_fitness>self.best_fitness:
+            self.best_fitness=best_fitness
+            self.best_solution=best_solution
+            self.best_sentence=best_sentence
+            self.edit_distance=edit_distance
+        if (best_fitness) > self.fitness_threshold:
+            self.log_info(f"Fitness threshold reached at generation {ga_instance.generations_completed}. Stopping the algorithm.")
+            return "stop"
+        
 
 # Example usage
 if __name__ == "__main__":
