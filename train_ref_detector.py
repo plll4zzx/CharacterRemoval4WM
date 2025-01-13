@@ -13,6 +13,7 @@ import os
 import datetime
 import random
 from llm_wm import LLM_WM
+import argparse
 
 def char_adv(sentence, rand_char_rate=0.1):
     tokens = sentence.split()
@@ -205,7 +206,7 @@ class RefDetector:
         self.model.eval()
 
         loss_l=[]
-        metric = evaluate.load('/home/plll/python/metrics/accuracy/accuracy.py')
+        metric = evaluate.load(os.path.expanduser('~/python/metrics/accuracy/accuracy.py'))
         for idx, batch in enumerate(self.train_dataloader):
             if idx == 20:
                 break
@@ -220,7 +221,7 @@ class RefDetector:
         print('train loss', np.round(np.mean(loss_l),4))
         print('train', result)
         
-        metric = evaluate.load('/home/plll/python/metrics/accuracy/accuracy.py')
+        metric = evaluate.load(os.path.expanduser('~/python/metrics/accuracy/accuracy.py'))
         loss_l=[]
         for batch in self.eval_dataloader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -335,9 +336,15 @@ class RefDetector:
 if __name__=='__main__':
     llm_name="facebook/opt-1.3b"
     dataset_name='../../dataset/c4/realnewslike'
+    
+    # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15
+    parser = argparse.ArgumentParser(description='train ref detector')
+    parser.add_argument('--wm_name', type=str, default='KGW')
+    parser.add_argument('--num_epochs', type=int, default=5)
+    args = parser.parse_args()
     ref_model=RefDetector(
         llm_name=llm_name, 
-        wm_name='SynthID', 
+        wm_name=args.wm_name, 
         tokenizer_path='bert-base-uncased'
     )
     ref_model.load_data(
@@ -356,5 +363,5 @@ if __name__=='__main__':
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()
-    ref_model.start_train(num_epochs=9, lr_step=3)
+    ref_model.start_train(num_epochs=args.num_epochs, lr_step=3)
     ref_model.save_model(name='RefDetector')
