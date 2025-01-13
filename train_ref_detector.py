@@ -294,15 +294,15 @@ class RefDetector:
         self.train_flag=True
 
         self.model_path=model_path
-        self.model = OPTForSequenceClassification.from_pretrained(
+        self.model = AutoModelForSequenceClassification.from_pretrained(
             model_path, 
             num_labels=2, torch_dtype="auto"
         )
         self.model.to(self.device)
 
         # self.optimizer = AdamW(self.model.parameters(), lr=lr_init, weight_decay=0.8)
-        # self.optimizer = Adam(self.model.parameters(), lr=lr_init)
-        self.optimizer = SGD(self.model.parameters(), lr=lr_init, momentum=0.9)
+        self.optimizer = Adam(self.model.parameters(), lr=lr_init)
+        # self.optimizer = SGD(self.model.parameters(), lr=lr_init, momentum=0.9)
 
         self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=gamma)
 
@@ -337,8 +337,8 @@ if __name__=='__main__':
     dataset_name='../../dataset/c4/realnewslike'
     ref_model=RefDetector(
         llm_name=llm_name, 
-        wm_name='KGW', 
-        tokenizer_path='facebook/opt-350m'
+        wm_name='SynthID', 
+        tokenizer_path='bert-base-uncased'
     )
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
@@ -350,11 +350,11 @@ if __name__=='__main__':
         text_len=100, 
     )
     ref_model.train_init(
-        # model_path='facebook/opt-350m',
-        model_path='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2025-01-08',
+        model_path='bert-base-uncased',
+        # model_path='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2025-01-08',
         lr_init=5e-5, gamma=0.5
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()
-    ref_model.start_train(num_epochs=15, lr_step=5)
+    ref_model.start_train(num_epochs=9, lr_step=3)
     ref_model.save_model(name='RefDetector')

@@ -117,7 +117,7 @@ class GA_Attack:
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
-        return self.evaluate_fitness(modified_sentence, self.target_class)-(solu_len/solution.size)*1.5
+        return self.evaluate_fitness(modified_sentence, self.target_class)-(solu_len/solution.size)*1.3
 
     def get_adv(
         self, sentence, target_class, ori_fitness,

@@ -117,8 +117,8 @@ if __name__=="__main__":
     parser.add_argument('--max_token_num', type=int, default=100)
     parser.add_argument('--atk_style', type=str, default='char')
 
-    parser.add_argument('--ref_tokenizer', type=str, default='bert-base-uncased')
-    parser.add_argument('--ref_model', type=str, default='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2025-01-05')
+    parser.add_argument('--ref_tokenizer', type=str, default='facebook/opt-350m')#'bert-base-uncased'
+    parser.add_argument('--ref_model', type=str, default='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_facebook_opt-350m_2025-01-08')
     parser.add_argument('--atk_times', type=int, default=50)
     
     args = parser.parse_args()

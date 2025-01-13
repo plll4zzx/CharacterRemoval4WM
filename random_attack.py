@@ -180,9 +180,9 @@ class RandomAttack:
         self, sentence, 
         max_edit_rate=0.3,
     ):
-        token_ids=self.tokenizer.encode(sentence)
+        # token_ids=self.tokenizer.encode(sentence)
         # token_ids=remove_repeat(token_ids)
-        token_list=[self.tokenizer.decode(t, skip_special_tokens=True) for t in token_ids]
+        token_list=sentence.split()#[self.tokenizer.decode(t, skip_special_tokens=True) for t in token_ids]
         token_num=len(token_list)
         
         max_edit_dist=round(token_num*max_edit_rate)
@@ -201,7 +201,7 @@ class RandomAttack:
             if edit_dist>=max_edit_dist:
                 break
 
-        new_sentence=''.join(new_token_list)
+        new_sentence=' '.join(new_token_list)
 
         return new_sentence, edit_dist
     
