@@ -3,6 +3,8 @@
 *.log
 *.json
 !attack_config/*
+!ga_config.json
+!rand_config.json
 # compiled python files
 __pycache__/
 

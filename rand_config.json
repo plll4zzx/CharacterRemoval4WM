@@ -1,0 +1,27 @@
+{
+    "KGW":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2025-01-05",
+        "max_edit_rate":[0.05, 0.1]
+    },
+    "DIP":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14",
+        "max_edit_rate":[0.05, 0.1]
+    },
+    "SynthID":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14",
+        "max_edit_rate":[0.05, 0.1]
+    },
+    "Unigram":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14",
+        "max_edit_rate":[0.2, 0.4]
+    },
+    "Unbiased":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-15",
+        "max_edit_rate":[0.05, 0.1]
+    }
+}
