@@ -22,7 +22,10 @@ def test_ga_attack(
     max_token_num=80, victim_tokenizer = 'bert-base-uncased',
     victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-31',
     llm_name="facebook/opt-1.3b",
-    dataset_name='../../dataset/c4/realnewslike'
+    dataset_name='../../dataset/c4/realnewslike',
+    len_weight=1,
+    fitness_threshold=0.9,
+    eva_thr=0.2
 ):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
@@ -32,7 +35,10 @@ def test_ga_attack(
         victim_model = victim_model,
         victim_tokenizer = victim_tokenizer,
         wm_detector = wm_scheme.detect_wm,
-        wm_name = wm_name
+        wm_name = wm_name,
+        len_weight=len_weight,
+        fitness_threshold=fitness_threshold,
+        eva_thr=eva_thr
     )
     
     ga_attack.log_info(['wm_name:', wm_name])
@@ -43,6 +49,9 @@ def test_ga_attack(
     ga_attack.log_info(['max_edit_rate:', max_edit_rate])
     ga_attack.log_info(['num_generations:', num_generations])
     ga_attack.log_info(['max_token_num:', max_token_num])
+    ga_attack.log_info(['len_weight:', len_weight])
+    ga_attack.log_info(['fitness_threshold:', fitness_threshold])
+    ga_attack.log_info(['eva_thr:', eva_thr])
     
     target_class=0
     count_num=0
@@ -55,18 +64,19 @@ def test_ga_attack(
 
     text_num=300
     for idx in range(text_num+1):#[79]:#
-        ga_attack.log_info(str(idx))
         if idx%25==0 and idx>0:
             ga_attack.log_info('******')
-            ga_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
             ga_attack.log_info(['edit_dist', round(np.mean(edit_dist_l),4)])
             ga_attack.log_info(['token_num', round(np.mean(token_num_l),4)])
-            ga_attack.log_info(['budget rate', round(np.mean(edit_dist_l)/np.mean(token_num_l),4)])
             ga_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),3)])
+            ga_attack.log_info(['budget rate', round(np.mean(edit_dist_l)/np.mean(token_num_l),4)])
             ga_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
+            ga_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
             ga_attack.log_info('******')
             if idx==text_num:
                 break
+        
+        ga_attack.log_info(str(idx))
         
         wm_text=wm_data[idx]['wm_text']
         wm_text, token_num=ga_attack.truncation(wm_text, max_token_num=max_token_num)
@@ -108,6 +118,9 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='test_ga_attack')
     parser.add_argument('--wm_name', type=str, default='KGW')
     parser.add_argument('--max_edit_rate', type=float, default=0.1)
+    parser.add_argument('--len_weight', type=float, default=1.3)
+    parser.add_argument('--eva_thr', type=float, default=0.1)
+    parser.add_argument('--fitness_threshold', type=float, default=0.9)
     parser.add_argument('--max_token_num', type=int, default=100)
     parser.add_argument('--num_generations', type=int, default=15)
     parser.add_argument('--victim_tokenizer', type=str, default='facebook/opt-350m')
@@ -120,6 +133,9 @@ if __name__=="__main__":
         max_token_num=args.max_token_num,
         num_generations=args.num_generations,
         victim_model=args.victim_model,
-        victim_tokenizer=args.victim_tokenizer
+        victim_tokenizer=args.victim_tokenizer,
+        len_weight=args.len_weight,
+        fitness_threshold=args.fitness_threshold,
+        eva_thr=args.eva_thr
     )
     

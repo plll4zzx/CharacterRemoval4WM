@@ -1,7 +1,7 @@
 
 from textattack.utils import load_json, save_json, find_homo
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification, OPTForSequenceClassification
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification, OPTForSequenceClassification, BertForMaskedLM
 from torch.optim import AdamW, SGD, Adam
 from torch.utils.data import Dataset, DataLoader
 import torch
@@ -341,6 +341,8 @@ if __name__=='__main__':
     parser = argparse.ArgumentParser(description='train ref detector')
     parser.add_argument('--wm_name', type=str, default='KGW')
     parser.add_argument('--num_epochs', type=int, default=5)
+    parser.add_argument('--lr', type=float, default=5e-5)
+    
     args = parser.parse_args()
     ref_model=RefDetector(
         llm_name=llm_name, 
@@ -359,7 +361,7 @@ if __name__=='__main__':
     ref_model.train_init(
         model_path='bert-base-uncased',
         # model_path='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2025-01-08',
-        lr_init=5e-5, gamma=0.5
+        lr_init=args.lr, gamma=0.5
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()

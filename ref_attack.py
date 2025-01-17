@@ -111,7 +111,7 @@ class RefAttack:
         # self.log_info(['slide_flag', self.slide_flag])
 
     def truncation(self, text, max_token_num=100):
-        new_text, token_num=self.attack.truncation(text, max_token_num)
+        new_text, token_num=truncation(text, max_token_num)
         return new_text, token_num
     
     def save(self):

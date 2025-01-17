@@ -65,6 +65,7 @@ class RandomAttack:
         logger=None,
         ref_model=None,
         device='cuda',
+        wm_name='',
     ):
         
         self.gensimi=None 
@@ -83,11 +84,12 @@ class RandomAttack:
         
         if logger is None:
             self.log=Logger(
-                'attack_log/RandomAttack'+'-'.join([
-                    # self.wm_name, self.attack_name, 
+                'attack_log/tmp1/RandomAttack'+'-'.join([
+                    wm_name, 
+                    # self.attack_name, 
                     # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
                     # str(self.temperature)
-                ])+'-'+str(datetime.datetime.now())[0:-10]+'.log',
+                ])+'-'+str(datetime.datetime.now())[0:-7]+'.log',
                 level='debug', 
                 screen=False
             )
@@ -101,7 +103,11 @@ class RandomAttack:
         self.log.logger.info(info)
 
     def truncation(self, text, max_token_num=100):
-        new_text, token_num=truncation(text, self.tokenizer, max_token_num)
+        new_text, token_num=truncation(
+            text, 
+            # self.tokenizer, 
+            max_token_num=max_token_num
+        )
         return new_text, token_num
 
     def substitute(self, token):
@@ -151,8 +157,21 @@ class RandomAttack:
         adv_sentence_list=[]
         if atk_style=='char':
             atk_method=self.char_attack1
-        else:
+        elif atk_style=='token':
             atk_method=self.token_attack
+        elif atk_style=='ende':
+            atk_method=self.ende_attack
+        elif atk_style=='low':
+            atk_method=self.low_attack
+        elif atk_style=='mix_char':
+            atk_method=self.char_attack1
+            sentence=self.low_attack(sentence)[0]
+            sentence=self.ende_attack(sentence)[0]
+        elif atk_style=='mix_token':
+            atk_method=self.token_attack
+            sentence=self.low_attack(sentence)[0]
+            sentence=self.ende_attack(sentence)[0]
+        
         if atk_times<=1 or self.ref_model is None:
             atk_times=1
         for idx in range(atk_times):
@@ -186,7 +205,7 @@ class RandomAttack:
         token_num=len(token_list)
         
         max_edit_dist=round(token_num*max_edit_rate)
-        rand_tokens=np.random.choice(token_num, max_edit_dist*3, replace=False)
+        rand_tokens=np.random.choice(token_num, min(token_num, max_edit_dist*2), replace=False)
 
         edit_dist=0
         new_token_list=deepcopy(token_list)
@@ -263,8 +282,8 @@ class RandomAttack:
         edited_sentence = list(tokens)
         selected_tokens = []
         token_num=len(tokens)
-        max_edit_dist=token_num*max_edit_rate
-        solution=np.random.choice(token_num, int(max_edit_dist*2), replace=False)
+        max_edit_dist=round(token_num*max_edit_rate)
+        solution=np.random.choice(token_num, min(token_num, max_edit_dist*2), replace=False)
 
         for i in solution:
             if len(selected_tokens) < max_edit_dist:  # Enforce max edits
@@ -302,3 +321,17 @@ class RandomAttack:
         new_sentence = " ".join(edited_sentence)
         edit_dist=len(selected_tokens)
         return new_sentence, edit_dist 
+    
+    def ende_attack(
+        self, sentence, max_edit_rate=None
+    ):
+        if self.tokenizer is not None:
+            tmp_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
+            new_sentence=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
+        return new_sentence, 0 
+    
+    def low_attack(
+        self, sentence, max_edit_rate=None
+    ):
+        new_sentence=sentence.lower()
+        return new_sentence, 0 

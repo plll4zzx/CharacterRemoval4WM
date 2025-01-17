@@ -30,10 +30,12 @@ def test_rand_attack(
     
     if ref_tokenizer is None:
         rand_attack=RandomAttack(
+            wm_name=wm_name,
             tokenizer=wm_scheme.transformers_config.tokenizer,
         )
     else:
         rand_attack=RandomAttack(
+            wm_name=wm_name,
             tokenizer=ref_tokenizer,
             ref_model=ref_model,
         )
@@ -58,19 +60,19 @@ def test_rand_attack(
     wm_score_drop_rate_l=[]
     text_num=300
     for idx in range(text_num+1):
-        
-        rand_attack.log_info(str(idx))
         if idx%25==0 and idx>0:
             rand_attack.log_info('******')
-            rand_attack.log_info(['ASR', round(count_num/base_num,4)])
             rand_attack.log_info(['edit_dist', round(np.mean(edit_dist_l),4)])
             rand_attack.log_info(['token_num', round(np.mean(token_num_l),4)])
-            rand_attack.log_info(['budget rate', round(np.mean(edit_dist_l)/np.mean(token_num_l),4)])
             rand_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),3)])
+            rand_attack.log_info(['budget rate', round(np.mean(edit_dist_l)/np.mean(token_num_l),4)])
             rand_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
+            rand_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
             rand_attack.log_info('******')
             if idx==text_num:
                 break
+        
+        rand_attack.log_info(str(idx))
         
         wm_text=wm_data[idx]['wm_text']
         wm_text, token_num=rand_attack.truncation(wm_text, max_token_num=max_token_num)
@@ -112,14 +114,14 @@ def test_rand_attack(
 if __name__=="__main__":
     # python test_random_attack.py --max_edit_rate 0.2 --atk_style "char" --max_token_num 200
     parser = argparse.ArgumentParser(description='test_rand_attack')
-    parser.add_argument('--wm_name', type=str, default='KGW')
-    parser.add_argument('--max_edit_rate', type=float, default=0.05)
+    parser.add_argument('--wm_name', type=str, default='Unigram')
+    parser.add_argument('--max_edit_rate', type=float, default=0.5)
     parser.add_argument('--max_token_num', type=int, default=100)
-    parser.add_argument('--atk_style', type=str, default='char')
+    parser.add_argument('--atk_style', type=str, default='token')
 
-    parser.add_argument('--ref_tokenizer', type=str, default='facebook/opt-350m')#'bert-base-uncased'
-    parser.add_argument('--ref_model', type=str, default='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_facebook_opt-350m_2025-01-08')
-    parser.add_argument('--atk_times', type=int, default=50)
+    parser.add_argument('--ref_tokenizer', type=str, default='bert-base-uncased')#'bert-base-uncased'
+    parser.add_argument('--ref_model', type=str, default='saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14')
+    parser.add_argument('--atk_times', type=int, default=1)
     
     args = parser.parse_args()
     test_rand_attack(

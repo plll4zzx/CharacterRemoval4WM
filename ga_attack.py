@@ -17,7 +17,9 @@ class GA_Attack:
         logger=None,
         wm_name='TS',
         fitness_threshold=0.90,
-        device='cuda'
+        device='cuda',
+        len_weight=1.3,
+        eva_thr=0.2
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(victim_tokenizer)
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
@@ -30,6 +32,8 @@ class GA_Attack:
         self.best_fitness=0
         self.edit_distance=0
         self.best_sentence=''
+        self.len_weight=len_weight
+        self.eva_thr=eva_thr
 
         self.model.to(self.device)
 
@@ -53,7 +57,11 @@ class GA_Attack:
         self.log.logger.info(info)
 
     def truncation(self, text, max_token_num=100):
-        new_text, token_num=truncation(text, self.tokenizer, max_token_num)
+        new_text, token_num=truncation(
+            text, 
+            # self.tokenizer, 
+            max_token_num=max_token_num
+        )
         return new_text, token_num
 
     def evaluate_fitness(self, modified_sentence, target_class):
@@ -117,7 +125,10 @@ class GA_Attack:
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
-        return self.evaluate_fitness(modified_sentence, self.target_class)-(solu_len/solution.size)*1.3
+        eva_fitness=self.evaluate_fitness(modified_sentence, self.target_class)
+        if eva_fitness>self.eva_thr:
+            eva_fitness=eva_fitness-(solu_len/solution.size)*self.len_weight
+        return eva_fitness
 
     def get_adv(
         self, sentence, target_class, ori_fitness,
@@ -126,8 +137,12 @@ class GA_Attack:
         population_size=100, 
         max_edit_rate=0.1, 
         mutation_percent_genes=30
-    ):#30,100,50
-        # ori_fitness
+    ):
+
+        sentence=sentence.lower()
+        tmp_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
+        sentence=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
+        
         self.tokens = sentence.split()
         self.target_class = target_class
         self.max_edits = max(1, int(np.ceil(len(self.tokens) * max_edit_rate)))  # Set max_edits to 30% of the token count
