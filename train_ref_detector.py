@@ -339,7 +339,7 @@ if __name__=='__main__':
     
     # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15
     parser = argparse.ArgumentParser(description='train ref detector')
-    parser.add_argument('--wm_name', type=str, default='KGW')
+    parser.add_argument('--wm_name', type=str, default='SynthID')
     parser.add_argument('--num_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=5e-5)
     
@@ -359,11 +359,11 @@ if __name__=='__main__':
         text_len=100, 
     )
     ref_model.train_init(
-        model_path='bert-base-uncased',
-        # model_path='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2025-01-08',
+        # model_path='bert-base-uncased',
+        model_path='saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14',
         lr_init=args.lr, gamma=0.5
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()
-    ref_model.start_train(num_epochs=args.num_epochs, lr_step=3)
-    ref_model.save_model(name='RefDetector')
+    # ref_model.start_train(num_epochs=args.num_epochs, lr_step=3)
+    # ref_model.save_model(name='RefDetector')

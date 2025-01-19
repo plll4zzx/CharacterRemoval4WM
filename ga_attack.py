@@ -126,9 +126,16 @@ class GA_Attack:
 
         # Evaluate fitness using the helper function
         eva_fitness=self.evaluate_fitness(modified_sentence, self.target_class)
-        if eva_fitness>self.eva_thr:
-            eva_fitness=eva_fitness-(solu_len/solution.size)*self.len_weight
-        return eva_fitness
+        
+        if eva_fitness<self.eva_thr:
+            fit_score = eva_fitness
+        # elif eva_fitness>=self.eva_thr[0] and eva_fitness<self.eva_thr[1]:
+        #     fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
+        else:
+            fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
+        # if eva_fitness>self.eva_thr:
+        #     fit_score=eva_fitness-(solu_len/solution.size)*self.len_weight+(self.max_edit_rate)*self.len_weight
+        return fit_score
 
     def get_adv(
         self, sentence, target_class, ori_fitness,
@@ -145,6 +152,7 @@ class GA_Attack:
         
         self.tokens = sentence.split()
         self.target_class = target_class
+        self.max_edit_rate=max_edit_rate
         self.max_edits = max(1, int(np.ceil(len(self.tokens) * max_edit_rate)))  # Set max_edits to 30% of the token count
         n = len(self.tokens)
 
@@ -193,7 +201,8 @@ class GA_Attack:
             self.best_solution=best_solution
             self.best_sentence=best_sentence
             self.edit_distance=edit_distance
-        if (best_fitness) > self.fitness_threshold:
+        if edit_distance<=self.max_edits*0.5:
+        # if (best_fitness) > self.fitness_threshold+(self.max_edit_rate)*self.len_weight*0.5:
             self.log_info(f"Fitness threshold reached at generation {ga_instance.generations_completed}. Stopping the algorithm.")
             return "stop"
         

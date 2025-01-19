@@ -1,6 +1,7 @@
 
 from textattack.utils import load_json
 import os
+from test_ga_attack import test_ga_attack
 
 sh_templte='python test_ga_attack.py --num_generations {num_generations} --max_edit_rate {max_edit_rate} --len_weight {len_weight} --eva_thr {eva_thr} --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" --victim_model "{victim_model}" --wm_name "{wm_name}"'
 
@@ -19,4 +20,16 @@ for max_token_num in max_token_num_list:
         eva_thr=wm_config['eva_thr']
         tmp_sh=sh_templte.format(num_generations=num_generations, len_weight=len_weight, eva_thr=eva_thr, fitness_threshold=fitness_threshold, max_edit_rate=max_edit_rate, max_token_num=max_token_num, victim_tokenizer=victim_tokenizer, victim_model=victim_model, wm_name=wm_name)
         print(tmp_sh)
-        os.system(tmp_sh)
+        # os.system(tmp_sh)
+        test_ga_attack(
+            wm_name=wm_name, 
+            max_edit_rate=max_edit_rate,
+            max_token_num=max_token_num,
+            num_generations=num_generations,
+            victim_model=victim_model,
+            victim_tokenizer=victim_tokenizer,
+            len_weight=len_weight,
+            fitness_threshold=fitness_threshold,
+            eva_thr=eva_thr
+        )
+
