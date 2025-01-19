@@ -21,10 +21,10 @@
         "victim_tokenizer": "bert-base-uncased",
         "victim_model":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14",
         "num_generations":30,
-        "max_edit_rate":0.1,
-        "len_weight":2,
+        "max_edit_rate":0.15,
+        "len_weight":1.5,
         "fitness_threshold":0.9,
-        "eva_thr":[0.1, 0.3]
+        "eva_thr":0.1
     },
     "Unigram":{
         "victim_tokenizer": "bert-base-uncased",
