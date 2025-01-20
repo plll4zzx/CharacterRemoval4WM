@@ -12,6 +12,7 @@ import textattack.attack_sems
 import numpy as np
 from textattack.utils import Logger, to_string
 import datetime
+from optimum.bettertransformer import BetterTransformer
 
 class LLM_WM:
 
@@ -19,14 +20,32 @@ class LLM_WM:
         self.model_name = model_name
         self.wm_name=wm_name
         self.device = device if torch.cuda.is_available() else "cpu"
-
+        tokenizer=AutoTokenizer.from_pretrained(self.model_name)
+        if "llama" in model_name.lower():
+            model = AutoModelForCausalLM.from_pretrained(
+                self.model_name,
+                device_map="auto",
+                torch_dtype="auto",
+                quantization_config={
+                    "load_in_4bit":True, 
+                    # "load_in_8bit": True,  
+                    "bnb_4bit_compute_dtype": "float16",  # 指定计算精度
+                    "bnb_4bit_use_double_quant": True,   # 是否使用双量化
+                    "bnb_4bit_quant_type": "nf4"         # 量化类型（nf4 通常表现更好）
+                }
+            )
+            # model = BetterTransformer.transform(model)#.to(self.device)
+        else:
+            model=AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device)
+        model.config.pad_token_id = tokenizer.eos_token_id  
+        model.config.eos_token_id = tokenizer.eos_token_id  
         # Transformers config
         self.transformers_config = TransformersConfig(
-            model=AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device),
-            tokenizer=AutoTokenizer.from_pretrained(self.model_name),
-            vocab_size=50272,
+            model=model,
+            tokenizer=tokenizer,
+            # vocab_size=len(tokenizer),
             device=self.device,
-            max_new_tokens=200,
+            max_new_tokens=350,
             min_length=230,
             do_sample=True,
             no_repeat_ngram_size=4
