@@ -1,14 +1,14 @@
 
 from read_data import c4
-# import textattack.attack_sems
-import numpy as np
-from textattack.utils import Logger, to_string, save_json, get_advtext_filename
-# import datetime
+from textattack.utils import to_string, save_json, get_advtext_filename
 from llm_wm import LLM_WM
-from semantic_attack import SemanticAttack
 import os
 from tqdm import tqdm
 import argparse
+# from semantic_attack import SemanticAttack
+# import numpy as np
+# import datetime
+# import textattack.attack_sems
 
 def get_wm_data(
     file_num=10,

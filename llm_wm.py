@@ -1,18 +1,17 @@
 
 import torch
-import json
 from MarkLLM.watermark.auto_watermark import AutoWatermark
 from MarkLLM.utils.transformers_config import TransformersConfig
 from transformers import AutoModelForCausalLM, AutoTokenizer
-import transformers
-
-import textattack
-from read_data import c4
-import textattack.attack_sems
-import numpy as np
 from textattack.utils import Logger, to_string
-import datetime
-from optimum.bettertransformer import BetterTransformer
+# import json
+# import transformers
+# import textattack
+# from read_data import c4
+# import textattack.attack_sems
+# import numpy as np
+# import datetime
+# from optimum.bettertransformer import BetterTransformer
 
 class LLM_WM:
 
@@ -37,13 +36,17 @@ class LLM_WM:
             # model = BetterTransformer.transform(model)#.to(self.device)
         else:
             model=AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device)
+        if "opt" in model_name.lower():
+            vocab_size=50272
+        else:
+            vocab_size=len(tokenizer)
         model.config.pad_token_id = tokenizer.eos_token_id  
         model.config.eos_token_id = tokenizer.eos_token_id  
         # Transformers config
         self.transformers_config = TransformersConfig(
             model=model,
             tokenizer=tokenizer,
-            # vocab_size=len(tokenizer),
+            vocab_size=vocab_size,
             device=self.device,
             max_new_tokens=350,
             min_length=230,

@@ -1,4 +1,4 @@
-import random
+# import random
 import numpy as np
 from pygad import GA
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
@@ -151,9 +151,10 @@ class GA_Attack:
         sentence=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
         
         self.tokens = sentence.split()
+        self.ori_fitness=ori_fitness
         self.target_class = target_class
         self.max_edit_rate=max_edit_rate
-        self.max_edits = max(1, int(np.ceil(len(self.tokens) * max_edit_rate)))  # Set max_edits to 30% of the token count
+        self.max_edits = max(1, int(np.ceil(len(self.tokens) * max_edit_rate))) 
         n = len(self.tokens)
 
         self.best_solution=None
@@ -201,9 +202,11 @@ class GA_Attack:
             self.best_solution=best_solution
             self.best_sentence=best_sentence
             self.edit_distance=edit_distance
-        if edit_distance<=self.max_edits*0.5:
-        # if (best_fitness) > self.fitness_threshold+(self.max_edit_rate)*self.len_weight*0.5:
-            self.log_info(f"Fitness threshold reached at generation {ga_instance.generations_completed}. Stopping the algorithm.")
+        if edit_distance <= self.max_edits*0.5:
+            self.log_info(f"Stop! Edit_distance reached.")
+            return "stop"
+        if best_fitness >= (self.fitness_threshold+(self.max_edit_rate)*self.len_weight*0.5):
+            self.log_info(f"Stop! Fitness threshold reached.")
             return "stop"
         
 
