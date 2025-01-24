@@ -84,7 +84,7 @@ class RandomAttack:
         
         if logger is None:
             self.log=Logger(
-                'attack_log/tmp1/RandomAttack'+'-'.join([
+                'attack_log/RandomAttack'+'-'.join([
                     wm_name, 
                     # self.attack_name, 
                     # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
@@ -185,14 +185,17 @@ class RandomAttack:
                 # 'ref_score':self.ref_score(adv_sentence, target_class)
             }
             adv_sentence_list.append(tmp_rlt)
-        for idx in range(0, len(adv_sentence_list), batch_size):
-            tmp_batch=adv_sentence_list[idx:idx+batch_size]
-            tmp_sentence=[tmp_batch[idy]['sentence'] for idy in range(len(tmp_batch))]
-            tmp_batch_score=self.ref_score(tmp_sentence, target_class)
-            for idy in range(len(tmp_batch)):
-                adv_sentence_list[idx+idy]['ref_score']=tmp_batch_score[idy]
+        
         if atk_times>1:
+            for idx in range(0, len(adv_sentence_list), batch_size):
+                tmp_batch=adv_sentence_list[idx:idx+batch_size]
+                tmp_sentence=[tmp_batch[idy]['sentence'] for idy in range(len(tmp_batch))]
+                tmp_batch_score=self.ref_score(tmp_sentence, target_class)
+                for idy in range(len(tmp_batch)):
+                    adv_sentence_list[idx+idy]['ref_score']=tmp_batch_score[idy]
+        
             adv_sentence_list=sorted(adv_sentence_list, key=lambda x:x['ref_score'], reverse=True)
+        
         return adv_sentence_list[0]
 
     def token_attack(

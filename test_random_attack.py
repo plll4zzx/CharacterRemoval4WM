@@ -18,11 +18,11 @@ import argparse
 
 
 def test_rand_attack(
-    wm_name, max_edit_rate, max_token_num=80, atk_style='char',
+    llm_name, wm_name, max_edit_rate, max_token_num=80, atk_style='char',
     ref_tokenizer = None, ref_model=None, atk_times=1
 ):
     
-    llm_name="facebook/opt-1.3b"
+    
     dataset_name='../../dataset/c4/realnewslike'
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
@@ -93,10 +93,10 @@ def test_rand_attack(
         )
 
         attk_rlt=wm_scheme.detect_wm(adv_rlt['sentence'])
-        
-        ori_score=rand_attack.ref_score(wm_text, target_class)
-        rand_attack.log_info(['ori_score:', ori_score[0]])
-        rand_attack.log_info(['ref_score:', adv_rlt['ref_score']])
+        if atk_times>0:
+            ori_score=rand_attack.ref_score(wm_text, target_class)
+            rand_attack.log_info(['ori_score:', ori_score[0]])
+            rand_attack.log_info(['ref_score:', adv_rlt['ref_score']])
         rand_attack.log_info(['wm_detect:', wm_rlt])
         rand_attack.log_info(['ak_detect:', attk_rlt])
         rand_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
@@ -114,17 +114,19 @@ def test_rand_attack(
 if __name__=="__main__":
     # python test_random_attack.py --max_edit_rate 0.2 --atk_style "char" --max_token_num 200
     parser = argparse.ArgumentParser(description='test_rand_attack')
-    parser.add_argument('--wm_name', type=str, default='Unigram')
+    parser.add_argument('--llm_name', type=str, default='../model/Llama3.1-8B_hg')
+    parser.add_argument('--wm_name', type=str, default='KGW')
     parser.add_argument('--max_edit_rate', type=float, default=0.5)
     parser.add_argument('--max_token_num', type=int, default=100)
-    parser.add_argument('--atk_style', type=str, default='token')
+    parser.add_argument('--atk_style', type=str, default='low')
 
     parser.add_argument('--ref_tokenizer', type=str, default='bert-base-uncased')#'bert-base-uncased'
-    parser.add_argument('--ref_model', type=str, default='saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14')
-    parser.add_argument('--atk_times', type=int, default=1)
+    parser.add_argument('--ref_model', type=str)#, default='saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14')
+    parser.add_argument('--atk_times', type=int, default=0)
     
     args = parser.parse_args()
     test_rand_attack(
+        llm_name=args.llm_name,
         wm_name=args.wm_name, 
         max_edit_rate=args.max_edit_rate,
         max_token_num=args.max_token_num,
