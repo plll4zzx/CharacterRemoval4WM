@@ -339,11 +339,12 @@ if __name__=='__main__':
     llm_name="../model/Llama3.1-8B_hg"
     dataset_name='../../dataset/c4/realnewslike'
     
-    # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15
+    # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15 --rand_char_rate 0.1
     parser = argparse.ArgumentParser(description='train ref detector')
     parser.add_argument('--wm_name', type=str, default='SynthID')
     parser.add_argument('--num_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-5)
+    parser.add_argument('--rand_char_rate', type=float, default=0.1)
     
     args = parser.parse_args()
     ref_model=RefDetector(
@@ -354,11 +355,11 @@ if __name__=='__main__':
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
         text_len=100,
-        rand_char_rate=0.05, rand_times=9
+        rand_char_rate=args.rand_char_rate, rand_times=9
     )
     ref_model.dataloader_init(
         train_split=0.8,
-        text_len=100, 
+        text_len=150, 
     )
     ref_model.train_init(
         model_path='bert-base-uncased',
