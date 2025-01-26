@@ -1,7 +1,7 @@
 
 from textattack.utils import load_json, save_json, find_homo
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification, OPTForSequenceClassification, BertForMaskedLM
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler
 from torch.optim import AdamW, SGD, Adam
 from torch.utils.data import Dataset, DataLoader
 import torch
@@ -70,7 +70,8 @@ class WMDataset(Dataset):
                 self.add_data(tmp_text)
 
                 for i in range(rand_times):
-                    tmp_text0=char_adv(tmp_text, rand_char_rate)
+                    tmp_rand_char_rate = random.uniform(0, rand_char_rate)
+                    tmp_text0=char_adv(tmp_text, tmp_rand_char_rate)
                     self.add_data(tmp_text0)
 
             if tmp_d['un_detect']['is_watermarked']==False:
@@ -79,7 +80,8 @@ class WMDataset(Dataset):
                 self.add_data(tmp_text)
 
                 for i in range(rand_times):
-                    tmp_text0=char_adv(tmp_text, rand_char_rate)
+                    tmp_rand_char_rate = random.uniform(0, rand_char_rate)
+                    tmp_text0=char_adv(tmp_text, tmp_rand_char_rate)
                     self.add_data(tmp_text0)
         
         wm_d_len=len(self.wm_dataset)

@@ -1,7 +1,9 @@
 import json
 import logging
 from logging import handlers
+import random
 
+unprintable_char=''.join([chr(i) for i in range(1000) if chr(i).isprintable()==False])[0:10]
 def find_homo(input_char):
     homos = {
         "-": "˗",
@@ -47,7 +49,8 @@ def find_homo(input_char):
     if input_char in homos:
         return homos[input_char]
     else:
-        return ' '
+        random_char = random.choice(unprintable_char)
+        return random_char+input_char
 
 def to_string(inputs):
     output_str=''
