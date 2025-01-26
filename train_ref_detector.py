@@ -343,11 +343,12 @@ class RefDetector:
 
 
 if __name__=='__main__':
-    llm_name="facebook/opt-1.3b"#"../model/Llama3.1-8B_hg"
+    # llm_name="facebook/opt-1.3b"#"../model/Llama3.1-8B_hg"
     dataset_name='../../dataset/c4/realnewslike'
     
     # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15 --rand_char_rate 0.1
     parser = argparse.ArgumentParser(description='train ref detector')
+    parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
     parser.add_argument('--wm_name', type=str, default='SynthID')
     parser.add_argument('--num_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-5)
@@ -355,7 +356,7 @@ if __name__=='__main__':
     
     args = parser.parse_args()
     ref_model=RefDetector(
-        llm_name=llm_name, 
+        llm_name=args.llm_name, 
         wm_name=args.wm_name, 
         tokenizer_path='bert-base-uncased'
     )
