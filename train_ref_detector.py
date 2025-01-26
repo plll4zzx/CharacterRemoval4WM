@@ -97,9 +97,9 @@ class WMDataset(Dataset):
         print(wm_d_len, un_d_len)
         if wm_detector is not None:
             if rand_times>0:
-                save_json(self.dataset, data_path[0:-5]+'_'+str(text_len)+'_'+str(rand_char_rate)+'_'+str(rand_times)+'.json')
+                save_json(self.dataset, data_path[0:-5]+'_'+str(rand_char_rate)+'_'+str(rand_times)+'.json')
             else:
-                save_json(self.dataset, data_path[0:-5]+'_'+str(text_len)+'.json')
+                save_json(self.dataset, data_path[0:-5]+'_'+'.json')
 
     def __len__(self):
         return len(self.dataset)
@@ -152,7 +152,7 @@ class RefDetector:
         #     data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
         #     self.dataset=WMDataset(data_path, data_num)
         if rand_times>0:
-            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+"_"+str(rand_char_rate)+"_"+str(rand_times)+".json"
+            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(rand_char_rate)+"_"+str(rand_times)+".json"
             if os.path.exists(data_path):
                 self.dataset=WMDataset(data_path, data_num, stored_flag=True)
             else:
