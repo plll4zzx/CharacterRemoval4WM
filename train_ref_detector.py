@@ -50,7 +50,9 @@ def char_adv(sentence, rand_char_rate=0.1):
 class WMDataset(Dataset):
     def __init__(
         self, data_path, data_num, 
-        tokenizer=None, text_len=None, wm_detector=None, stored_flag=False,
+        tokenizer=None, 
+        # text_len=None, 
+        wm_detector=None, stored_flag=False,
         rand_char_rate=0, rand_times=0, wm_threshold=None,
     ):
         if stored_flag:
@@ -59,7 +61,7 @@ class WMDataset(Dataset):
         
         self.wm_detector=wm_detector
         self.tokenizer=tokenizer
-        self.text_len=text_len
+        # self.text_len=text_len
         tmp_dataset=load_json(data_path)[0:data_num]
         self.wm_dataset=[]
         self.un_dataset=[]
@@ -142,15 +144,15 @@ class RefDetector:
         self.train_flag=False
 
     def load_data(
-        self, dataset_name, data_num, text_len=None, 
+        self, dataset_name, data_num, #text_len=None, 
         rand_char_rate=0, rand_times=0
     ):
         self.dataset_name=dataset_name
-        if text_len is None:
-            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
-            self.dataset=WMDataset(data_path, data_num)
-        elif rand_times>0:
-            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(text_len)+"_"+str(rand_char_rate)+"_"+str(rand_times)+".json"
+        # if text_len is None:
+        #     data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
+        #     self.dataset=WMDataset(data_path, data_num)
+        if rand_times>0:
+            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+"_"+str(rand_char_rate)+"_"+str(rand_times)+".json"
             if os.path.exists(data_path):
                 self.dataset=WMDataset(data_path, data_num, stored_flag=True)
             else:
@@ -158,18 +160,23 @@ class RefDetector:
                 wm_scheme=LLM_WM(model_name = self.llm_name, device = "cuda", wm_name=self.wm_name)
                 self.dataset=WMDataset(
                     data_path, data_num, self.tokenizer, 
-                    text_len=text_len, wm_detector=wm_scheme.detect_wm, 
+                    # text_len=text_len, 
+                    wm_detector=wm_scheme.detect_wm, 
                     rand_char_rate=rand_char_rate, rand_times=rand_times, 
                     # wm_threshold=wm_scheme.wm_model.utils.config.threshold
                 )
         else:
-            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(text_len)+".json"
+            data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+".json"
             if os.path.exists(data_path):
                 self.dataset=WMDataset(data_path, data_num, stored_flag=True)
             else:
                 data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
                 wm_scheme=LLM_WM(model_name = self.llm_name, device = "cuda", wm_name=self.wm_name)
-                self.dataset=WMDataset(data_path, data_num, self.tokenizer, text_len=text_len, wm_detector=wm_scheme.detect_wm)
+                self.dataset=WMDataset(
+                    data_path, data_num, self.tokenizer, 
+                    # text_len=text_len, 
+                    wm_detector=wm_scheme.detect_wm
+                )
 
     def train_epoch(self):
         loss_l=[]
@@ -336,7 +343,7 @@ class RefDetector:
 
 
 if __name__=='__main__':
-    llm_name="../model/Llama3.1-8B_hg"
+    llm_name="facebook/opt-1.3b"#"../model/Llama3.1-8B_hg"
     dataset_name='../../dataset/c4/realnewslike'
     
     # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15 --rand_char_rate 0.1
@@ -354,8 +361,8 @@ if __name__=='__main__':
     )
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
-        text_len=100,
         rand_char_rate=args.rand_char_rate, rand_times=9
+        # text_len=150,
     )
     ref_model.dataloader_init(
         train_split=0.8,
