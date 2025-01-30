@@ -1,9 +1,11 @@
 
 from textattack.utils import load_json
 import os
+from test_random_attack import test_rand_attack
 
 sh_templte='python test_random_attack.py --atk_style "{atk_style}" --max_edit_rate {max_edit_rate} --atk_times {atk_times} --max_token_num {max_token_num} --ref_tokenizer "{ref_tokenizer}" --ref_model "{ref_model}" --wm_name "{wm_name}"'
 
+llm_name='../model/Llama3.1-8B_hg'#'facebook/opt-1.3b'
 rand_config=load_json(file_path='rand_config.json')
 atk_style_list=['low','ende']#['token', 'char', 'mix_char']
 atk_times_list=[0]#[1,10,50,100]
@@ -20,4 +22,14 @@ for max_token_num in max_token_num_list:
                 for atk_times in atk_times_list:
                     tmp_sh=sh_templte.format(atk_style=atk_style, max_edit_rate=max_edit_rate, atk_times=atk_times, max_token_num=max_token_num, ref_tokenizer=ref_tokenizer, ref_model=ref_model, wm_name=wm_name)
                     print(tmp_sh)
-                    os.system(tmp_sh)
+                    # os.system(tmp_sh)
+                    test_rand_attack(
+                        llm_name=llm_name,
+                        wm_name=wm_name, 
+                        max_edit_rate=max_edit_rate,
+                        max_token_num=max_token_num,
+                        atk_style=atk_style,
+                        ref_tokenizer=ref_tokenizer,
+                        ref_model=ref_model,
+                        atk_times=atk_times
+                    )
