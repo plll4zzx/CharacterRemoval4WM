@@ -84,7 +84,7 @@ class RandomAttack:
         
         if logger is None:
             self.log=Logger(
-                'attack_log/RandomAttack'+'-'.join([
+                'attack_log/llama/RandomAttack'+'-'.join([
                     wm_name, 
                     # self.attack_name, 
                     # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
@@ -182,7 +182,7 @@ class RandomAttack:
             tmp_rlt={
                 'sentence':adv_sentence, 
                 'edit_dist':edit_dist,
-                # 'ref_score':self.ref_score(adv_sentence, target_class)
+                'ref_score':self.ref_score(adv_sentence, target_class)
             }
             adv_sentence_list.append(tmp_rlt)
         
