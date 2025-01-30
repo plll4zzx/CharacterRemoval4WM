@@ -6,7 +6,9 @@
 !ga_config.json
 !rand_config.json
 !opt_rand_config.json
+!llama_rand_config.json
 !attack_log/GAAttackSynthID-2025-01-20 00:04.log
+attack_log/llama_log.zip
 # compiled python files
 __pycache__/
 
