@@ -78,7 +78,7 @@ def test_ga_attack(
         
         ga_attack.log_info(str(idx))
         
-        wm_text=wm_data[idx]['wm_text']
+        wm_text=wm_data[299-idx]['wm_text']
         wm_text, token_num=ga_attack.truncation(wm_text, max_token_num=max_token_num)
         if len(wm_text)==0:
             continue

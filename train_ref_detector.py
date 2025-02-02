@@ -72,7 +72,7 @@ class WMDataset(Dataset):
                 self.add_data(tmp_text)
 
                 for i in range(rand_times):
-                    tmp_rand_char_rate = random.uniform(0, rand_char_rate)
+                    tmp_rand_char_rate = random.uniform(rand_char_rate/2, rand_char_rate)
                     tmp_text0=char_adv(tmp_text, tmp_rand_char_rate)
                     self.add_data(tmp_text0)
 
@@ -82,7 +82,7 @@ class WMDataset(Dataset):
                 self.add_data(tmp_text)
 
                 for i in range(rand_times):
-                    tmp_rand_char_rate = random.uniform(0, rand_char_rate)
+                    tmp_rand_char_rate = random.uniform(rand_char_rate/2, rand_char_rate)
                     tmp_text0=char_adv(tmp_text, tmp_rand_char_rate)
                     self.add_data(tmp_text0)
         

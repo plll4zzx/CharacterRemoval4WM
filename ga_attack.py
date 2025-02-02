@@ -125,14 +125,15 @@ class GA_Attack:
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
+        # eva_fitness=10-self.wm_detector(modified_sentence)['score']
         eva_fitness=self.evaluate_fitness(modified_sentence, self.target_class)
         
         if eva_fitness<self.eva_thr:
             fit_score = eva_fitness
-        # elif eva_fitness>=self.eva_thr[0] and eva_fitness<self.eva_thr[1]:
-        #     fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
+        elif eva_fitness>=self.fitness_threshold:
+            fit_score = self.fitness_threshold+(-solu_len/solution.size)*self.len_weight
         else:
-            fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
+            fit_score = eva_fitness+(-solu_len/solution.size)*self.len_weight
         # if eva_fitness>self.eva_thr:
         #     fit_score=eva_fitness-(solu_len/solution.size)*self.len_weight+(self.max_edit_rate)*self.len_weight
         return fit_score
@@ -146,9 +147,9 @@ class GA_Attack:
         mutation_percent_genes=30
     ):
 
-        sentence=sentence.lower()
-        tmp_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
-        sentence=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
+        # sentence=sentence.lower()
+        # tmp_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
+        # sentence=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
         
         self.tokens = sentence.split()
         self.ori_fitness=ori_fitness
@@ -205,9 +206,9 @@ class GA_Attack:
         if edit_distance <= self.max_edits*0.5:
             self.log_info(f"Stop! Edit_distance reached.")
             return "stop"
-        if best_fitness >= (self.fitness_threshold+(self.max_edit_rate)*self.len_weight*0.5):
-            self.log_info(f"Stop! Fitness threshold reached.")
-            return "stop"
+        # if best_fitness >= (self.fitness_threshold+(self.max_edit_rate)*self.len_weight*0.5):
+        #     self.log_info(f"Stop! Fitness threshold reached.")
+        #     return "stop"
         
 
 # Example usage

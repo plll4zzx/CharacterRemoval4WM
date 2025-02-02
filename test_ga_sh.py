@@ -5,11 +5,12 @@ from test_ga_attack import test_ga_attack
 
 sh_templte='python test_ga_attack.py --num_generations {num_generations} --max_edit_rate {max_edit_rate} --len_weight {len_weight} --eva_thr {eva_thr} --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" --victim_model "{victim_model}" --wm_name "{wm_name}"'
 
-ga_config=load_json(file_path='ga_config.json')
-max_token_num_list=[200]#,200
+llm_name='../model/Llama3.1-8B_hg'
+ga_config=load_json(file_path='attk_config/llama_ga_config.json')
+max_token_num_list=[100]#,200
 
 for max_token_num in max_token_num_list:
-    for wm_name in ['Unigram']:#rand_config:
+    for wm_name in ['KGW']:#rand_config:
         wm_config=ga_config[wm_name]
         victim_tokenizer=wm_config['victim_tokenizer']
         victim_model=wm_config['victim_model']
@@ -22,6 +23,7 @@ for max_token_num in max_token_num_list:
         print(tmp_sh)
         # os.system(tmp_sh)
         test_ga_attack(
+            llm_name=llm_name,
             wm_name=wm_name, 
             max_edit_rate=max_edit_rate,
             max_token_num=max_token_num,

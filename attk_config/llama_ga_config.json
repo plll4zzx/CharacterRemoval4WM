@@ -1,0 +1,47 @@
+{
+    "KGW":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-01",
+        "num_generations":20,
+        "max_edit_rate":{"100":0.2, "200":0.1},
+        "len_weight":{"100":1, "200":1.3},
+        "fitness_threshold":{"100":0.95, "200":0.9},
+        "eva_thr":0.1
+    },
+    "DIP":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-01-27",
+        "num_generations":10,
+        "max_edit_rate":{"100":0.15, "200":0.1},
+        "len_weight":{"100":0.8, "200":1.3},
+        "fitness_threshold":{"100":0.95, "200":0.9},
+        "eva_thr":0.1
+    },
+    "SynthID":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-01-26",
+        "num_generations":20,
+        "max_edit_rate":{"100":0.15, "200":0.05},
+        "len_weight":{"100":1, "200":1},
+        "fitness_threshold":{"100":0.95, "200":0.9},
+        "eva_thr":0.1
+    },
+    "Unigram":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-01-26",
+        "num_generations":15,
+        "max_edit_rate":{"100":0.25, "200":0.25},
+        "len_weight":{"100":1.5, "200":1.5},
+        "fitness_threshold":{"100":0.9, "200":0.9},
+        "eva_thr":0.2
+    },
+    "Unbiased":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-15",
+        "num_generations":15,
+        "max_edit_rate":0.1,
+        "len_weight":1,
+        "fitness_threshold":0.9,
+        "eva_thr":0.2
+    }
+}
