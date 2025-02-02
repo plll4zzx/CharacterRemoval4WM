@@ -25,7 +25,9 @@ def test_ga_attack(
     dataset_name='../../dataset/c4/realnewslike',
     len_weight=1,
     fitness_threshold=0.9,
-    eva_thr=0.2
+    eva_thr=0.2,
+    mean=0,
+    std=1
 ):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
@@ -38,7 +40,9 @@ def test_ga_attack(
         wm_name = wm_name,
         len_weight=len_weight,
         fitness_threshold=fitness_threshold,
-        eva_thr=eva_thr
+        eva_thr=eva_thr,
+        mean=mean,
+        std=std
     )
     
     ga_attack.log_info(['wm_name:', wm_name])

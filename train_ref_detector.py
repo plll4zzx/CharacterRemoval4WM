@@ -177,6 +177,10 @@ class RefDetector:
                     # text_len=text_len, 
                     wm_detector=wm_scheme.detect_wm
                 )
+        wmscore_list=[tmp_d['score'] for tmp_d in self.dataset]
+        self.d_mean = np.mean(wmscore_list)
+        self.d_std = np.std(wmscore_list)
+        print('mean', self.d_mean, 'std', self.d_std)
 
     def train_epoch(self):
         loss_l=[]
@@ -255,7 +259,7 @@ class RefDetector:
         # for name, param in self.model.named_parameters():
         #     print(f"{name}: requires_grad={param.requires_grad}")
 
-    def dataloader_init(self, train_split=0.8, text_len=150):
+    def dataloader_init(self, train_split=0.8, text_len=150, batch_size=16):
         def collate_fn(batch):
             list_input_ids = []
             list_attention_mask = []
@@ -270,7 +274,9 @@ class RefDetector:
                 )
                 list_input_ids.append(tmp_d['input_ids'])
                 list_attention_mask.append(tmp_d['attention_mask'])
-                list_labels.append(batch[i]["score"])
+                list_labels.append(
+                    float((batch[i]["score"]-self.d_mean)/self.d_std)
+                )
                 if 'token_type_ids' in tmp_d:
                     token_type_flag=True
                     list_token_type_ids.append(tmp_d['token_type_ids'])
@@ -292,11 +298,11 @@ class RefDetector:
 
         train_num=round(self.dataset.__len__()*train_split)
         self.train_dataloader = DataLoader(
-            self.dataset[0:train_num], shuffle=True, batch_size=16, 
+            self.dataset[0:train_num], shuffle=True, batch_size=batch_size, 
             collate_fn=collate_fn
         )
         self.eval_dataloader = DataLoader(
-            self.dataset[train_num+1:], shuffle=True, batch_size=16, 
+            self.dataset[train_num+1:], shuffle=True, batch_size=batch_size, 
             collate_fn=collate_fn
         )
 
@@ -354,7 +360,7 @@ if __name__=='__main__':
     parser.add_argument('--wm_name', type=str, default='SynthID')
     parser.add_argument('--num_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-5)
-    parser.add_argument('--rand_char_rate', type=float, default=0.1)
+    parser.add_argument('--rand_char_rate', type=float, default=0.15)
     
     args = parser.parse_args()
     ref_model=RefDetector(
@@ -370,6 +376,7 @@ if __name__=='__main__':
     ref_model.dataloader_init(
         train_split=0.8,
         text_len=150, 
+        batch_size=32
     )
     ref_model.train_init(
         model_path='bert-base-uncased',

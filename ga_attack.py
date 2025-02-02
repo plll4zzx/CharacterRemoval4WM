@@ -19,7 +19,9 @@ class GA_Attack:
         fitness_threshold=0.90,
         device='cuda',
         len_weight=1.3,
-        eva_thr=0.2
+        eva_thr=0.2,
+        mean=0,
+        std=1
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(victim_tokenizer)
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
@@ -34,6 +36,8 @@ class GA_Attack:
         self.best_sentence=''
         self.len_weight=len_weight
         self.eva_thr=eva_thr
+        self.mean=mean
+        self.std=std
 
         self.model.to(self.device)
 
@@ -78,7 +82,8 @@ class GA_Attack:
         # Define a fitness value based on the target misclassification
         # fitness = predictions[0][target_class]
 
-        return fitness.cpu().detach().numpy()
+        return fitness.item()
+        # return fitness.cpu().detach().numpy()
     
     def modify_sentence(self, solution):
         edited_sentence = list(self.tokens)
@@ -126,8 +131,9 @@ class GA_Attack:
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
-        eva_fitness=10-self.wm_detector(modified_sentence)['score']
-        # eva_fitness=self.evaluate_fitness(modified_sentence, self.target_class)
+        # eva_fitness=self.std*self.wm_detector(modified_sentence)['score']+self.mean
+        # eva_fitness=-self.wm_detector(modified_sentence)['score']
+        eva_fitness=-self.evaluate_fitness(modified_sentence, self.target_class)
         
         if eva_fitness<self.eva_thr:
             fit_score = eva_fitness
@@ -186,6 +192,8 @@ class GA_Attack:
         # if best_solution!=self.best_solution:
         #     print()
         # best_sentence, edit_distance, solu_len = self.modify_sentence(best_solution)
+        adv_fitness=self.evaluate_fitness(self.best_sentence, self.target_class)
+        self.log_info(['adv_fitness:', adv_fitness])
         return self.best_sentence, self.edit_distance, self.best_fitness
 
     def on_generation(self, ga_instance):
