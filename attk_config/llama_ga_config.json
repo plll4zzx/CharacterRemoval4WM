@@ -1,11 +1,11 @@
 {
     "KGW":{
         "victim_tokenizer": "bert-base-uncased",
-        "victim_model":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-01",
-        "num_generations":20,
-        "max_edit_rate":{"100":0.2, "200":0.1},
-        "len_weight":{"100":1, "200":1.3},
-        "fitness_threshold":{"100":0.95, "200":0.9},
+        "victim_model":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-02",
+        "num_generations":10,
+        "max_edit_rate":{"100":0.1, "200":0.1},
+        "len_weight":{"100":30, "200":1.3},
+        "fitness_threshold":{"100":4, "200":0.9},
         "eva_thr":0.1
     },
     "DIP":{

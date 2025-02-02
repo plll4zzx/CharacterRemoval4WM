@@ -72,10 +72,11 @@ class GA_Attack:
         with torch.no_grad():
             outputs = self.model(**batch)
         logits = outputs.logits
-        predictions = torch.softmax(logits, dim=1)
+        fitness=logits
+        # predictions = torch.softmax(logits, dim=1)
 
         # Define a fitness value based on the target misclassification
-        fitness = predictions[0][target_class]
+        # fitness = predictions[0][target_class]
 
         return fitness.cpu().detach().numpy()
     
@@ -125,13 +126,13 @@ class GA_Attack:
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
-        # eva_fitness=10-self.wm_detector(modified_sentence)['score']
-        eva_fitness=self.evaluate_fitness(modified_sentence, self.target_class)
+        eva_fitness=10-self.wm_detector(modified_sentence)['score']
+        # eva_fitness=self.evaluate_fitness(modified_sentence, self.target_class)
         
         if eva_fitness<self.eva_thr:
             fit_score = eva_fitness
-        elif eva_fitness>=self.fitness_threshold:
-            fit_score = self.fitness_threshold+(-solu_len/solution.size)*self.len_weight
+        # elif eva_fitness>=self.fitness_threshold:
+        #     fit_score = self.fitness_threshold+(-solu_len/solution.size)*self.len_weight
         else:
             fit_score = eva_fitness+(-solu_len/solution.size)*self.len_weight
         # if eva_fitness>self.eva_thr:
