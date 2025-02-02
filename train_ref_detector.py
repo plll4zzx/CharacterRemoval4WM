@@ -1,7 +1,7 @@
 
 from textattack.utils import load_json, save_json, find_homo
 from datasets import load_dataset
-from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler
+from transformers import AutoTokenizer, AutoModelForSequenceClassification, get_scheduler, BertForSequenceClassification
 from torch.optim import AdamW, SGD, Adam
 from torch.utils.data import Dataset, DataLoader
 import torch
@@ -270,7 +270,7 @@ class RefDetector:
                 )
                 list_input_ids.append(tmp_d['input_ids'])
                 list_attention_mask.append(tmp_d['attention_mask'])
-                list_labels.append(batch[i]["labels"])
+                list_labels.append(batch[i]["score"])
                 if 'token_type_ids' in tmp_d:
                     token_type_flag=True
                     list_token_type_ids.append(tmp_d['token_type_ids'])
@@ -306,7 +306,9 @@ class RefDetector:
         self.model_path=model_path
         self.model = AutoModelForSequenceClassification.from_pretrained(
             model_path, 
-            num_labels=2, torch_dtype="auto"
+            num_labels=1, 
+            problem_type="regression", 
+            torch_dtype="auto"
         )
         self.model.to(self.device)
 
