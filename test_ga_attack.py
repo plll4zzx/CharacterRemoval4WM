@@ -27,7 +27,8 @@ def test_ga_attack(
     fitness_threshold=0.9,
     eva_thr=0.2,
     mean=0,
-    std=1
+    std=1,
+    ab_std=1
 ):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
@@ -42,7 +43,8 @@ def test_ga_attack(
         fitness_threshold=fitness_threshold,
         eva_thr=eva_thr,
         mean=mean,
-        std=std
+        std=std,
+        ab_std=ab_std
     )
     
     ga_attack.log_info(['wm_name:', wm_name])
@@ -56,6 +58,7 @@ def test_ga_attack(
     ga_attack.log_info(['len_weight:', len_weight])
     ga_attack.log_info(['fitness_threshold:', fitness_threshold])
     ga_attack.log_info(['eva_thr:', eva_thr])
+    ga_attack.log_info(['ab_std:', ab_std])
     
     target_class=0
     count_num=0
@@ -102,18 +105,20 @@ def test_ga_attack(
             max_edit_rate=max_edit_rate,
             num_generations=num_generations,
         )
+        try:
+            attk_rlt=wm_scheme.detect_wm(attk_text)
+            ga_attack.log_info(['ak_detect:', attk_rlt])
+            wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
+            wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
 
-        attk_rlt=wm_scheme.detect_wm(attk_text)
-        ga_attack.log_info(['ak_detect:', attk_rlt])
+            if attk_rlt['is_watermarked']==False:
+                count_num+=1
+        except:
+            ga_attack.log_info('ERROR')
         ga_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
         ga_attack.log_info(['ak_text:', attk_text.replace('\n',' ')])
         edit_dist_l.append(edit_dist)
         token_num_l.append(token_num)
-        wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
-        wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
-
-        if attk_rlt['is_watermarked']==False:
-            count_num+=1
     
     # ga_attack.save()
 

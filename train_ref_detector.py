@@ -376,11 +376,11 @@ if __name__=='__main__':
     ref_model.dataloader_init(
         train_split=0.8,
         text_len=150, 
-        batch_size=32
+        batch_size=16
     )
     ref_model.train_init(
         model_path='bert-base-uncased',
-        # model_path='saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14',
+        # model_path='saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-02',
         lr_init=args.lr, gamma=0.5
     )
     # ref_model.froze_layer(f_num=12)

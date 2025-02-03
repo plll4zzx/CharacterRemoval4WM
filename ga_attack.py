@@ -7,6 +7,7 @@ from llm_wm import LLM_WM
 from textattack.utils import Logger, to_string, save_json, save_jsonl, truncation, find_homo
 import datetime
 from copy import copy
+from difflib import SequenceMatcher
 
 class GA_Attack:
     def __init__(
@@ -21,10 +22,12 @@ class GA_Attack:
         len_weight=1.3,
         eva_thr=0.2,
         mean=0,
-        std=1
+        std=1,
+        ab_std=1
     ):
         self.tokenizer = AutoTokenizer.from_pretrained(victim_tokenizer)
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
+        self.model.eval()
         self.device=device
         self.special_char = '@'
         self.wm_detector=wm_detector
@@ -38,6 +41,7 @@ class GA_Attack:
         self.eva_thr=eva_thr
         self.mean=mean
         self.std=std
+        self.ab_std=ab_std
 
         self.model.to(self.device)
 
@@ -67,6 +71,57 @@ class GA_Attack:
             max_token_num=max_token_num
         )
         return new_text, token_num
+    
+    def get_abnormal_tokens(self, text):
+        inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True)
+        # 将输入数据放到设备上
+        inputs = {key: val.to(self.device) for key, val in inputs.items()}
+        
+        # 这里我们希望计算模型输出对每个 token 的梯度，
+        # 因为 token 是离散的，所以我们获取对应的 embedding。
+        input_ids = inputs["input_ids"]         # shape: [1, seq_length]
+        attention_mask = inputs["attention_mask"]
+        
+        # 获取输入的 token embedding，并设置 requires_grad=True 开启梯度计算
+        embeddings = self.model.bert.embeddings.word_embeddings(input_ids)
+        embeddings.requires_grad_()
+        embeddings.retain_grad()
+        
+        # 前向传播：将 embeddings 传入模型，注意此时使用 inputs_embeds 代替 input_ids
+        outputs = self.model(inputs_embeds=embeddings, attention_mask=attention_mask)
+        # 模型输出 logits 的形状为 [batch_size, 1]，代表预测的分数
+        score = outputs.logits  # 形状：[1, 1]
+        print(f"Predicted score: {score.item():.4f}")
+        
+        # 反向传播：对输出的标量分数求梯度
+        self.model.zero_grad()  # 清空模型内已有的梯度
+        score.backward()
+        
+        # embeddings.grad 的形状为 [1, seq_length, embedding_dim]，
+        # 表示每个 token embedding 对输出分数的梯度
+        gradients = embeddings.grad.detach()  # detach后转换为 numpy 处理
+        # 计算每个 token 的梯度范数，作为衡量 token 敏感程度的一个指标
+        token_grad_norms = gradients.norm(dim=-1).squeeze(0) 
+
+        tokens = self.tokenizer.convert_ids_to_tokens(input_ids[0])
+        mean_grad = token_grad_norms.mean().item()
+        std_grad = token_grad_norms.std().item()
+        
+        threshold = mean_grad + self.ab_std * std_grad
+
+        abnormal_tokens = []
+        for token, norm in zip(tokens, token_grad_norms.cpu().numpy()):
+            if norm > threshold:
+                abnormal_tokens.append(token)
+
+        return abnormal_tokens
+    
+    def check_abnormal_token(self, token):
+        for a_token in self.abnormal_tokens:
+            similarity = SequenceMatcher(None, token, a_token).ratio()
+            if similarity>0.5:
+                return True
+        return False   
 
     def evaluate_fitness(self, modified_sentence, target_class):
         # Tokenize the modified sentence
@@ -91,7 +146,8 @@ class GA_Attack:
 
         for i, gene in enumerate(solution):
             if gene > 0 and len(selected_tokens) < self.max_edits:  # Enforce max edits
-
+                if self.check_abnormal_token(edited_sentence[i]):
+                    continue
                 len_t=len(edited_sentence[i])
                 sep_len=3
                 m_num=len_t//sep_len
@@ -131,7 +187,7 @@ class GA_Attack:
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
-        # eva_fitness=self.std*self.wm_detector(modified_sentence)['score']+self.mean
+        # eva_fitness=-(self.wm_detector(modified_sentence)['score']-self.mean)/self.std
         # eva_fitness=-self.wm_detector(modified_sentence)['score']
         eva_fitness=-self.evaluate_fitness(modified_sentence, self.target_class)
         
@@ -140,7 +196,7 @@ class GA_Attack:
         # elif eva_fitness>=self.fitness_threshold:
         #     fit_score = self.fitness_threshold+(-solu_len/solution.size)*self.len_weight
         else:
-            fit_score = eva_fitness+(-solu_len/solution.size)*self.len_weight
+            fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
         # if eva_fitness>self.eva_thr:
         #     fit_score=eva_fitness-(solu_len/solution.size)*self.len_weight+(self.max_edit_rate)*self.len_weight
         return fit_score
@@ -162,13 +218,19 @@ class GA_Attack:
         self.ori_fitness=ori_fitness
         self.target_class = target_class
         self.max_edit_rate=max_edit_rate
-        self.max_edits = max(1, int(np.ceil(len(self.tokens) * max_edit_rate))) 
+
+        # if self.ori_fitness>1.5:
+        #     self.max_edit_rate+=0.05
+
+        self.max_edits = max(1, int(np.ceil(len(self.tokens) * self.max_edit_rate))) 
         n = len(self.tokens)
 
         self.best_solution=None
         self.best_sentence=''
         self.edit_distance=0
-        self.best_fitness=0
+        self.best_fitness=-100
+        self.abnormal_tokens=[]
+        self.abnormal_tokens=self.get_abnormal_tokens(sentence)
 
         # Initialize PyGAD
         ga_instance = GA(
@@ -198,6 +260,7 @@ class GA_Attack:
 
     def on_generation(self, ga_instance):
         # self.log_info(f"Generation: {ga_instance.generations_completed}")
+        # steps=ga_instance.generations_completed
         (best_solution, best_fitness, _)=ga_instance.best_solution()
         self.best_solution=best_solution
         self.log_info(f"Generation: {ga_instance.generations_completed}, Best Fitness: {best_fitness}")
@@ -215,6 +278,8 @@ class GA_Attack:
         if edit_distance <= self.max_edits*0.5:
             self.log_info(f"Stop! Edit_distance reached.")
             return "stop"
+        # if steps%5==0 and steps>0:
+        #     self.abnormal_tokens=self.get_abnormal_tokens(self.best_sentence)
         # if best_fitness >= (self.fitness_threshold+(self.max_edit_rate)*self.len_weight*0.5):
         #     self.log_info(f"Stop! Fitness threshold reached.")
         #     return "stop"

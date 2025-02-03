@@ -6,18 +6,18 @@ import random
 unprintable_char=''.join([chr(i) for i in range(1000) if chr(i).isprintable()==False])[0:10]
 def find_homo(input_char):
     homos = {
-        "-": "˗",
-        "9": "৭",
-        "8": "Ȣ",
-        "7": "𝟕",
-        "6": "б",
-        "5": "Ƽ",
-        "4": "Ꮞ",
-        "3": "Ʒ",
-        "2": "ᒿ",
-        "1": "l",
-        "0": "O",
-        "'": "`",
+        # "-": "˗",
+        # "9": "৭",
+        # "8": "Ȣ",
+        # "7": "𝟕",
+        # "6": "б",
+        # "5": "Ƽ",
+        # "4": "Ꮞ",
+        # "3": "Ʒ",
+        # "2": "ᒿ",
+        # "1": "l",
+        # "0": "O",
+        # "'": "`",
         "a": "ɑ",
         "b": "Ь",
         "c": "ϲ",
@@ -49,8 +49,8 @@ def find_homo(input_char):
     if input_char in homos:
         return homos[input_char]
     else:
-        random_char = random.choice(unprintable_char)
-        return random_char+input_char
+        # random_char = random.choice(unprintable_char)
+        return input_char
 
 def to_string(inputs):
     output_str=''
