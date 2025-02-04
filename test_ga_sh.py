@@ -7,10 +7,10 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} --max_e
 
 llm_name='facebook/opt-1.3b'
 ga_config=load_json(file_path='attk_config/opt_ga_config.json')
-max_token_num_list=[100]#,200
+max_token_num_list=[100,200]#
 
 for max_token_num in max_token_num_list:
-    for wm_name in ['SynthID']:#rand_config:
+    for wm_name in ['KGW']:#rand_config:
         wm_config=ga_config[wm_name]
         victim_tokenizer=wm_config['victim_tokenizer']
         victim_model=wm_config['victim_model']
