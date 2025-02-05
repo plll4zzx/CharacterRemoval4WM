@@ -13,12 +13,15 @@
     },
     "DIP":{
         "victim_tokenizer": "bert-base-uncased",
-        "victim_model":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14",
+        "victim_model":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-04",
         "num_generations":15,
-        "max_edit_rate":0.1,
-        "len_weight":1,
+        "max_edit_rate":{"100":0.13, "200":0.13},
+        "len_weight":{"100":2, "200":1},
         "fitness_threshold":0.9,
-        "eva_thr":0.2
+        "eva_thr":-0.05,
+        "mean":1.268103,
+        "std":1.1784888,
+        "ab_std":2
     },
     "SynthID":{
         "victim_tokenizer": "bert-base-uncased",
@@ -34,20 +37,26 @@
     },
     "Unigram":{
         "victim_tokenizer": "bert-base-uncased",
-        "victim_model":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14",
+        "victim_model":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-04",
         "num_generations":15,
-        "max_edit_rate":{"100":0.25, "200":0.25},
-        "len_weight":{"100":1.5, "200":1.5},
+        "max_edit_rate":{"100":0.23, "200":0.13},
+        "len_weight":{"100":2, "200":1},
         "fitness_threshold":{"100":0.9, "200":0.9},
-        "eva_thr":0.2
+        "eva_thr":-0.05,
+        "mean":3.6317376,
+        "std":3.6826357,
+        "ab_std":1
     },
     "Unbiased":{
         "victim_tokenizer": "bert-base-uncased",
-        "victim_model":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-15",
+        "victim_model":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-04",
         "num_generations":15,
-        "max_edit_rate":0.1,
-        "len_weight":1,
-        "fitness_threshold":0.9,
-        "eva_thr":0.2
+        "max_edit_rate":{"100":0.13, "200":0.13},
+        "len_weight":{"100":2, "200":1},
+        "fitness_threshold":{"100":0.9, "200":0.9},
+        "eva_thr":-0.05,
+        "mean":1.266152,
+        "std":1.18968802,
+        "ab_std":2
     }
 }
