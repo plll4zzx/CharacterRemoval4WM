@@ -83,8 +83,8 @@ def test_ga_attack(
             ga_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
             ga_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
             ga_attack.log_info('******')
-            if idx==text_num:
-                break
+        if idx==text_num:
+            break
         
         ga_attack.log_info(str(idx))
         

@@ -193,7 +193,7 @@ class GA_Attack:
                     if len(tmp_subst)>0:
                         edited_sentence[i]=tmp_subst[0]
                         selected_tokens.append(i)
-                        continue
+                    continue
 
                 # # Treat operation as part of the solution
                 # operation = solution[len(self.tokens) + i]  # Operation encoded in the extended solution
