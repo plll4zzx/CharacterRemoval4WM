@@ -8,6 +8,7 @@ from textattack.utils import Logger, to_string, save_json, save_jsonl, truncatio
 import datetime
 from copy import copy
 from difflib import SequenceMatcher
+from random_attack import GensimModel
 
 class GA_Attack:
     def __init__(
@@ -23,8 +24,11 @@ class GA_Attack:
         eva_thr=0.2,
         mean=0,
         std=1,
-        ab_std=1
+        ab_std=1,
+        atk_style='char'
     ):
+        self.gensimi=None 
+        self.simi_num_for_token=5
         self.tokenizer = AutoTokenizer.from_pretrained(victim_tokenizer)
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
         self.model.eval()
@@ -42,6 +46,7 @@ class GA_Attack:
         self.mean=mean
         self.std=std
         self.ab_std=ab_std
+        self.atk_style=atk_style
 
         self.model.to(self.device)
 
@@ -140,6 +145,29 @@ class GA_Attack:
         return fitness.item()
         # return fitness.cpu().detach().numpy()
     
+    def substitute(self, token):
+        if self.gensimi is None:
+            self.gensimi=GensimModel()
+        space_flag=False
+        if ' ' in token:
+            space_flag=True
+        token=token.replace(' ', '').lower()
+        # if self.token_len_flag:
+        if len(token)<=2:
+            return []
+        
+        if token in self.simi_tokens_dict:
+            return self.simi_tokens_dict[token]
+        simi_tokens=self.gensimi.find_simi_words(token, simi_num=self.simi_num_for_token)
+
+        if space_flag:
+            for idx in range(len(simi_tokens)):
+                if simi_tokens[idx][0]!=' ':
+                    simi_tokens[idx]=' '+simi_tokens[idx]
+        self.simi_tokens_dict[token]=simi_tokens
+        
+        return simi_tokens
+    
     def modify_sentence(self, solution):
         edited_sentence = list(self.tokens)
         selected_tokens = []
@@ -158,14 +186,19 @@ class GA_Attack:
                 # if half_token_len<=1:
                 #     continue
 
-                selected_tokens.append(i)
+                tmp_token=copy(edited_sentence[i])
+
+                if self.atk_style=='token':
+                    tmp_subst=self.substitute(tmp_token)
+                    if len(tmp_subst)>0:
+                        edited_sentence[i]=tmp_subst[0]
+                        selected_tokens.append(i)
+                        continue
 
                 # # Treat operation as part of the solution
                 # operation = solution[len(self.tokens) + i]  # Operation encoded in the extended solution
                 # operation=gene
                 operation = 2 #random.choice([1, 2, 3])
-
-                tmp_token=copy(edited_sentence[i])
                 for m_loc in m_locs:
                     if m_loc>=(len_t-1):
                         continue
@@ -177,6 +210,8 @@ class GA_Attack:
                     elif operation == 3:  # Insert
                         tmp_token = tmp_token[:m_loc] + self.special_char+ tmp_token[m_loc:]
                 edited_sentence[i]=tmp_token
+                
+                selected_tokens.append(i)
         # Reconstruct sentence
         modified_sentence = " ".join(edited_sentence)
         edit_distance=len(selected_tokens)
@@ -231,6 +266,7 @@ class GA_Attack:
         self.best_fitness=-100
         self.abnormal_tokens=[]
         self.abnormal_tokens=self.get_abnormal_tokens(sentence)
+        self.simi_tokens_dict={}
 
         # Initialize PyGAD
         ga_instance = GA(

@@ -28,7 +28,8 @@ def test_ga_attack(
     eva_thr=0.2,
     mean=0,
     std=1,
-    ab_std=1
+    ab_std=1,
+    atk_style='char'
 ):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
@@ -44,7 +45,8 @@ def test_ga_attack(
         eva_thr=eva_thr,
         mean=mean,
         std=std,
-        ab_std=ab_std
+        ab_std=ab_std,
+        atk_style=atk_style
     )
     
     ga_attack.log_info(['wm_name:', wm_name])
@@ -59,6 +61,7 @@ def test_ga_attack(
     ga_attack.log_info(['fitness_threshold:', fitness_threshold])
     ga_attack.log_info(['eva_thr:', eva_thr])
     ga_attack.log_info(['ab_std:', ab_std])
+    ga_attack.log_info(['atk_style:', atk_style])
     
     target_class=0
     count_num=0

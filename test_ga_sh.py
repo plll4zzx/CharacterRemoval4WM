@@ -20,9 +20,11 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} --max_e
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV"
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
-parser.add_argument('--wm_name', type=str, default='SynthID')
+parser.add_argument('--wm_name', type=str, default='KGW')
+parser.add_argument('--atk_style', type=str, default='token')
 args = parser.parse_args()
 
+atk_style=args.atk_style
 llm_name=args.llm_name
 if 'opt' in llm_name:
     ga_config=load_json(file_path='attk_config/opt_ga_config.json')
@@ -64,6 +66,7 @@ for max_token_num in max_token_num_list:
             eva_thr=eva_thr,
             mean=mean,
             std=std,
-            ab_std=ab_std
+            ab_std=ab_std,
+            atk_style=atk_style
         )
 
