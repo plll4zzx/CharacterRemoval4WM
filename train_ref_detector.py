@@ -119,6 +119,8 @@ class WMDataset(Dataset):
         tmp_score=wm_rlt['score']
         if wm_flag==False:
             tmp_labels=0
+            if tmp_score is None:
+                tmp_score=0
             self.un_dataset.append({
                 'text':text,
                 'labels': tmp_labels,
@@ -126,6 +128,8 @@ class WMDataset(Dataset):
             })
         else:
             tmp_labels=1
+            if tmp_score is None:
+                tmp_score=1
             self.wm_dataset.append({
                 'text':text,
                 'labels': tmp_labels,
@@ -361,6 +365,7 @@ if __name__=='__main__':
     parser.add_argument('--num_epochs', type=int, default=5)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--rand_char_rate', type=float, default=0.15)
+    parser.add_argument('--lr_step', type=int, default=3)
     
     args = parser.parse_args()
     ref_model=RefDetector(
@@ -385,5 +390,5 @@ if __name__=='__main__':
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch()
-    ref_model.start_train(num_epochs=args.num_epochs, lr_step=3)
+    ref_model.start_train(num_epochs=args.num_epochs, lr_step=args.lr_step)
     ref_model.save_model(name='RefDetector')

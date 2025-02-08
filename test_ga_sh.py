@@ -20,7 +20,7 @@ ga_config=load_json(file_path='attk_config/opt_ga_config.json')
 max_token_num_list=[100,200]#
 
 for max_token_num in max_token_num_list:
-    for wm_name in ['Unigram']:#rand_config:
+    for wm_name in ['UPV']:#rand_config:
         wm_config=ga_config[wm_name]
         victim_tokenizer=wm_config['victim_tokenizer']
         victim_model=wm_config['victim_model']

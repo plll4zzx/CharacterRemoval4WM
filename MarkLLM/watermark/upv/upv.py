@@ -21,12 +21,12 @@ import torch
 from math import sqrt
 from functools import partial
 from ..base import BaseWatermark
-from utils.utils import load_config_file
+from MarkLLM.utils.utils import load_config_file
 from .network_model import UPVGenerator, UPVDetector
-from utils.transformers_config import TransformersConfig
+from MarkLLM.utils.transformers_config import TransformersConfig
 from transformers import LogitsProcessor, LogitsProcessorList
-from visualize.data_for_visualization import DataForVisualization
-from exceptions.exceptions import AlgorithmNameMismatchError, InvalidDetectModeError
+from MarkLLM.visualize.data_for_visualization import DataForVisualization
+from MarkLLM.exceptions.exceptions import AlgorithmNameMismatchError, InvalidDetectModeError
 
 
 class UPVConfig:
@@ -89,13 +89,13 @@ class UPVUtils:
     def _get_generator_model(self, input_dim: int, window_size: int) -> UPVGenerator:
         """Load the generator model from the specified file."""
         model = UPVGenerator(input_dim, window_size)
-        model.load_state_dict(torch.load(self.config.generator_model_name))
+        model.load_state_dict(torch.load('MarkLLM/'+self.config.generator_model_name))
         return model
 
     def _get_detector_model(self, bit_number: int) -> UPVDetector:
         """Load the detector model from the specified file."""
         model = UPVDetector(bit_number)
-        model.load_state_dict(torch.load(self.config.detector_model_name))
+        model.load_state_dict(torch.load('MarkLLM/'+self.config.detector_model_name))
         return model
 
     def _get_predictions_from_generator(self, input_x: torch.Tensor) -> bool:
@@ -106,6 +106,7 @@ class UPVUtils:
     
     def int_to_bin_list(self, n: int, length=8) -> list[int]:
         """Convert an integer to a binary list of specified length."""
+        n=n%(2**length)
         bin_str = format(n, 'b').zfill(length)
         return [int(b) for b in bin_str]
     

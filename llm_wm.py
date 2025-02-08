@@ -75,4 +75,9 @@ class LLM_WM:
         result = self.wm_model.detect_watermark(text)
         if not isinstance(result['is_watermarked'], bool):
             result['is_watermarked']=bool(result['is_watermarked'])
+        if result['score'] is None:
+            if result['is_watermarked']:
+                result['score']=1
+            else:
+                result['score']=0
         return result

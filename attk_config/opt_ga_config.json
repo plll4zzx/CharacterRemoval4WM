@@ -58,5 +58,17 @@
         "mean":1.266152,
         "std":1.18968802,
         "ab_std":2
+    },
+    "UPV":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":"saved_model/RefDetector_UPV_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-08",
+        "num_generations":15,
+        "max_edit_rate":{"100":0.13, "200":0.13},
+        "len_weight":{"100":0, "200":1},
+        "fitness_threshold":{"100":0.9, "200":0.9},
+        "eva_thr":0.2,
+        "mean":0.5,
+        "std":0.5,
+        "ab_std":2
     }
 }

@@ -91,7 +91,7 @@ if __name__=="__main__":
     parser = argparse.ArgumentParser(description='collect wm data')
     parser.add_argument('--dataset_name', type=str, default='../../dataset/c4/realnewslike')
     parser.add_argument('--model_name', type=str, default="../model/Llama3.1-8B_hg")
-    parser.add_argument('--wm_name', type=str, default="Unigram")
+    parser.add_argument('--wm_name', type=str, default="SIR")
     parser.add_argument('--file_num', type=int, default=1)
     parser.add_argument('--file_data_num', type=int, default=1)
     parser.add_argument('--text_len', type=int, default=50)

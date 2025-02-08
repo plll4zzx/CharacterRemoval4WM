@@ -57,7 +57,7 @@ class SIRConfig:
         self.transform_model_input_dim = config_dict['transform_model_input_dim']
         self.transform_model_name = config_dict['transform_model_name']
         self.embedding_model_path = config_dict['embedding_model_path']
-        self.mapping_name = config_dict['mapping_name']
+        self.mapping_name = config_dict['mapping_name']+str(transformers_config.vocab_size)+'.json'
 
         self.generation_model = transformers_config.model
         self.generation_tokenizer = transformers_config.tokenizer
