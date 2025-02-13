@@ -14,6 +14,53 @@ import datetime
 import random
 from llm_wm import LLM_WM
 import argparse
+import matplotlib.pyplot as plt
+
+def plot_scatter(true_values, predicted_values, fig_path=None):
+    if len(true_values)>1000:
+        sample_indices = np.random.choice(len(true_values), size=1000, replace=False) 
+        true_values=true_values[sample_indices]
+        predicted_values=predicted_values[sample_indices]
+    min_value=min(true_values.min(), predicted_values.min())
+    max_value=max(true_values.max(), predicted_values.max())
+    # 绘制散点图
+    plt.figure(figsize=(8, 6))
+    plt.scatter(true_values, predicted_values, color='blue', alpha=0.6, label="Predictions")
+    tmp_max=max(abs(max_value), abs(min_value))
+    plt.plot([-tmp_max, tmp_max], [-tmp_max, tmp_max], color='red', linestyle='--', label="Ideal Line (y=x)")  # 参考对角线
+
+    # 图表美化
+    plt.xlabel("Original Watermark Score")
+    plt.ylabel("Reference Watermark Score")
+    # plt.fill_betweenx([-tmp_max, tmp_max], 0, -tmp_max, color='lightgrey', alpha=0.5)
+    plt.fill_betweenx([-tmp_max, tmp_max], 0, tmp_max, where=[False, False], color='lightgrey', alpha=0.5)
+    x_fill = np.linspace(-tmp_max, 0, 100)  # 取 x 轴左半部分
+    plt.fill_between(x_fill, 0, tmp_max, color='lightgray', alpha=0.5)
+    x_fill = np.linspace(0, tmp_max, 100)  # 取 x 轴右半部分
+    plt.fill_between(x_fill, -tmp_max, 0, color='lightgray', alpha=0.5)
+
+    # plt.title("Scatter Plot of True vs Predicted Values")
+    # plt.legend()
+    plt.grid(True)
+
+    
+    # 设置坐标轴加粗
+    ax = plt.gca()
+    # ax.spines['top'].set_linewidth(2)
+    # ax.spines['right'].set_linewidth(2)
+    # ax.spines['bottom'].set_linewidth(2)
+    # ax.spines['left'].set_linewidth(2)
+    
+    # 将原点放在图像正中央
+    ax.set_xlim([-tmp_max, tmp_max])
+    ax.set_ylim([-tmp_max, tmp_max])
+    ax.axhline(0, color='black',linewidth=1)
+    ax.axvline(0, color='black',linewidth=1)
+
+    if fig_path is not None:
+        plt.savefig(fig_path)
+    else:
+        plt.show()
 
 def char_adv(sentence, rand_char_rate=0.1):
     tokens = sentence.split()
@@ -155,7 +202,7 @@ class RefDetector:
         # if text_len is None:
         #     data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
         #     self.dataset=WMDataset(data_path, data_num)
-        if rand_times>0:
+        if rand_char_rate>0:
             data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(rand_char_rate)+"_"+str(rand_times)+".json"
             if os.path.exists(data_path):
                 self.dataset=WMDataset(data_path, data_num, stored_flag=True)
@@ -219,9 +266,13 @@ class RefDetector:
             
         print('loss', np.round(np.mean(loss_l), 6))
     
-    def test_epoch(self):
+    def test_epoch(self, wm_threshold=None):
         self.model.eval()
-
+        if wm_threshold is not None:
+            wm_threshold=(wm_threshold-self.d_mean)/self.d_std
+        logits_l=[]
+        t_score_l=[]
+        
         loss_l=[]
         metric = evaluate.load(os.path.expanduser('~/python/metrics/accuracy/accuracy.py'))
         for idx, batch in enumerate(self.train_dataloader):
@@ -232,8 +283,15 @@ class RefDetector:
                 outputs = self.model(**batch)
             loss_l.append(outputs.loss.item())
             logits = outputs.logits
-            predictions = torch.argmax(logits, dim=-1)
-            metric.add_batch(predictions=predictions, references=batch["labels"])
+            if wm_threshold is not None:
+                predictions = (logits>wm_threshold).float().reshape((-1))
+                labels=(batch["labels"]>wm_threshold).float()
+                # logits_l.append(logits.item())
+                # t_score_l.append(batch["labels"].item())
+            else:
+                predictions = torch.argmax(logits, dim=-1)
+                labels=batch["labels"]
+            metric.add_batch(predictions=predictions, references=labels)
         result=metric.compute()
         print('train loss', np.round(np.mean(loss_l),4))
         print('train', result)
@@ -246,9 +304,17 @@ class RefDetector:
                 outputs = self.model(**batch)
             loss_l.append(outputs.loss.item())
             logits = outputs.logits
-            predictions = torch.argmax(logits, dim=-1)
-            metric.add_batch(predictions=predictions, references=batch["labels"])
+            if wm_threshold is not None:
+                predictions = (logits>wm_threshold).float().reshape((-1))
+                labels=(batch["labels"]>wm_threshold).float()
+                logits_l.append(logits.reshape((-1)).cpu().numpy())
+                t_score_l.append(batch["labels"].reshape((-1)).cpu().numpy())
+            else:
+                predictions = torch.argmax(logits, dim=-1)
+                labels=batch["labels"]
+            metric.add_batch(predictions=predictions, references=labels)
         result=metric.compute()
+        plot_scatter(np.hstack(t_score_l), np.hstack(logits_l), fig_path=self.model_path+'.pdf')
         print('evaluate loss', np.round(np.mean(loss_l),4))
         print('evaluate', result)
 
@@ -310,7 +376,9 @@ class RefDetector:
             collate_fn=collate_fn
         )
 
-    def train_init(self, model_path="bert-base-uncased", lr_init=1e-5, gamma=0.2):
+    def train_init(self, model_path=None, lr_init=1e-5, gamma=0.2):
+        if model_path is None:
+            model_path="bert-base-uncased"
         self.train_flag=True
 
         self.model_path=model_path
@@ -361,11 +429,13 @@ if __name__=='__main__':
     # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15 --rand_char_rate 0.1
     parser = argparse.ArgumentParser(description='train ref detector')
     parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
-    parser.add_argument('--wm_name', type=str, default='SynthID')
-    parser.add_argument('--num_epochs', type=int, default=5)
+    parser.add_argument('--wm_name', type=str, default='KGW')
+    parser.add_argument('--num_epochs', type=int, default=0)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--rand_char_rate', type=float, default=0.15)
     parser.add_argument('--lr_step', type=int, default=3)
+    parser.add_argument('--model_path', type=str, default="saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-04")
+    parser.add_argument('--ths', type=float, default=4)
     
     args = parser.parse_args()
     ref_model=RefDetector(
@@ -384,11 +454,11 @@ if __name__=='__main__':
         batch_size=16
     )
     ref_model.train_init(
-        model_path='bert-base-uncased',
-        # model_path='saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-02',
+        model_path=args.model_path,
         lr_init=args.lr, gamma=0.5
     )
     # ref_model.froze_layer(f_num=12)
-    ref_model.test_epoch()
+    ref_model.test_epoch(wm_threshold=args.ths)
     ref_model.start_train(num_epochs=args.num_epochs, lr_step=args.lr_step)
-    ref_model.save_model(name='RefDetector')
+    if args.num_epochs>0:
+        ref_model.save_model(name='RefDetector')
