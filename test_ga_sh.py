@@ -22,9 +22,11 @@ parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
 parser.add_argument('--wm_name', type=str, default='')
 parser.add_argument('--atk_style', type=str, default='token')
+parser.add_argument('--ori_flag', type=str, default='True')
 args = parser.parse_args()
 
 atk_style=args.atk_style
+ori_flag=bool(args.ori_flag=='True')
 llm_name=args.llm_name
 if 'opt' in llm_name:
     ga_config=load_json(file_path='attk_config/opt_ga_config.json')
@@ -72,6 +74,7 @@ for max_token_num in max_token_num_list:
             mean=mean,
             std=std,
             ab_std=ab_std,
-            atk_style=atk_style
+            atk_style=atk_style,
+            ori_flag=ori_flag
         )
 

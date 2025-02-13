@@ -29,7 +29,8 @@ def test_ga_attack(
     mean=0,
     std=1,
     ab_std=1,
-    atk_style='char'
+    atk_style='char',
+    ori_flag=False
 ):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
@@ -46,9 +47,11 @@ def test_ga_attack(
         mean=mean,
         std=std,
         ab_std=ab_std,
-        atk_style=atk_style
+        atk_style=atk_style,
+        ori_flag=ori_flag
     )
-    
+    if ori_flag==True:
+        ab_std=100
     ga_attack.log_info(['wm_name:', wm_name])
     ga_attack.log_info(['llm_name:', llm_name])
     ga_attack.log_info(['victim_tokenizer:', victim_tokenizer])
@@ -62,6 +65,7 @@ def test_ga_attack(
     ga_attack.log_info(['eva_thr:', eva_thr])
     ga_attack.log_info(['ab_std:', ab_std])
     ga_attack.log_info(['atk_style:', atk_style])
+    ga_attack.log_info(['ori_flag:', ori_flag])
     
     target_class=0
     count_num=0

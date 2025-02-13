@@ -25,7 +25,8 @@ class GA_Attack:
         mean=0,
         std=1,
         ab_std=1,
-        atk_style='char'
+        atk_style='char',
+        ori_flag=False
     ):
         self.gensimi=None 
         self.simi_num_for_token=5
@@ -47,6 +48,7 @@ class GA_Attack:
         self.std=std
         self.ab_std=ab_std
         self.atk_style=atk_style
+        self.ori_flag=ori_flag
 
         self.model.to(self.device)
 
@@ -129,6 +131,8 @@ class GA_Attack:
         return False   
 
     def evaluate_fitness(self, modified_sentence, target_class):
+        if self.ori_flag:
+            return (self.wm_detector(modified_sentence)['score']-self.mean)/self.std
         # Tokenize the modified sentence
         inputs = self.tokenizer(modified_sentence, return_tensors="pt", padding=True, truncation=True)
         batch = {k: v.to(self.device) for k, v in inputs.items()}
@@ -222,8 +226,6 @@ class GA_Attack:
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
 
         # Evaluate fitness using the helper function
-        # eva_fitness=-(self.wm_detector(modified_sentence)['score']-self.mean)/self.std
-        # eva_fitness=-self.wm_detector(modified_sentence)['score']
         eva_fitness=-self.evaluate_fitness(modified_sentence, self.target_class)
         
         if eva_fitness<self.eva_thr:
