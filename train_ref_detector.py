@@ -15,6 +15,8 @@ import random
 from llm_wm import LLM_WM
 import argparse
 import matplotlib.pyplot as plt
+from scipy.stats import gaussian_kde
+import seaborn as sns
 
 def plot_scatter(true_values, predicted_values, fig_path=None, title='', mid_point=0):
     if len(true_values)>1000:
@@ -23,9 +25,17 @@ def plot_scatter(true_values, predicted_values, fig_path=None, title='', mid_poi
         predicted_values=predicted_values[sample_indices]
     min_value=min(true_values.min(), predicted_values.min())
     max_value=max(true_values.max(), predicted_values.max())
-    # 绘制散点图
+    
+
+    # 绘制散点图，颜色深浅代表密度
     plt.figure(figsize=(8, 6))
-    plt.scatter(true_values, predicted_values, color='blue', alpha=0.6, label="Predictions")
+    # xy = np.vstack([true_values, predicted_values])
+    # density = gaussian_kde(xy)(xy)
+    # plt.scatter(true_values, predicted_values, c=density, cmap="Blues", s=10, alpha=0.6)
+    sns.kdeplot(x=true_values, y=predicted_values, cmap="Blues", fill=True)
+    # plt.colorbar(label="Density")  # 添加颜色条
+    plt.scatter(true_values, predicted_values, color="black", alpha=0.3, s=10)
+
     tmp_max=max(abs(max_value-mid_point), abs(min_value-mid_point))
     left_bond=mid_point-tmp_max
     right_bond=mid_point+tmp_max
