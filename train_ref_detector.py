@@ -16,7 +16,7 @@ from llm_wm import LLM_WM
 import argparse
 import matplotlib.pyplot as plt
 
-def plot_scatter(true_values, predicted_values, fig_path=None):
+def plot_scatter(true_values, predicted_values, fig_path=None, title='', mid_point=0):
     if len(true_values)>1000:
         sample_indices = np.random.choice(len(true_values), size=1000, replace=False) 
         true_values=true_values[sample_indices]
@@ -26,20 +26,23 @@ def plot_scatter(true_values, predicted_values, fig_path=None):
     # 绘制散点图
     plt.figure(figsize=(8, 6))
     plt.scatter(true_values, predicted_values, color='blue', alpha=0.6, label="Predictions")
-    tmp_max=max(abs(max_value), abs(min_value))
-    plt.plot([-tmp_max, tmp_max], [-tmp_max, tmp_max], color='red', linestyle='--', label="Ideal Line (y=x)")  # 参考对角线
+    tmp_max=max(abs(max_value-mid_point), abs(min_value-mid_point))
+    left_bond=mid_point-tmp_max
+    right_bond=mid_point+tmp_max
+    plt.plot([left_bond, right_bond], [left_bond, right_bond], color='red', linestyle='--', label="Ideal Line (y=x)")  # 参考对角线
 
     # 图表美化
     plt.xlabel("Original Watermark Score")
     plt.ylabel("Reference Watermark Score")
     # plt.fill_betweenx([-tmp_max, tmp_max], 0, -tmp_max, color='lightgrey', alpha=0.5)
-    plt.fill_betweenx([-tmp_max, tmp_max], 0, tmp_max, where=[False, False], color='lightgrey', alpha=0.5)
-    x_fill = np.linspace(-tmp_max, 0, 100)  # 取 x 轴左半部分
-    plt.fill_between(x_fill, 0, tmp_max, color='lightgray', alpha=0.5)
-    x_fill = np.linspace(0, tmp_max, 100)  # 取 x 轴右半部分
-    plt.fill_between(x_fill, -tmp_max, 0, color='lightgray', alpha=0.5)
+    # plt.fill_betweenx([left_bond, right_bond], 0, tmp_max, where=[False, False], color='lightgrey', alpha=0.5)
+    x_fill = np.linspace(left_bond, mid_point, 100)  # 取 x 轴左半部分
+    plt.fill_between(x_fill, mid_point, right_bond, color='lightgray', alpha=0.5)
+    x_fill = np.linspace(mid_point, right_bond, 100)  # 取 x 轴右半部分
+    plt.fill_between(x_fill, left_bond, mid_point, color='lightgray', alpha=0.5)
 
-    # plt.title("Scatter Plot of True vs Predicted Values")
+    if len(title)>0:
+        plt.title(title)
     # plt.legend()
     plt.grid(True)
 
@@ -52,10 +55,10 @@ def plot_scatter(true_values, predicted_values, fig_path=None):
     # ax.spines['left'].set_linewidth(2)
     
     # 将原点放在图像正中央
-    ax.set_xlim([-tmp_max, tmp_max])
-    ax.set_ylim([-tmp_max, tmp_max])
-    ax.axhline(0, color='black',linewidth=1)
-    ax.axvline(0, color='black',linewidth=1)
+    ax.set_xlim([left_bond, right_bond])
+    ax.set_ylim([left_bond, right_bond])
+    # ax.axhline(0, color='black',linewidth=1)
+    # ax.axvline(0, color='black',linewidth=1)
 
     if fig_path is not None:
         plt.savefig(fig_path)
@@ -112,11 +115,15 @@ class WMDataset(Dataset):
         tmp_dataset=load_json(data_path)[0:data_num]
         self.wm_dataset=[]
         self.un_dataset=[]
+        self.wm_count=0
+        self.un_count=0
         for tmp_d in tqdm(tmp_dataset, ncols=100):
             if tmp_d['wm_detect']['is_watermarked']==True:
                 tmp_text=tmp_d['wm_text']
+                tmp_score=tmp_d['wm_detect']['score']
+                tmp_label=tmp_d['wm_detect']['is_watermarked']
                 # tmp_text=self.en_de(tmp_text)
-                self.add_data(tmp_text)
+                self.add_data(tmp_text, wm_flag=tmp_label, tmp_score=tmp_score)
 
                 for i in range(rand_times):
                     tmp_rand_char_rate = random.uniform(rand_char_rate/2, rand_char_rate)
@@ -125,8 +132,10 @@ class WMDataset(Dataset):
 
             if tmp_d['un_detect']['is_watermarked']==False:
                 tmp_text=tmp_d['un_text']
+                tmp_score=tmp_d['un_detect']['score']
+                tmp_label=tmp_d['un_detect']['is_watermarked']
                 # tmp_text=self.en_de(tmp_text)
-                self.add_data(tmp_text)
+                self.add_data(tmp_text, wm_flag=tmp_label, tmp_score=tmp_score)
 
                 for i in range(rand_times):
                     tmp_rand_char_rate = random.uniform(rand_char_rate/2, rand_char_rate)
@@ -160,10 +169,11 @@ class WMDataset(Dataset):
             text=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
         return text
 
-    def add_data(self, text):
-        wm_rlt=self.wm_detector(text)
-        wm_flag=wm_rlt['is_watermarked']
-        tmp_score=wm_rlt['score']
+    def add_data(self, text, wm_flag=None, tmp_score=None):
+        if wm_flag is None:
+            wm_rlt=self.wm_detector(text)
+            wm_flag=wm_rlt['is_watermarked']
+            tmp_score=wm_rlt['score']
         if wm_flag==False:
             tmp_labels=0
             if tmp_score is None:
@@ -173,6 +183,7 @@ class WMDataset(Dataset):
                 'labels': tmp_labels,
                 'score': tmp_score
             })
+            self.un_count+=1
         else:
             tmp_labels=1
             if tmp_score is None:
@@ -182,6 +193,7 @@ class WMDataset(Dataset):
                 'labels': tmp_labels,
                 'score': tmp_score
             })
+            self.wm_count+=1
 
 class RefDetector:
 
@@ -198,11 +210,12 @@ class RefDetector:
         self, dataset_name, data_num, #text_len=None, 
         rand_char_rate=0, rand_times=0
     ):
+        self.rand_times=rand_times
         self.dataset_name=dataset_name
         # if text_len is None:
         #     data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
         #     self.dataset=WMDataset(data_path, data_num)
-        if rand_char_rate>0:
+        if rand_times>0:
             data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000_"+str(rand_char_rate)+"_"+str(rand_times)+".json"
             if os.path.exists(data_path):
                 self.dataset=WMDataset(data_path, data_num, stored_flag=True)
@@ -232,6 +245,8 @@ class RefDetector:
         self.d_mean = np.mean(wmscore_list)
         self.d_std = np.std(wmscore_list)
         print('mean', self.d_mean, 'std', self.d_std)
+        wm_count=sum([1 for tmp_d in self.dataset if tmp_d['labels']==1])
+        un_count=sum([1 for tmp_d in self.dataset if tmp_d['labels']==0])
 
     def train_epoch(self):
         loss_l=[]
@@ -314,7 +329,21 @@ class RefDetector:
                 labels=batch["labels"]
             metric.add_batch(predictions=predictions, references=labels)
         result=metric.compute()
-        plot_scatter(np.hstack(t_score_l), np.hstack(logits_l), fig_path=self.model_path+'.pdf')
+        if wm_threshold is not None:
+            t_score=np.hstack(t_score_l)
+            p_score=np.hstack(logits_l)
+            fig_path=os.path.join(
+                'plot', '_'.join([
+                    self.wm_name,
+                    self.dataset_name.replace('/', '_'), 
+                    self.llm_name.replace('/', '_'), 
+                    self.tokenizer_path.replace('/', '_'),
+                    str(self.rand_times)
+                ])
+            )  
+            plot_scatter(t_score, p_score, fig_path=fig_path+'.pdf', title=self.wm_name, mid_point=wm_threshold)
+            pearson_r = np.corrcoef(t_score, p_score)[0, 1]
+            print("pearson_r", pearson_r )
         print('evaluate loss', np.round(np.mean(loss_l),4))
         print('evaluate', result)
 
@@ -397,7 +426,7 @@ class RefDetector:
         self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=gamma)
 
 
-    def start_train(self, num_epochs=3, lr_step=8):
+    def start_train(self, num_epochs=3, lr_step=8, wm_threshold=None):
         # loss_fn = torch.nn.CrossEntropyLoss()
         for epoch in range(num_epochs):
             if epoch%lr_step==0 and epoch>0:
@@ -405,7 +434,7 @@ class RefDetector:
                 print('lr', self.optimizer.param_groups[0]['lr'])
             print('epoch:', epoch)
             self.train_epoch()
-            self.test_epoch()
+            self.test_epoch(wm_threshold=wm_threshold)
     
     def save_model(self, name='RefDetector'):
         model_path=os.path.join(
@@ -429,13 +458,18 @@ if __name__=='__main__':
     # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15 --rand_char_rate 0.1
     parser = argparse.ArgumentParser(description='train ref detector')
     parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
-    parser.add_argument('--wm_name', type=str, default='KGW')
+    parser.add_argument('--wm_name', type=str, default='UPV')
     parser.add_argument('--num_epochs', type=int, default=0)
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--rand_char_rate', type=float, default=0.15)
     parser.add_argument('--lr_step', type=int, default=3)
-    parser.add_argument('--model_path', type=str, default="saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-04")
-    parser.add_argument('--ths', type=float, default=4)
+    parser.add_argument(
+        '--model_path', type=str, 
+        # default=None,
+        default="saved_model/RefDetector_UPV_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-16"
+    )
+    parser.add_argument('--ths', type=float, default=0.5)
+    parser.add_argument('--rand_times', type=int, default=5)
     
     args = parser.parse_args()
     ref_model=RefDetector(
@@ -445,7 +479,7 @@ if __name__=='__main__':
     )
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
-        rand_char_rate=args.rand_char_rate, rand_times=9
+        rand_char_rate=args.rand_char_rate, rand_times=args.rand_times
         # text_len=150,
     )
     ref_model.dataloader_init(
@@ -459,6 +493,6 @@ if __name__=='__main__':
     )
     # ref_model.froze_layer(f_num=12)
     ref_model.test_epoch(wm_threshold=args.ths)
-    ref_model.start_train(num_epochs=args.num_epochs, lr_step=args.lr_step)
+    ref_model.start_train(num_epochs=args.num_epochs, lr_step=args.lr_step, wm_threshold=args.ths)
     if args.num_epochs>0:
         ref_model.save_model(name='RefDetector')

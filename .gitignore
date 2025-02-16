@@ -2,6 +2,7 @@
 .cache
 *.log
 *.json
+*.pdf
 !attack_config/*
 !ga_config.json
 !rand_config.json
