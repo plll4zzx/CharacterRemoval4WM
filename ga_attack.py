@@ -185,7 +185,8 @@ class GA_Attack:
                 m_num=len_t//sep_len
                 if m_num==0:
                     continue
-                m_locs=[int((m_num/len_t)*(j)*len_t)+(sep_len//2) for j in range(m_num)]
+                m_locs=[int(len_t//2)]
+                # m_locs=[int((m_num/len_t)*(j)*len_t)+(sep_len//2) for j in range(m_num)]
                 # half_token_len=len(edited_sentence[i])//2
                 # if half_token_len<=1:
                 #     continue

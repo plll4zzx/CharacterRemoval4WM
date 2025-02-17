@@ -99,7 +99,7 @@
         "victim_tokenizer": "bert-base-uncased",
         "victim_model":{
             "0":"saved_model/RefDetector_SIR_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-15",
-            "5":"",
+            "5":"saved_model/RefDetector_SIR_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-16",
             "9":"saved_model/RefDetector_SIR_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-08"
         },
         "num_generations":15,

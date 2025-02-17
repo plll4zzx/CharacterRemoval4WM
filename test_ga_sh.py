@@ -16,16 +16,18 @@ def get_key_value(x_dict, key1, key2=None):
 
 sh_templte='python test_ga_attack.py --num_generations {num_generations} --max_edit_rate {max_edit_rate} --len_weight {len_weight} --eva_thr {eva_thr} --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" --victim_model "{victim_model}" --wm_name "{wm_name}"'
 
-# python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "token"
+# python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "token" --ori_flag "False"
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
 parser.add_argument('--wm_name', type=str, default='')
 parser.add_argument('--atk_style', type=str, default='token')
-parser.add_argument('--ori_flag', type=str, default='True')
+parser.add_argument('--ori_flag', type=str, default='False')
+parser.add_argument('--data_aug', type=int, default=9)
 args = parser.parse_args()
 
 atk_style=args.atk_style
+data_aug=args.data_aug
 ori_flag=bool(args.ori_flag=='True')
 llm_name=args.llm_name
 if 'opt' in llm_name:
@@ -43,7 +45,7 @@ for max_token_num in max_token_num_list:
     for wm_name in wm_name_list:
         wm_config=ga_config[wm_name]
         victim_tokenizer=wm_config['victim_tokenizer']
-        victim_model=wm_config['victim_model']
+        victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))
         num_generations=wm_config['num_generations']
         eva_thr=wm_config['eva_thr']
         mean=wm_config['mean']
