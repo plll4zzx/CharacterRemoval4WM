@@ -81,3 +81,13 @@ class LLM_WM:
             else:
                 result['score']=0
         return result
+    
+    def get_perplexity(self, sentence):
+        encodings = self.transformers_config.tokenizer(sentence, return_tensors="pt").to(self.device)
+
+        with torch.no_grad():
+            outputs = self.transformers_config.model(**encodings, labels=encodings["input_ids"])
+            loss = outputs.loss  # 交叉熵损失
+
+        perplexity = torch.exp(loss)  # PPL = e^loss
+        return perplexity.item()

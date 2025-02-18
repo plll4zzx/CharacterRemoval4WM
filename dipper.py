@@ -14,6 +14,7 @@ class DipperParaphraser(object):
             model,
             device_map="auto",
             torch_dtype="auto",
+            load_in_4bit=True,
             quantization_config={
                 "load_in_4bit":True, 
                 # "load_in_8bit": True,  

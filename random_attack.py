@@ -9,6 +9,23 @@ import string
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from copy import copy
+from dipper import DipperParaphraser
+from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
+from rouge_score import rouge_scorer
+
+def belu_func(ref_sen, ground_sen):
+    reference = [ref_sen.split(' ')]
+    candidate = ground_sen.split(' ')
+
+    # 计算 BLEU 分数
+    smooth = SmoothingFunction().method1  # 避免 BLEU 得分为 0
+    score = sentence_bleu(reference, candidate, smoothing_function=smooth)
+    return score
+
+def rouge_f1(ground_sen, candi_sen):
+    scorer = rouge_scorer.RougeScorer(["rouge1"], use_stemmer=True)
+    scores = scorer.score(ground_sen, candi_sen)
+    return scores["rouge1"].fmeasure
 
 class GensimModel:
 
@@ -69,6 +86,7 @@ class RandomAttack:
     ):
         
         self.gensimi=None 
+        self.paraphraser=None
         self.token_len_flag=True
         self.simi_num_for_token=5
         self.special_char=string.whitespace
@@ -84,7 +102,7 @@ class RandomAttack:
         
         if logger is None:
             self.log=Logger(
-                'attack_log/llama/RandomAttack'+'-'.join([
+                'attack_log/opt-1/RandomAttack'+'-'.join([
                     wm_name, 
                     # self.attack_name, 
                     # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
@@ -141,12 +159,14 @@ class RandomAttack:
         with torch.no_grad():
             outputs = self.ref_model(**batch)
         logits = outputs.logits
-        predictions = torch.softmax(logits, dim=1)
+        fitness=logits
+        # predictions = torch.softmax(logits, dim=1)
 
         # Define a fitness value based on the target misclassification
-        fitness = predictions[:, target_class]
+        # fitness = predictions[:, target_class]
 
-        return fitness.cpu().detach().numpy()
+        # return fitness.item()
+        return fitness.cpu().detach().numpy().reshape((-1))
 
     def get_adv(
         self, sentence, atk_style,
@@ -159,6 +179,8 @@ class RandomAttack:
             atk_method=self.char_attack1
         elif atk_style=='token':
             atk_method=self.token_attack
+        elif atk_style=='sentence':
+            atk_method=self.sentence_attack
         elif atk_style=='ende':
             atk_method=self.ende_attack
         elif atk_style=='low':
@@ -182,11 +204,11 @@ class RandomAttack:
             tmp_rlt={
                 'sentence':adv_sentence, 
                 'edit_dist':edit_dist,
-                'ref_score':self.ref_score(adv_sentence, target_class)
+                # 'ref_score':self.ref_score(adv_sentence, target_class)
             }
             adv_sentence_list.append(tmp_rlt)
         
-        if atk_times>1:
+        if atk_times>=1:
             for idx in range(0, len(adv_sentence_list), batch_size):
                 tmp_batch=adv_sentence_list[idx:idx+batch_size]
                 tmp_sentence=[tmp_batch[idy]['sentence'] for idy in range(len(tmp_batch))]
@@ -194,7 +216,7 @@ class RandomAttack:
                 for idy in range(len(tmp_batch)):
                     adv_sentence_list[idx+idy]['ref_score']=tmp_batch_score[idy]
         
-            adv_sentence_list=sorted(adv_sentence_list, key=lambda x:x['ref_score'], reverse=True)
+            adv_sentence_list=sorted(adv_sentence_list, key=lambda x:x['ref_score'], reverse=False)
         
         return adv_sentence_list[0]
 
@@ -296,7 +318,8 @@ class RandomAttack:
                 m_num=len_t//sep_len
                 if m_num==0:
                     continue
-                m_locs=[int((m_num/len_t)*(j)*len_t)+(sep_len//2) for j in range(m_num)]
+                m_locs=[int(len_t//2)]
+                # m_locs=[int((m_num/len_t)*(j)*len_t)+(sep_len//2) for j in range(m_num)]
                 # half_token_len=len(edited_sentence[i])//2
                 # if half_token_len<=1:
                 #     continue
@@ -338,3 +361,16 @@ class RandomAttack:
     ):
         new_sentence=sentence.lower()
         return new_sentence, 0 
+    
+    def sentence_attack(
+        self, sentence, max_edit_rate=None
+    ):  
+        if self.paraphraser is None:
+            import Levenshtein
+            self.paraphraser=DipperParaphraser()
+        new_sentence=self.paraphraser.paraphrase(sentence, lex_diversity=20, order_diversity=0)
+        
+        ori_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
+        new_ids=self.tokenizer.encode(new_sentence, add_special_tokens=False)
+        edit_dist=Levenshtein.distance(ori_ids, new_ids)
+        return new_sentence, edit_dist
