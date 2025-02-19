@@ -12,8 +12,8 @@ if 'opt' in llm_name:
 else:
     rand_config=load_json(file_path='attk_config/llama_rand_config.json')
 data_aug=9
-atk_style_list=['token', 'char']#['low','ende', 'mix_char']#
-atk_times_list=[100]#1,10,50,
+atk_style_list=['char','token', ]#['low','ende', 'mix_char']#
+atk_times_list=[1,10,50,100]#
 max_token_num_list=[100,200]#
 
 for max_token_num in max_token_num_list:
