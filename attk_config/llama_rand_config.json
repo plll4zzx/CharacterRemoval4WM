@@ -1,22 +1,47 @@
 {
     "KGW":{
         "ref_tokenizer": "bert-base-uncased",
-        "ref_model":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-01-26",
+        "ref_model":{
+            "0":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-16",
+            "5":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-17",
+            "9":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
+        },
         "max_edit_rate":[0.05, 0.1]
     },
     "DIP":{
         "ref_tokenizer": "bert-base-uncased",
-        "ref_model":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-01-27",
+        "ref_model":{
+            "0":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-16",
+            "5":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-17",
+            "9":"saved_model/RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
+        },
         "max_edit_rate":[0.05, 0.1]
     },
     "SynthID":{
         "ref_tokenizer": "bert-base-uncased",
-        "ref_model":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-01-26",
+        "ref_model":{
+            "0":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-16",
+            "5":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-17",
+            "9":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
+        },
         "max_edit_rate":[0.05, 0.1]
     },
     "Unigram":{
         "ref_tokenizer": "bert-base-uncased",
-        "ref_model":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-01-26",
+        "ref_model":{
+            "0":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-16",
+            "5":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-17",
+            "9":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
+        },
         "max_edit_rate":[0.2, 0.4]
+    },
+    "Unbiased":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":{
+            "0":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-16",
+            "5":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-17",
+            "9":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
+        },
+        "max_edit_rate":[0.05, 0.1]
     }
 }
