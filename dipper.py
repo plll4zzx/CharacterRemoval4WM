@@ -5,6 +5,7 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration
 import nltk
 from nltk.tokenize import sent_tokenize
 nltk.download('punkt')
+nltk.download('punkt_tab')
 
 class DipperParaphraser(object):
     def __init__(self, model="kalpeshk2011/dipper-paraphraser-xxl", verbose=True):
@@ -15,13 +16,13 @@ class DipperParaphraser(object):
             device_map="auto",
             torch_dtype="auto",
             load_in_4bit=True,
-            quantization_config={
-                "load_in_4bit":True, 
-                # "load_in_8bit": True,  
-                "bnb_4bit_compute_dtype": "float16",  # 指定计算精度
-                "bnb_4bit_use_double_quant": True,   # 是否使用双量化
-                "bnb_4bit_quant_type": "nf4"         # 量化类型（nf4 通常表现更好）
-            }
+            # quantization_config={
+            #     "load_in_4bit":True, 
+            #     # "load_in_8bit": True,  
+            #     "bnb_4bit_compute_dtype": "float16",  # 指定计算精度
+            #     "bnb_4bit_use_double_quant": True,   # 是否使用双量化
+            #     "bnb_4bit_quant_type": "nf4"         # 量化类型（nf4 通常表现更好）
+            # }
         )
         if verbose:
             print(f"{model} model loaded in {time.time() - time1}")

@@ -5,14 +5,14 @@ from test_random_attack import test_rand_attack
 
 sh_templte='python test_random_attack.py --atk_style "{atk_style}" --max_edit_rate {max_edit_rate} --atk_times {atk_times} --max_token_num {max_token_num} --ref_tokenizer "{ref_tokenizer}" --ref_model "{ref_model}" --wm_name "{wm_name}" --llm_name "{llm_name}"'
 
-llm_name='facebook/opt-1.3b'#'../model/Llama3.1-8B_hg'#
+llm_name='../model/Llama3.1-8B_hg'#'facebook/opt-1.3b'#
 
 if 'opt' in llm_name:
     rand_config=load_json(file_path='attk_config/opt_rand_config.json')
 else:
     rand_config=load_json(file_path='attk_config/llama_rand_config.json')
 data_aug=9
-atk_style_list=['char','token', ]#['low','ende', 'mix_char']#
+atk_style_list=['char','token', ]#['low','ende', 'mix_char']#,'sentence'
 atk_times_list=[1,10,50,100]#
 max_token_num_list=[100,200]#
 
