@@ -217,13 +217,13 @@ class RefAttack:
         self.log_info(['wm_score drop rate', round((sen_detect['score']-attacked_rlt['score'])/sen_detect['score'], 4)])
         self.log_info()
 
-        self.result_list.append({
-            'raw_text': sentence,
-            'raw_detect': sen_detect, 
-            'adv_text': attacked_text,
-            'cls_score': cls_score,
-            'num_queries':num_queries,
-            'budget': budget,
-            'adv_detect': attacked_rlt, 
-        })
-        return attacked_rlt, cls_score, num_queries, budget
+        # self.result_list.append({
+        #     'raw_text': sentence,
+        #     'raw_detect': sen_detect, 
+        #     'adv_text': attacked_text,
+        #     'cls_score': cls_score,
+        #     'num_queries':num_queries,
+        #     'budget': budget,
+        #     'adv_detect': attacked_rlt, 
+        # })
+        return attacked_text, budget

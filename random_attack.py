@@ -83,6 +83,8 @@ class RandomAttack:
         ref_model=None,
         device='cuda',
         wm_name='',
+        ori_flag=False,
+        wm_detector=None,
     ):
         
         self.gensimi=None 
@@ -91,6 +93,8 @@ class RandomAttack:
         self.simi_num_for_token=5
         self.special_char=string.whitespace
         self.device=device
+        self.wm_detector=wm_detector
+        self.ori_flag=ori_flag
         if isinstance(tokenizer,str):
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
         else:
@@ -116,16 +120,26 @@ class RandomAttack:
         self.log_info('\n')
 
     def log_info(self, info=''):
-        if not isinstance(info, str):
+        if isinstance(info, str):
+            self.log.logger.info(info)
+        elif isinstance(info, dict):
+            keys='\t'.join([key for key in info])
+            values='\t'.join([str(info[key]) for key in info])
+            self.log.logger.info(keys)
+            self.log.logger.info(values)
+        else:
             info=to_string(info)
-        self.log.logger.info(info)
+            self.log.logger.info(info)
 
     def truncation(self, text, max_token_num=100):
         new_text, token_num=truncation(
             text, 
             # self.tokenizer, 
-            max_token_num=max_token_num
+            max_token_num=max_token_num,
+            # min_num=max_token_num*0.65
         )
+        if token_num<max_token_num*0.65:
+            return '', 0
         return new_text, token_num
 
     def substitute(self, token):
@@ -151,6 +165,13 @@ class RandomAttack:
         return simi_tokens
     
     def ref_score(self, sentences, target_class):
+        if self.ori_flag:
+            if isinstance(sentences, str):
+                sentences=[sentences]
+            return [
+                self.wm_detector(sentence)['score']
+                for sentence in sentences
+            ]
         if self.ref_model is None:
             return 0
         inputs = self.tokenizer(sentences, return_tensors="pt", padding=True, truncation=True)
@@ -193,7 +214,18 @@ class RandomAttack:
             atk_method=self.token_attack
             sentence=self.low_attack(sentence)[0]
             sentence=self.ende_attack(sentence)[0]
-        
+        else:
+            import textattack
+            # import textattack.attack_sems
+            self.model_wrapper = textattack.models.wrappers.HuggingFaceModelWrapper(self.ref_model, self.tokenizer)
+            self.grad_method = getattr(textattack.attack_recipes, atk_style).build(
+                self.model_wrapper, 
+                query_budget=100,
+                # temperature=self.temperature,
+                # max_single_query=20,
+            )
+            atk_method=self.grad_attack
+            
         if atk_times<=1 or self.ref_model is None:
             atk_times=1
         for idx in range(atk_times):
@@ -374,3 +406,17 @@ class RandomAttack:
         new_ids=self.tokenizer.encode(new_sentence, add_special_tokens=False)
         edit_dist=Levenshtein.distance(ori_ids, new_ids)
         return new_sentence, edit_dist
+    
+    def grad_attack(
+        self, sentence, max_edit_rate=None
+    ):
+        attacked=self.grad_method.attack(
+            sentence, 0.1, 
+        )
+        
+        cls_score=attacked.perturbed_result.score
+        num_queries=attacked.perturbed_result.num_queries
+        budget=attacked.original_result.attacked_text.words_diff_num(attacked.perturbed_result.attacked_text)
+        attacked_text=attacked.perturbed_result.attacked_text.text
+        # attacked_rlt=self.wm_detector(attacked_text)
+        return attacked_text, budget

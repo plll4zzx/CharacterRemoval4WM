@@ -31,7 +31,7 @@ class GreedyWordSwapWIR(SearchMethod):
         model_wrapper: model wrapper used for gradient-based ranking
     """
 
-    def __init__(self, wir_method="unk", unk_token="[UNK]", max_index_num=20):
+    def __init__(self, wir_method="unk", unk_token="[UNK]", max_index_num=5):
         self.wir_method = wir_method
         self.unk_token = unk_token
         self.max_index_num=max_index_num
@@ -135,7 +135,7 @@ class GreedyWordSwapWIR(SearchMethod):
 
         # Sort words by order of importance
         index_order, search_over = self._get_index_order(attacked_text)
-        index_order=index_order#[:self.max_index_num]
+        index_order=index_order[:self.max_index_num]
         i = 0
         cur_result = initial_result
         results = None
