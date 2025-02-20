@@ -106,7 +106,7 @@ class RandomAttack:
         
         if logger is None:
             self.log=Logger(
-                'attack_log/llama-1/RandomAttack'+'-'.join([
+                'attack_log/opt-1/RandomAttack'+'-'.join([
                     wm_name, 
                     # self.attack_name, 
                     # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
@@ -220,7 +220,7 @@ class RandomAttack:
             self.model_wrapper = textattack.models.wrappers.HuggingFaceModelWrapper(self.ref_model, self.tokenizer)
             self.grad_method = getattr(textattack.attack_recipes, atk_style).build(
                 self.model_wrapper, 
-                query_budget=100,
+                query_budget=50,
                 # temperature=self.temperature,
                 # max_single_query=20,
             )
