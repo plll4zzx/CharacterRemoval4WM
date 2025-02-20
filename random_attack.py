@@ -12,6 +12,34 @@ from copy import copy
 from dipper import DipperParaphraser
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_score import rouge_scorer
+import Levenshtein
+def check_num(x_str):
+    num_str_list=[str(idx) for idx in range(10)]
+    if x_str in num_str_list:
+        return True
+    return False
+
+def split_sentence(sentence):
+        sentence=sentence.replace('\n', ' ')
+        last_idx=0
+        sub_sentence_list=[]
+        for idx in range(len(sentence)):
+            char_=sentence[idx]
+            if idx>0 and idx<len(sentence)-1 and char_=='.' and check_num(sentence[idx-1]) and check_num(sentence[idx+1]):
+                continue
+            if char_ in ['.', '?', ';', '!', '•']:#,' – ',',"'
+                sub_sentence=sentence[last_idx:idx+1]
+                if sub_sentence[0]==' ':
+                    sub_sentence=sub_sentence[1:]
+                if sub_sentence[-1]==' ':
+                    sub_sentence=sub_sentence[:-1]
+                if len(sub_sentence)<=20:
+                    continue
+                last_idx=idx+1
+                sub_sentence_list.append(sub_sentence)
+        if last_idx<len(sentence)-1:
+            sub_sentence_list.append(sentence[last_idx:])
+        return sub_sentence_list
 
 def belu_func(ref_sen, ground_sen):
     reference = [ref_sen.split(' ')]
@@ -400,11 +428,21 @@ class RandomAttack:
         if self.paraphraser is None:
             import Levenshtein
             self.paraphraser=DipperParaphraser()
-        new_sentence=self.paraphraser.paraphrase(sentence, lex_diversity=20, order_diversity=0)
+        sub_sentence_list=split_sentence(sentence)
+        re_sub_sentence_list=[]
+
+        for sub_sentence in sub_sentence_list:
+            re_sub_sentence = self.paraphraser.paraphrase(sentence, lex_diversity=60, order_diversity=0)
+            if len(re_sub_sentence[0])<=20:
+                re_sub_sentence_list.append(sub_sentence)
+            else:
+                re_sub_sentence_list.append(re_sub_sentence[0])
+        new_sentence='. '.join(re_sub_sentence_list)
+        # new_sentence=self.paraphraser.paraphrase(sentence, lex_diversity=20, order_diversity=0)
         
         ori_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
         new_ids=self.tokenizer.encode(new_sentence, add_special_tokens=False)
-        edit_dist=Levenshtein.distance(ori_ids, new_ids)
+        edit_dist=  Levenshtein.distance(ori_ids, new_ids)
         return new_sentence, edit_dist
     
     def grad_attack(
