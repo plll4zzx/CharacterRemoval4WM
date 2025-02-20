@@ -41,8 +41,8 @@ class CompositeTransformation(Transformation):
         if 'return_indices' in kwargs:
             new_attacked_texts=list(new_attacked_texts)
         else:
-            new_attacked_texts=list(new_attacked_texts)#[:self.max_trans_num]
-        return new_attacked_texts
+            new_attacked_texts=list(new_attacked_texts)
+        return new_attacked_texts[:self.max_trans_num]
 
     def __repr__(self):
         main_str = "CompositeTransformation" + "("

@@ -69,7 +69,7 @@ class HuggingFaceModelWrapper(PyTorchModelWrapper):
             # HuggingFace classification models return a tuple as output
             # where the first item in the tuple corresponds to the list of
             # scores for each input.
-            return outputs.logits
+            return outputs.logits#.reshape((-1))
 
     def get_grad(self, text_input):
         """Get gradient of loss with respect to input tokens.

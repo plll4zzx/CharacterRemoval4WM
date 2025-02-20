@@ -19,7 +19,7 @@ import Levenshtein
 
 def test_rand_attack(
     llm_name, wm_name, max_edit_rate, max_token_num=80, atk_style='char',
-    ref_tokenizer = None, ref_model=None, atk_times=1
+    ref_tokenizer = None, ref_model=None, atk_times=1, ori_flag=False
 ):
     
     
@@ -38,6 +38,8 @@ def test_rand_attack(
             wm_name=wm_name,
             tokenizer=ref_tokenizer,
             ref_model=ref_model,
+            ori_flag=ori_flag,
+            wm_detector = wm_scheme.detect_wm,
         )
         rand_attack.log_info(['ref_tokenizer:', ref_tokenizer])
         rand_attack.log_info(['ref_model:', ref_model])
@@ -49,6 +51,7 @@ def test_rand_attack(
     rand_attack.log_info(['max_token_num:', max_token_num])
     rand_attack.log_info(['atk_style:', atk_style])
     rand_attack.log_info(['atk_times:', atk_times])
+    rand_attack.log_info(['ori_flag:', ori_flag])
     
     count_num=0
     base_num=0
@@ -65,20 +68,27 @@ def test_rand_attack(
     ppl_l=[]
     adv_ppl_l=[]
     text_num=300
+    if max_token_num>200:
+        text_num=text_num*4
     for idx in range(text_num+1):
         if idx%25==0 and idx>0:
             rand_attack.log_info('******')
-            rand_attack.log_info(['edit_dist', round(np.mean(t_edit_dist_l),4)])
-            rand_attack.log_info(['token_num', round(np.mean(token_num_l),4)])
-            rand_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),4)])
-            rand_attack.log_info(['token budget rate', round(np.mean(t_edit_dist_l)/np.mean(token_num_l),4)])
-            rand_attack.log_info(['char budget rate', round(np.mean(c_edit_dist_l)/np.mean(char_num_l),4)])
-            rand_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
-            rand_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
-            rand_attack.log_info(['belu', round(np.mean(belu_score_l),4)])
-            rand_attack.log_info(['rouge-f1', round(np.mean(rouge_score_l),4)])
-            rand_attack.log_info(['ppl rate', round(np.mean(ppl_l),4)])
-            rand_attack.log_info(['adv_ppl', round(np.mean(adv_ppl_l),4)])
+            rand_attack.log_info({
+                'edit_dist': round(np.mean(t_edit_dist_l),4),
+                'token_num': round(np.mean(token_num_l),4),
+                'wm_score_drop': round(np.mean(wm_score_l),4),
+                'count': (count_num, base_num),
+            })
+            rand_attack.log_info({
+                'wm_drop_rate': round(np.mean(wm_score_drop_rate_l),4),
+                'ASR': round(count_num/base_num, 4),
+                'token_budget_rate': round(np.mean(t_edit_dist_l)/np.mean(token_num_l),4),
+                'char_budget_rate': round(np.mean(c_edit_dist_l)/np.mean(char_num_l),4),
+                'belu': round(np.mean(belu_score_l),4),
+                'rouge-f1': round(np.mean(rouge_score_l),4),
+                'ppl_rate': round(np.mean(ppl_l),4),
+                'adv_ppl': round(np.mean(adv_ppl_l),4)
+            })
             rand_attack.log_info('******')
             if idx==text_num:
                 break
@@ -108,6 +118,7 @@ def test_rand_attack(
             ori_score=rand_attack.ref_score(wm_text, target_class)
             rand_attack.log_info(['ori_score:', ori_score[0]])
             rand_attack.log_info(['ref_score:', adv_rlt['ref_score']])
+        rand_attack.log_info(['token_num:', token_num])
         rand_attack.log_info(['wm_detect:', wm_rlt])
         rand_attack.log_info(['ak_detect:', attk_rlt])
         rand_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
@@ -143,6 +154,7 @@ if __name__=="__main__":
     parser.add_argument('--ref_tokenizer', type=str, default='bert-base-uncased')#'bert-base-uncased'
     parser.add_argument('--ref_model', type=str)#, default='saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14')
     parser.add_argument('--atk_times', type=int, default=0)
+    parser.add_argument('--ori_flag', type=str, default='False')
     
     args = parser.parse_args()
     test_rand_attack(
@@ -153,6 +165,7 @@ if __name__=="__main__":
         atk_style=args.atk_style,
         ref_tokenizer=args.ref_tokenizer,
         ref_model=args.ref_model,
-        atk_times=args.atk_times
+        atk_times=args.atk_times,
+        ori_flag=bool(args.ori_flag=='True')
     )
     

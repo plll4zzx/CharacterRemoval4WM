@@ -55,9 +55,10 @@ class ClassificationGoalFunction(GoalFunction):
             # set of numbers corresponding to probabilities, which should add
             # up to 1. Since they are `torch.float` values, allow a small
             # error in the summation.
-            scores = torch.nn.functional.softmax(scores, dim=1)
-            if not ((scores.sum(dim=1) - 1).abs() < 1e-6).all():
-                raise ValueError("Model scores do not add up to 1.")
+            if scores.shape[1]>1:
+                scores = torch.nn.functional.softmax(scores, dim=1)
+                if not ((scores.sum(dim=1) - 1).abs() < 1e-6).all():
+                    raise ValueError("Model scores do not add up to 1.")
         return scores.cpu()
 
     def _goal_function_result_type(self):

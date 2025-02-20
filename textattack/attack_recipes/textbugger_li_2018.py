@@ -13,7 +13,7 @@ from textattack.constraints.pre_transformation import (
     StopwordModification,
 )
 from textattack.constraints.semantics.sentence_encoders import UniversalSentenceEncoder
-from textattack.goal_functions import UntargetedClassification
+from textattack.goal_functions import UntargetedClassification,InputReduction
 from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import (
     CompositeTransformation,
@@ -36,7 +36,7 @@ class TextBuggerLi2018(AttackRecipe):
     """
 
     @staticmethod
-    def build(model_wrapper):
+    def build(model_wrapper, query_budget=100):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
         #
@@ -89,7 +89,8 @@ class TextBuggerLi2018(AttackRecipe):
         #
         # Goal is untargeted classification
         #
-        goal_function = UntargetedClassification(model_wrapper, target_max_score=0.1)#
+        goal_function = UntargetedClassification(model_wrapper, query_budget=query_budget)#, target_max_score=0.1
+        # goal_function = InputReduction(model_wrapper, maximizable=False)
         #
         # Greedily swap words with "Word Importance Ranking".
         #
