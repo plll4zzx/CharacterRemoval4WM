@@ -162,13 +162,13 @@ class Learned_WM_Model:
                 p[0]
                 for p in self.eval_dataset.data[i * batch_size: (i + 1) * batch_size]
             ]
-            inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True).to(self.device)  # Batch encoding
+            inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True, max_length=50).to(self.device)  # Batch encoding
 
             with torch.no_grad():
                 output_ids = self.model.generate(
                     input_ids=inputs["input_ids"],
                     attention_mask=inputs["attention_mask"],
-                    max_new_tokens=100,
+                    max_new_tokens=150,
                     temperature=0.7,
                     top_p=0.9,
                     do_sample=True
@@ -205,6 +205,6 @@ if __name__=="__main__":
         lr_step=8,
         gradient_accumulation_steps = 1
     )
-    ld_model.save_model()
+    # ld_model.save_model()
 
         

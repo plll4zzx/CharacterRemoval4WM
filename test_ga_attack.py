@@ -169,6 +169,13 @@ if __name__=="__main__":
     parser.add_argument('--victim_tokenizer', type=str, default='facebook/opt-350m')
     parser.add_argument('--victim_model', type=str, default='saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_facebook_opt-350m_2025-01-08')
     
+    parser.add_argument('--llm_name', type=str, default='')
+    parser.add_argument('--mean', type=float, default=0)
+    parser.add_argument('--std', type=float, default=1)
+    parser.add_argument('--ab_std', type=float, default=3)
+    parser.add_argument('--atk_style', type=str, default='char')
+    parser.add_argument('--ori_flag', type=str, default='False')
+    
     args = parser.parse_args()
     test_ga_attack(
         wm_name=args.wm_name, 
@@ -179,6 +186,12 @@ if __name__=="__main__":
         victim_tokenizer=args.victim_tokenizer,
         len_weight=args.len_weight,
         fitness_threshold=args.fitness_threshold,
-        eva_thr=args.eva_thr
+        eva_thr=args.eva_thr,
+        llm_name=args.llm_name, #
+        mean=args.mean, #
+        std=args.std, #
+        ab_std=args.ab_std, #
+        atk_style=args.atk_style, #
+        ori_flag=args.ori_flag #
     )
     

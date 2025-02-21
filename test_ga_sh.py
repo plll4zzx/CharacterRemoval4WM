@@ -14,7 +14,12 @@ def get_key_value(x_dict, key1, key2=None):
         value=x_dict[key1]
     return value
 
-sh_templte='python test_ga_attack.py --num_generations {num_generations} --max_edit_rate {max_edit_rate} --len_weight {len_weight} --eva_thr {eva_thr} --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" --victim_model "{victim_model}" --wm_name "{wm_name}"'
+sh_templte='python test_ga_attack.py --num_generations {num_generations} \
+--max_edit_rate {max_edit_rate} --len_weight {len_weight} --eva_thr {eva_thr} \
+--fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" \
+--victim_model "{victim_model}" --wm_name "{wm_name}"  \
+--llm_name "{llm_name}" --eva_thr "{eva_thr}" --mean "{mean}" \
+--std "{std}" --ab_std "{ab_std}" --atk_style "{atk_style}" --ori_flag "{ori_flag}" '
 
 # python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "token" --ori_flag "False"
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style
@@ -43,7 +48,7 @@ else:
 
 for max_token_num in max_token_num_list:
     for wm_name in wm_name_list:
-        for ab_std in [0,1,2,3]:
+        for ab_std in [3]:
             wm_config=ga_config[wm_name]
             victim_tokenizer=wm_config['victim_tokenizer']
             victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))
@@ -57,27 +62,36 @@ for max_token_num in max_token_num_list:
             fitness_threshold = get_key_value(wm_config, 'fitness_threshold', str(max_token_num))
             
             tmp_sh=sh_templte.format(
-                num_generations=num_generations, len_weight=len_weight, eva_thr=eva_thr, 
-                fitness_threshold=fitness_threshold, max_edit_rate=max_edit_rate, max_token_num=max_token_num, 
-                victim_tokenizer=victim_tokenizer, victim_model=victim_model, wm_name=wm_name
+                llm_name=llm_name,
+                wm_name=wm_name, max_edit_rate=max_edit_rate,  max_token_num=max_token_num, 
+                num_generations=num_generations, victim_model=victim_model, 
+                victim_tokenizer=victim_tokenizer, 
+                len_weight=len_weight,
+                fitness_threshold=fitness_threshold, 
+                eva_thr=eva_thr, 
+                mean=mean, #
+                std=std, #
+                ab_std=ab_std, #
+                atk_style=atk_style, #
+                ori_flag=ori_flag #
             )
             print(tmp_sh)
-            # os.system(tmp_sh)
-            test_ga_attack(
-                llm_name=llm_name,
-                wm_name=wm_name, 
-                max_edit_rate=max_edit_rate,
-                max_token_num=max_token_num,
-                num_generations=num_generations,
-                victim_model=victim_model,
-                victim_tokenizer=victim_tokenizer,
-                len_weight=len_weight,
-                fitness_threshold=fitness_threshold,
-                eva_thr=eva_thr,
-                mean=mean,
-                std=std,
-                ab_std=ab_std,
-                atk_style=atk_style,
-                ori_flag=ori_flag
-            )
+            os.system(tmp_sh)
+            # test_ga_attack(
+            #     llm_name=llm_name, #
+            #     wm_name=wm_name, 
+            #     max_edit_rate=max_edit_rate,
+            #     max_token_num=max_token_num,
+            #     num_generations=num_generations,
+            #     victim_model=victim_model,
+            #     victim_tokenizer=victim_tokenizer,
+            #     len_weight=len_weight,
+            #     fitness_threshold=fitness_threshold,
+            #     eva_thr=eva_thr,
+            #     mean=mean, #
+            #     std=std, #
+            #     ab_std=ab_std, #
+            #     atk_style=atk_style, #
+            #     ori_flag=ori_flag #
+            # )
 
