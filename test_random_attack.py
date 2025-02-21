@@ -67,7 +67,7 @@ def test_rand_attack(
     rouge_score_l=[]
     ppl_l=[]
     adv_ppl_l=[]
-    text_num=300
+    text_num=200
     if max_token_num>200:
         text_num=text_num*4
     for idx in range(text_num+1):
