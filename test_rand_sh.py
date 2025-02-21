@@ -13,13 +13,13 @@ else:
     rand_config=load_json(file_path='attk_config/llama_rand_config.json')
 data_aug=9
 ori_flag="False"
-atk_style_list=['TextBuggerLi2018']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
+atk_style_list=['DeepWordBugGao2018']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
 atk_times_list=[1]#1,,50,100
 max_token_num_list=[100]#100,50, 100,150,  
 
 for data_aug in [9]:
     for max_token_num in max_token_num_list:
-        for wm_name in ['DIP', 'SynthID','Unigram','Unbiased']:#rand_config:#,'Unbiased'
+        for wm_name in ['KGW']:#rand_config:#,'Unbiased''DIP', 'SynthID','Unigram','Unbiased'
             wm_config=rand_config[wm_name]
             ref_tokenizer=wm_config['ref_tokenizer']
             if data_aug==-1:

@@ -15,6 +15,8 @@ from textattack.utils import Logger, to_string, load_json
 from llm_wm import LLM_WM
 from ga_attack import GA_Attack
 import argparse
+import Levenshtein
+from random_attack import rouge_f1, belu_func
 
 
 def test_ga_attack(
@@ -70,22 +72,38 @@ def test_ga_attack(
     target_class=0
     count_num=0
     base_num=0
-    edit_dist_l=[]
+    t_edit_dist_l=[]
+    c_edit_dist_l=[]
     
     token_num_l=[]
+    char_num_l=[]
     wm_score_l=[]
     wm_score_drop_rate_l=[]
+    belu_score_l=[]
+    rouge_score_l=[]
+    ppl_l=[]
+    adv_ppl_l=[]
 
     text_num=300
     for idx in range(text_num+1):#[79]:#
         if idx%25==0 and idx>0:
             ga_attack.log_info('******')
-            ga_attack.log_info(['edit_dist', round(np.mean(edit_dist_l),4)])
-            ga_attack.log_info(['token_num', round(np.mean(token_num_l),4)])
-            ga_attack.log_info(['wm_score drop', round(np.mean(wm_score_l),3)])
-            ga_attack.log_info(['budget rate', round(np.mean(edit_dist_l)/np.mean(token_num_l),4)])
-            ga_attack.log_info(['wm_score drop rate', round(np.mean(wm_score_drop_rate_l),4)])
-            ga_attack.log_info(['ASR', round(count_num/base_num,4), count_num, base_num])
+            ga_attack.log_info({
+                'edit_dist': round(np.mean(t_edit_dist_l),4),
+                'token_num': round(np.mean(token_num_l),4),
+                'wm_score_drop': round(np.mean(wm_score_l),4),
+                'count': (count_num, base_num),
+            })
+            ga_attack.log_info({
+                'wm_drop_rate': round(np.mean(wm_score_drop_rate_l),4),
+                'ASR': round(count_num/base_num, 4),
+                'token_budget_rate': round(np.mean(t_edit_dist_l)/np.mean(token_num_l),4),
+                'char_budget_rate': round(np.mean(c_edit_dist_l)/np.mean(char_num_l),4),
+                'belu': round(np.mean(belu_score_l),4),
+                'rouge-f1': round(np.mean(rouge_score_l),4),
+                'ppl_rate': round(np.mean(ppl_l),4),
+                'adv_ppl': round(np.mean(adv_ppl_l),4)
+            })
             ga_attack.log_info('******')
         if idx==text_num:
             break
@@ -117,6 +135,15 @@ def test_ga_attack(
             ga_attack.log_info(['ak_detect:', attk_rlt])
             wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
             wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
+            rouge_score_l.append(rouge_f1(wm_text, attk_text))
+            belu_score_l.append(belu_func(wm_text, attk_text))
+            char_num_l.append(len(wm_text))
+            c_edit_dist_l.append(Levenshtein.distance(wm_text, attk_text))
+
+            wm_ppl=wm_scheme.get_perplexity(wm_text)
+            adv_ppl=wm_scheme.get_perplexity(attk_text)
+            ppl_l.append((adv_ppl-wm_ppl)/wm_ppl)
+            adv_ppl_l.append(adv_ppl)
 
             if attk_rlt['is_watermarked']==False:
                 count_num+=1
@@ -124,7 +151,7 @@ def test_ga_attack(
             ga_attack.log_info('ERROR')
         ga_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
         ga_attack.log_info(['ak_text:', attk_text.replace('\n',' ')])
-        edit_dist_l.append(edit_dist)
+        t_edit_dist_l.append(edit_dist)
         token_num_l.append(token_num)
     
     # ga_attack.save()
