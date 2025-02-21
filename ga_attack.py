@@ -67,9 +67,16 @@ class GA_Attack:
         self.log_info('\n')
 
     def log_info(self, info=''):
-        if not isinstance(info, str):
+        if isinstance(info, str):
+            self.log.logger.info(info)
+        elif isinstance(info, dict):
+            keys='\t'.join([key for key in info])
+            values='\t'.join([str(info[key]) for key in info])
+            self.log.logger.info(keys)
+            self.log.logger.info(values)
+        else:
             info=to_string(info)
-        self.log.logger.info(info)
+            self.log.logger.info(info)
 
     def truncation(self, text, max_token_num=100):
         new_text, token_num=truncation(
@@ -268,7 +275,8 @@ class GA_Attack:
         self.edit_distance=0
         self.best_fitness=-100
         self.abnormal_tokens=[]
-        self.abnormal_tokens=self.get_abnormal_tokens(sentence)
+        if self.ab_std>0:
+            self.abnormal_tokens=self.get_abnormal_tokens(sentence)
         self.simi_tokens_dict={}
 
         # Initialize PyGAD

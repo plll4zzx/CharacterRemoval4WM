@@ -21,7 +21,7 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} --max_e
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
 parser.add_argument('--wm_name', type=str, default='')
-parser.add_argument('--atk_style', type=str, default='token')
+parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
 args = parser.parse_args()
@@ -34,49 +34,49 @@ if 'opt' in llm_name:
     ga_config=load_json(file_path='attk_config/opt_ga_config.json')
 else:
     ga_config=load_json(file_path='attk_config/llama_ga_config.json')
-max_token_num_list=[100,200]#
+max_token_num_list=[100]#,200
 
 if args.wm_name=='':
     wm_name_list=ga_config.keys()
 else:
     wm_name_list=[args.wm_name]
-
-for max_token_num in max_token_num_list:
-    for wm_name in wm_name_list:
-        wm_config=ga_config[wm_name]
-        victim_tokenizer=wm_config['victim_tokenizer']
-        victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))
-        num_generations=wm_config['num_generations']
-        eva_thr=wm_config['eva_thr']
-        mean=wm_config['mean']
-        std=wm_config['std']
-        ab_std=wm_config['ab_std']
-        max_edit_rate = get_key_value(wm_config, 'max_edit_rate', str(max_token_num))
-        len_weight = get_key_value(wm_config, 'len_weight', str(max_token_num))
-        fitness_threshold = get_key_value(wm_config, 'fitness_threshold', str(max_token_num))
-        
-        tmp_sh=sh_templte.format(
-            num_generations=num_generations, len_weight=len_weight, eva_thr=eva_thr, 
-            fitness_threshold=fitness_threshold, max_edit_rate=max_edit_rate, max_token_num=max_token_num, 
-            victim_tokenizer=victim_tokenizer, victim_model=victim_model, wm_name=wm_name
-        )
-        print(tmp_sh)
-        # os.system(tmp_sh)
-        test_ga_attack(
-            llm_name=llm_name,
-            wm_name=wm_name, 
-            max_edit_rate=max_edit_rate,
-            max_token_num=max_token_num,
-            num_generations=num_generations,
-            victim_model=victim_model,
-            victim_tokenizer=victim_tokenizer,
-            len_weight=len_weight,
-            fitness_threshold=fitness_threshold,
-            eva_thr=eva_thr,
-            mean=mean,
-            std=std,
-            ab_std=ab_std,
-            atk_style=atk_style,
-            ori_flag=ori_flag
-        )
+for ab_std in [0,1,2,3]:
+    for max_token_num in max_token_num_list:
+        for wm_name in wm_name_list:
+            wm_config=ga_config[wm_name]
+            victim_tokenizer=wm_config['victim_tokenizer']
+            victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))
+            num_generations=wm_config['num_generations']
+            eva_thr=wm_config['eva_thr']
+            mean=wm_config['mean']
+            std=wm_config['std']
+            # ab_std=wm_config['ab_std']
+            max_edit_rate = get_key_value(wm_config, 'max_edit_rate', str(max_token_num))
+            len_weight = get_key_value(wm_config, 'len_weight', str(max_token_num))
+            fitness_threshold = get_key_value(wm_config, 'fitness_threshold', str(max_token_num))
+            
+            tmp_sh=sh_templte.format(
+                num_generations=num_generations, len_weight=len_weight, eva_thr=eva_thr, 
+                fitness_threshold=fitness_threshold, max_edit_rate=max_edit_rate, max_token_num=max_token_num, 
+                victim_tokenizer=victim_tokenizer, victim_model=victim_model, wm_name=wm_name
+            )
+            print(tmp_sh)
+            # os.system(tmp_sh)
+            test_ga_attack(
+                llm_name=llm_name,
+                wm_name=wm_name, 
+                max_edit_rate=max_edit_rate,
+                max_token_num=max_token_num,
+                num_generations=num_generations,
+                victim_model=victim_model,
+                victim_tokenizer=victim_tokenizer,
+                len_weight=len_weight,
+                fitness_threshold=fitness_threshold,
+                eva_thr=eva_thr,
+                mean=mean,
+                std=std,
+                ab_std=ab_std,
+                atk_style=atk_style,
+                ori_flag=ori_flag
+            )
 
