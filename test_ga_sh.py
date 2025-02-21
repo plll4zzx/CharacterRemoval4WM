@@ -40,9 +40,10 @@ if args.wm_name=='':
     wm_name_list=ga_config.keys()
 else:
     wm_name_list=[args.wm_name]
-for ab_std in [0,1,2,3]:
-    for max_token_num in max_token_num_list:
-        for wm_name in wm_name_list:
+
+for max_token_num in max_token_num_list:
+    for wm_name in wm_name_list:
+        for ab_std in [0,1,2,3]:
             wm_config=ga_config[wm_name]
             victim_tokenizer=wm_config['victim_tokenizer']
             victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))

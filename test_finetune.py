@@ -11,14 +11,17 @@ class WmDataset(Dataset):
     def __init__(self, tokenizer, target_llm_name, llm_name, wm_name, max_length=512):
         dataset_name='../../dataset/c4/realnewslike'
         self.tokenizer = tokenizer
+        self.tokenizer.padding_side='left'
         self.max_length = max_length
-        self.data = load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), target_llm_name.replace('/','_')])+"_5000.json")
+        self.data = load_json(
+            "saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), target_llm_name.replace('/','_')])+"_5000.json"
+        )
 
     def __len__(self):
         return len(self.data)
 
     def __getitem__(self, idx):
-        text = self.data[idx]
+        text = self.data[idx]['wm_text']
         encoding = self.tokenizer(
             text, padding="max_length", truncation=True, max_length=self.max_length, return_tensors="pt"
         )
@@ -133,31 +136,35 @@ class Learned_WM_Model:
 
         wm_rate=0
         batch_size = 4  # Adjust based on GPU memory
-        num_batches = (len(self.eval_dataset.data_num) + batch_size - 1) // batch_size  # Compute number of batches
+        num_batches = (self.eval_dataset.data_num + batch_size - 1) // batch_size  # Compute number of batches
 
         for i in range(num_batches):
-            batch_prompts = self.eval_dataset[i * batch_size: (i + 1) * batch_size]  # Select batch
+            batch_prompts = [
+                p[0]
+                for p in self.eval_dataset.data[i * batch_size: (i + 1) * batch_size]
+            ]
             inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True).to(self.device)  # Batch encoding
 
             with torch.no_grad():
                 output_ids = self.model.generate(
                     input_ids=inputs["input_ids"],
                     attention_mask=inputs["attention_mask"],
-                    max_length=100,
+                    max_new_tokens=100,
                     temperature=0.7,
-                    top_p=0.9
+                    top_p=0.9,
+                    do_sample=True
                 )
 
             generated_texts = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             for j in range(len(generated_texts)):
-                wm_rlt=self.wm_detector(self.generated_text)
+                wm_rlt=self.wm_detector(generated_texts[j])
                 if wm_rlt['is_watermarked']==True:
                     wm_rate+=1
         wm_rate=wm_rate/self.eval_dataset.data_num
         print('wm_rate:', wm_rate)
 
 if __name__=="__main__":
-    llm_name='facebook/opt-1.3b'
+    llm_name='facebook/opt-125m'
     wm_name='KGW'
     target_llm_name='facebook/opt-1.3b'
     ld_model=Learned_WM_Model(llm_name, wm_name, target_llm_name)
@@ -173,10 +180,11 @@ if __name__=="__main__":
     ld_model.train_init(
         gamma=0.2
     )
+    ld_model.test_epoch()
     ld_model.start_train(
         num_epochs=3,
         lr_step=8,
-        gradient_accumulation_steps = 4
+        gradient_accumulation_steps = 1
     )
     ld_model.save_model()
 
