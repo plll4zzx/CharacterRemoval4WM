@@ -6,6 +6,8 @@ from textattack.utils import load_json, save_json
 from llm_wm import LLM_WM
 from read_data import c4
 from tqdm import tqdm
+from peft import LoraConfig, get_peft_model, prepare_model_for_kbit_training
+import bitsandbytes as bnb
 
 class WmDataset(Dataset):
     def __init__(self, tokenizer, target_llm_name, llm_name, wm_name, max_length=512):
@@ -68,10 +70,27 @@ class Learned_WM_Model:
         self.wm_detector=wm_scheme.detect_wm
 
     def train_init(self, gamma=0.2):
-        self.model = AutoModelForCausalLM.from_pretrained(self.llm_name)
+        self.model = AutoModelForCausalLM.from_pretrained(
+            self.llm_name,
+            load_in_4bit=True,  # Change to `load_in_4bit=True` for 4-bit mode
+            device_map="auto"
+        )
 
         # Move model to GPU if available
-        self.model.to(self.device)
+        # self.model.to(self.device)
+        self.model = prepare_model_for_kbit_training(self.model)
+        lora_config = LoraConfig(
+            r=16,  # LoRA rank (adjust based on memory)
+            lora_alpha=32,  # Scaling factor
+            target_modules=["q_proj", "v_proj"],  # LoRA applied to attention layers
+            lora_dropout=0.05,
+            bias="none",
+            task_type="CAUSAL_LM"  # Required for causal language models like OPT
+        )
+
+        # Wrap model with LoRA
+        self.model = get_peft_model(self.model, lora_config)
+        self.model.print_trainable_parameters()
         self.optimizer = AdamW(self.model.parameters(), lr=5e-5)
         self.lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=self.optimizer, gamma=gamma)
     
