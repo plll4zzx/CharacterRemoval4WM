@@ -192,6 +192,6 @@ if __name__=="__main__":
         std=args.std, #
         ab_std=args.ab_std, #
         atk_style=args.atk_style, #
-        ori_flag=args.ori_flag #
+        ori_flag=bool(args.ori_flag=='True') #
     )
     
