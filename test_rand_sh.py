@@ -13,8 +13,8 @@ else:
     rand_config=load_json(file_path='attk_config/llama_rand_config.json')
 data_aug=9
 ori_flag="False"
-atk_style_list=['DeepWordBugGao2018']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
-atk_times_list=[1]#1,,50,100
+atk_style_list=['sentence']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
+atk_times_list=[10]#1,,50,100
 max_token_num_list=[100]#100,50, 100,150,  
 
 for data_aug in [9]:

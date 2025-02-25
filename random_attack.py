@@ -426,7 +426,7 @@ class RandomAttack:
         self, sentence, max_edit_rate=None
     ):  
         if self.paraphraser is None:
-            import Levenshtein
+            # import Levenshtein
             self.paraphraser=DipperParaphraser()
         sub_sentence_list=split_sentence(sentence)
         re_sub_sentence_list=[]

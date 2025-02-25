@@ -28,7 +28,10 @@ class LevenshteinEditDistance(Constraint):
 
     def _check_constraint(self, transformed_text, reference_text):
         edit_distance = editdistance.eval(reference_text.text, transformed_text.text)
-        return edit_distance <= self.max_edit_distance
+        if self.max_edit_distance<1:
+            return edit_distance <= self.max_edit_distance*reference_text.text.count(" ")
+        else:
+            return edit_distance <= self.max_edit_distance
 
     def extra_repr_keys(self):
         return ["max_edit_distance"] + super().extra_repr_keys()
