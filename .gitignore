@@ -3,6 +3,7 @@
 *.log
 *.json
 *.pdf
+*.zip
 !attack_config/*
 !ga_config.json
 !rand_config.json

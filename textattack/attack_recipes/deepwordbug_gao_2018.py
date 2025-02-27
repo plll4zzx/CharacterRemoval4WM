@@ -35,7 +35,7 @@ class DeepWordBugGao2018(AttackRecipe):
     """
 
     @staticmethod
-    def build(model_wrapper, use_all_transformations=True, query_budget=100):
+    def build(model_wrapper, use_all_transformations=True, query_budget=100, edit_distance=0.2):
         #
         # Swap characters out from words. Choose the best of four potential transformations.
         #
@@ -66,7 +66,7 @@ class DeepWordBugGao2018(AttackRecipe):
         # In these experiments, we hold the maximum difference
         # on edit distance (ϵ) to a constant 30 for each sample.
         #
-        constraints.append(LevenshteinEditDistance(30))
+        constraints.append(LevenshteinEditDistance(edit_distance))
         #
         # Goal is untargeted classification
         #
