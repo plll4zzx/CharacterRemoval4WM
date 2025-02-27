@@ -1,7 +1,7 @@
 from PIL import Image, ImageDraw, ImageFont
 import pytesseract
 
-def text_OCR_text(text):
+def text_OCR_text(text, img_path=None):
     # Step 2: Print the text into an image.
     # Load a default font
     font = ImageFont.load_default()
@@ -24,10 +24,8 @@ def text_OCR_text(text):
     draw = ImageDraw.Draw(img)
     draw.text((padding, padding), text, fill='black', font=font)
 
-    # Save the image.
-    image_path = "output_text.png"
-    img.save(image_path)
-    print(f"Image saved as '{image_path}'.")
+    if img_path is not None:
+        img.save(img_path)
 
     # Step 3: Read text from the image using OCR.
     # If Tesseract is not in your PATH, specify its full path like:
