@@ -4,6 +4,7 @@
 *.json
 *.pdf
 *.zip
+*.png
 !attack_config/*
 !ga_config.json
 !rand_config.json
@@ -69,3 +70,6 @@ MarkLLM/watermark/sir/model/*
 saved_model/*
 tmp.sh
 output_text.png
+text.png
+*.png
+textA.png

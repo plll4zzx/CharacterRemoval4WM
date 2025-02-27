@@ -20,7 +20,7 @@ from text_OCR import text_OCR_text
 
 def test_rand_attack(
     llm_name, wm_name, max_edit_rate, max_token_num=80, atk_style='char',
-    ref_tokenizer = None, ref_model=None, atk_times=1, ori_flag=False
+    ref_tokenizer = None, ref_model=None, atk_times=1, ori_flag=False, ocr_flag=False
 ):
     
     
@@ -53,11 +53,10 @@ def test_rand_attack(
     rand_attack.log_info(['atk_style:', atk_style])
     rand_attack.log_info(['atk_times:', atk_times])
     rand_attack.log_info(['ori_flag:', ori_flag])
+    rand_attack.log_info(['ocr_flag:', ocr_flag])
     
     count_num=0
     base_num=0
-    adv_ocr_num=0
-    wm_ocr_num=0
     t_edit_dist_l=[]
     c_edit_dist_l=[]
     
@@ -66,13 +65,23 @@ def test_rand_attack(
     char_num_l=[]
     wm_score_l=[]
     wm_score_drop_rate_l=[]
-    adv_ocr_rate_l=[]
-    wm_ocr_rate_l=[]
     belu_score_l=[]
     rouge_score_l=[]
     ppl_l=[]
     adv_ppl_l=[]
     text_num=300
+
+    adv_ocr_num=0
+    wm_ocr_num=0
+    adv_ocr_rate_l=[]
+    wm_ocr_rate_l=[]
+    ocr_adv_belu_l=[]
+    ocr_wm_belu_l=[]
+    ocr_adv_rouge_l=[]
+    ocr_wm_rouge_l=[]
+    ocr_adv_ppl_l=[]
+    ocr_wm_ppl_l=[]
+
     if max_token_num>200:
         text_num=text_num*4
     for idx in range(text_num+1):
@@ -94,12 +103,19 @@ def test_rand_attack(
                 'ppl_rate': round(np.mean(ppl_l),4),
                 'adv_ppl': round(np.mean(adv_ppl_l),4),
             })
-            rand_attack.log_info({
-                'adv_ocr_rate': round(adv_ocr_num/base_num, 4),
-                'adv_ocr_score_rate': round(np.mean(adv_ocr_rate_l),4),
-                'wm_ocr_rate': round(wm_ocr_num/base_num, 4),
-                'wm_ocr_score_rate': round(np.mean(wm_ocr_rate_l),4),
-            })
+            if ocr_flag:
+                rand_attack.log_info({
+                    'adv_ocr_score_rate': round(np.mean(adv_ocr_rate_l),4),
+                    'adv_ocr_rate': round(adv_ocr_num/base_num, 4),
+                    'ocr_adv_belu': round(np.mean(ocr_adv_belu_l),4),
+                    'ocr_adv_rouge': round(np.mean(ocr_adv_rouge_l),4),
+                    'ocr_adv_ppl': round(np.mean(ocr_adv_ppl_l),4),
+                    'wm_ocr_score_rate': round(np.mean(wm_ocr_rate_l),4),
+                    'wm_ocr_rate': round(wm_ocr_num/base_num, 4),
+                    'ocr_wm_belu': round(np.mean(ocr_wm_belu_l),4),
+                    'ocr_wm_rouge': round(np.mean(ocr_wm_rouge_l),4),
+                    'ocr_wm_ppl': round(np.mean(ocr_wm_ppl_l),4),
+                })
             rand_attack.log_info('******')
             if idx==text_num:
                 break
@@ -152,21 +168,28 @@ def test_rand_attack(
         if attk_rlt['is_watermarked']==False:
             count_num+=1
 
-        ocr_adv_text=text_OCR_text(adv_rlt['sentence'])
-        ocr_adv_rlt=wm_scheme.detect_wm(ocr_adv_text)
-        rand_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
-        rand_attack.log_info(['ocr_detect:', ocr_adv_rlt])
-        if ocr_adv_rlt['is_watermarked']==False:
-            adv_ocr_num+=1
-        adv_ocr_rate_l.append((ocr_adv_rlt['score']-attk_rlt['score'])/attk_rlt['score'])
-        
-        ocr_wm_text=text_OCR_text(wm_text)
-        ocr_wm_rlt=wm_scheme.detect_wm(ocr_wm_text)
-        rand_attack.log_info(['ocr_wm_text:', ocr_wm_text.replace('\n',' ')])
-        rand_attack.log_info(['ocr_wm_detect:', ocr_wm_rlt])
-        if ocr_wm_rlt['is_watermarked']==False:
-            wm_ocr_num+=1
-        wm_ocr_rate_l.append((ocr_wm_rlt['score']-wm_rlt['score'])/wm_rlt['score'])
+        if ocr_flag:
+            ocr_adv_text=text_OCR_text(adv_rlt['sentence'])#, img_path='text.png'
+            ocr_adv_rlt=wm_scheme.detect_wm(ocr_adv_text)
+            rand_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
+            rand_attack.log_info(['ocr_detect:', ocr_adv_rlt])
+            if ocr_adv_rlt['is_watermarked']==False and attk_rlt['is_watermarked']==False:
+                adv_ocr_num+=1
+            adv_ocr_rate_l.append((ocr_adv_rlt['score']-attk_rlt['score'])/attk_rlt['score'])
+            ocr_adv_belu_l.append(belu_func(wm_text, ocr_adv_text))
+            ocr_adv_rouge_l.append(rouge_f1(wm_text, ocr_adv_text))
+            ocr_adv_ppl_l.append((wm_scheme.get_perplexity(ocr_adv_text)-wm_ppl)/wm_ppl)
+            
+            ocr_wm_text=text_OCR_text(wm_text)
+            ocr_wm_rlt=wm_scheme.detect_wm(ocr_wm_text)
+            rand_attack.log_info(['ocr_wm_text:', ocr_wm_text.replace('\n',' ')])
+            rand_attack.log_info(['ocr_wm_detect:', ocr_wm_rlt])
+            if ocr_wm_rlt['is_watermarked']==False:
+                wm_ocr_num+=1
+            wm_ocr_rate_l.append((wm_rlt['score']-ocr_wm_rlt['score'])/wm_rlt['score'])
+            ocr_wm_rouge_l.append(rouge_f1(wm_text, ocr_wm_text))
+            ocr_wm_belu_l.append(belu_func(wm_text, ocr_wm_text))
+            ocr_wm_ppl_l.append((wm_scheme.get_perplexity(ocr_wm_text)-wm_ppl)/wm_ppl)
     # rand_attack.save()
 
 if __name__=="__main__":
@@ -182,6 +205,7 @@ if __name__=="__main__":
     parser.add_argument('--ref_model', type=str)#, default='saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14')
     parser.add_argument('--atk_times', type=int, default=0)
     parser.add_argument('--ori_flag', type=str, default='False')
+    parser.add_argument('--ocr_flag', type=str, default='False')
     
     args = parser.parse_args()
     test_rand_attack(
@@ -193,6 +217,7 @@ if __name__=="__main__":
         ref_tokenizer=args.ref_tokenizer,
         ref_model=args.ref_model,
         atk_times=args.atk_times,
-        ori_flag=bool(args.ori_flag=='True')
+        ori_flag=bool(args.ori_flag=='True'),
+        ocr_flag=bool(args.ocr_flag=='True')
     )
     
