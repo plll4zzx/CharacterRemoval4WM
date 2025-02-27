@@ -25,6 +25,7 @@ for data_aug in [9]:
             if data_aug==-1:
                 ori_flag="True"
                 data_aug=9
+            ori_flag=bool(ori_flag=='True')
             ref_model=wm_config['ref_model'][str(data_aug)]
             max_edit_rate_list=[0.15]#wm_config['max_edit_rate']0.05,0.1,
             for atk_style in atk_style_list:
