@@ -6,7 +6,7 @@ import os
 from tqdm import tqdm
 import argparse
 # from semantic_attack import SemanticAttack
-# import numpy as np
+import numpy as np
 # import datetime
 # import textattack.attack_sems
 
@@ -31,8 +31,23 @@ def get_wm_data(
     budget_l=[]
     result_list=[]
     batch_size=1
+    len_list=[]
     for idx in tqdm(range(0, c4_dataset.data_num, batch_size), ncols=100):#c4_dataset.data_num
         prompt=c4_dataset.data[idx][0]#[0:500]
+    #     token_id_list=wm_scheme.transformers_config.tokenizer.encode(prompt)
+    #     token_list=[
+    #         wm_scheme.transformers_config.tokenizer.decode(token_id, skip_special_tokens=True)
+    #         for token_id in token_id_list
+    #     ]
+    #     for token in token_list:
+    #         if len(token)==0:
+    #             continue
+    #         if token[0]==' ':
+    #             token=token[1:]
+    #         if len(token)<=2:
+    #             continue
+    #         len_list.append(len(token))
+    # print(np.mean(len_list))
         wm_text, un_wm_text = wm_scheme.generate(
             prompt, 
             # [tmp[0][0:500] for tmp in c4_dataset.data[idx:idx+batch_size]],
@@ -90,10 +105,10 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='collect wm data')
     parser.add_argument('--dataset_name', type=str, default='../../dataset/c4/realnewslike')
-    parser.add_argument('--model_name', type=str, default="../model/Llama3.1-8B_hg")
+    parser.add_argument('--model_name', type=str, default="facebook/opt-1.3b")
     parser.add_argument('--wm_name', type=str, default="SIR")
-    parser.add_argument('--file_num', type=int, default=1)
-    parser.add_argument('--file_data_num', type=int, default=1)
+    parser.add_argument('--file_num', type=int, default=10)
+    parser.add_argument('--file_data_num', type=int, default=100)
     parser.add_argument('--text_len', type=int, default=50)
     parser.add_argument('--rand_seed', type=int, default=123)
 

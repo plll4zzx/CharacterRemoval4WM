@@ -165,14 +165,24 @@ class Learned_WM_Model:
             inputs = self.tokenizer(batch_prompts, return_tensors="pt", padding=True, truncation=True, max_length=50).to(self.device)  # Batch encoding
 
             with torch.no_grad():
-                output_ids = self.model.generate(
+                outputs = self.model.generate(
                     input_ids=inputs["input_ids"],
                     attention_mask=inputs["attention_mask"],
                     max_new_tokens=150,
                     temperature=0.7,
                     top_p=0.9,
-                    do_sample=True
+                    do_sample=True,
+                    return_dict_in_generate=True,  # Required to get hidden states
+                    output_hidden_states=True  # Returns hidden states of all tokens
                 )
+            # Extract generated token IDs
+            output_ids = outputs.sequences
+
+            # Extract hidden states of each generated token
+            hidden_states = output_ids.hidden_states  # For decoder models (OPT, LLaMA)
+
+            # Convert hidden states to tensor (Shape: [num_layers, batch_size, seq_len, hidden_dim])
+            hidden_states_tensor = torch.stack(hidden_states)  # Stacking across layers
 
             generated_texts = self.tokenizer.batch_decode(output_ids, skip_special_tokens=True)
             for j in range(len(generated_texts)):
