@@ -29,7 +29,7 @@ parser.add_argument('--wm_name', type=str, default='')
 parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
-parser.add_argument('--ab_std', type=int, default=3)
+parser.add_argument('--ab_std', type=int, default=-1)
 args = parser.parse_args()
 
 atk_style=args.atk_style
@@ -47,9 +47,14 @@ if args.wm_name=='':
 else:
     wm_name_list=[args.wm_name]
 
+if args.ab_std==-1:
+    ab_std_list=[0,1,2,3,4]
+else:
+    ab_std_list=[args.ab_std]
+
 for max_token_num in max_token_num_list:
     for wm_name in wm_name_list:
-        for ab_std in [args.ab_std]:
+        for ab_std in ab_std_list:
             wm_config=ga_config[wm_name]
             victim_tokenizer=wm_config['victim_tokenizer']
             victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))
