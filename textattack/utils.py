@@ -127,11 +127,25 @@ homos_lo = {
 def find_homo(input_char):
     # input_char=input_char.lower()
     if input_char in homos:
-        # return homos[input_char][0]
-        return homos[input_char][homos_lo[input_char]]
+        return homos[input_char][0]
+        # return homos[input_char][homos_lo[input_char]]
+        # return homos[input_char][max(0, homos_lo[input_char]-1)]
     else:
         # random_char = random.choice(unprintable_char)
         return input_char
+
+def homo_back(input_char):
+    for key in homos:
+        if input_char==homos[key][0]:
+            return key
+            # return ''
+    return input_char
+
+def text_homo_back(text):
+    new_text=''
+    for tmp_char in text:
+        new_text=new_text+homo_back(tmp_char)
+    return new_text
 
 def to_string(inputs):
     output_str=''

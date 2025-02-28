@@ -5,6 +5,6 @@
     "hash_key": 15485863,
     "prefix_length": 1,
     "z_threshold": 4.0,
-    "f_scheme": "time",
+    "f_scheme": "skip",
     "window_scheme": "left"
 }

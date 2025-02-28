@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 import pytesseract
+# from mmocr.utils.ocr import MMOCR
 
 def create_high_quality_image(text, scale_factor=2):
     # 使用高质量的 TrueType 字体，请确保字体文件路径正确
@@ -61,6 +62,8 @@ def text_OCR_text(text, img_path=None):
     # If Tesseract is not in your PATH, specify its full path like:
     # pytesseract.pytesseract.tesseract_cmd = r'/usr/bin/tesseract'
     extracted_text = pytesseract.image_to_string(img)
+    # ocr = MMOCR(det="DBNet", recog="CRNN")  # 文本检测 + 识别
+    # extracted_text = ocr.readtext(img, output="output.jpg")
     return extracted_text
     # print("Extracted text from image:")
     # print(extracted_text)
@@ -68,6 +71,7 @@ def text_OCR_text(text, img_path=None):
     # print(sum(rel)/len(text))
 
 def text_to_image(text, max_width=600, max_height=200, font_color="black", bg_color="white",
+                #   font_path="/usr/share/fonts/truetype/unifont/unifont.ttf",#
                   font_path="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
                   padding=10, line_spacing=4):
     """
@@ -80,6 +84,7 @@ def text_to_image(text, max_width=600, max_height=200, font_color="black", bg_co
         while min_size <= max_size:
             mid_size = (min_size + max_size) // 2
             font = ImageFont.truetype(font_path, mid_size)
+            # font = ImageFont.load_default()
             dummy_img = Image.new("RGB", (1, 1), bg_color)
             draw = ImageDraw.Draw(dummy_img)
             bbox = draw.multiline_textbbox((0, 0), text, font=font, spacing=line_spacing)
@@ -129,7 +134,7 @@ if __name__ == "__main__":
         #     ocr_char=text_OCR_text(h, img_path='text.png')
         #     if ocr_char==key or ocr_char==h:
         #         print(key, h, ocr_char)
-        ocr_str=text_OCR_text(homo, img_path='text'+key+'.png')
+        ocr_str=text_OCR_text(homo, img_path='plot/text'+key+'.png')
         # print("'{key}':".format(key=key), end='')
         # print(ocr_str.replace('\n',' '), len(ocr_str))
         # for id,ocr_char in enumerate(ocr_str):

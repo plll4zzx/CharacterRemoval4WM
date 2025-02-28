@@ -10,7 +10,7 @@
 from read_data import c4
 # import textattack.attack_sems
 import numpy as np
-from textattack.utils import Logger, to_string, load_json
+from textattack.utils import Logger, to_string, load_json, text_homo_back
 # import datetime
 from llm_wm import LLM_WM
 from random_attack import RandomAttack, rouge_f1, belu_func
@@ -169,7 +169,7 @@ def test_rand_attack(
             count_num+=1
 
         if ocr_flag:
-            ocr_adv_text=text_OCR_text(adv_rlt['sentence'])#, img_path='text.png'
+            ocr_adv_text=text_homo_back(adv_rlt['sentence'])#, img_path='text.png'
             ocr_adv_rlt=wm_scheme.detect_wm(ocr_adv_text)
             rand_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
             rand_attack.log_info(['ocr_detect:', ocr_adv_rlt])
@@ -180,7 +180,7 @@ def test_rand_attack(
             ocr_adv_rouge_l.append(rouge_f1(wm_text, ocr_adv_text))
             ocr_adv_ppl_l.append((wm_scheme.get_perplexity(ocr_adv_text)-wm_ppl)/wm_ppl)
             
-            ocr_wm_text=text_OCR_text(wm_text)
+            ocr_wm_text=text_homo_back(wm_text)
             ocr_wm_rlt=wm_scheme.detect_wm(ocr_wm_text)
             rand_attack.log_info(['ocr_wm_text:', ocr_wm_text.replace('\n',' ')])
             rand_attack.log_info(['ocr_wm_detect:', ocr_wm_rlt])

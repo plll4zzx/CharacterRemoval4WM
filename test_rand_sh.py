@@ -31,7 +31,7 @@ for data_aug in [9]:
             ori_flag=bool(ori_flag=='True')
             ocr_flag=bool(ocr_flag=='True')
             ref_model=wm_config['ref_model'][str(data_aug)]
-            max_edit_rate_list=[0.2]#wm_config['max_edit_rate']0.05,0.1,
+            max_edit_rate_list=[0.15]#wm_config['max_edit_rate']0.05,0.1,
             for atk_style in atk_style_list:
                 for max_edit_rate in max_edit_rate_list:
                     for atk_times in atk_times_list:
