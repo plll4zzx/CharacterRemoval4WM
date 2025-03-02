@@ -19,10 +19,10 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" \
 --victim_model "{victim_model}" --wm_name "{wm_name}"  \
 --llm_name "{llm_name}" --eva_thr {eva_thr} --mean {mean} \
---std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" '
+--std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}'
 
-# python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "token" --ori_flag "False"
-# python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style
+# python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
+# python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
 parser.add_argument('--wm_name', type=str, default='')
@@ -30,10 +30,14 @@ parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
 parser.add_argument('--ab_std', type=int, default=-1)
+parser.add_argument('--device', type=int, default=0)
+parser.add_argument('--max_edit_rate', type=float, default=-1)
 args = parser.parse_args()
 
 atk_style=args.atk_style
 data_aug=args.data_aug
+device=args.device
+max_edit_rate=args.max_edit_rate
 ori_flag=bool(args.ori_flag=='True')
 llm_name=args.llm_name
 if 'opt' in llm_name:
@@ -63,7 +67,8 @@ for max_token_num in max_token_num_list:
             mean=wm_config['mean']
             std=wm_config['std']
             # ab_std=wm_config['ab_std']
-            max_edit_rate = get_key_value(wm_config, 'max_edit_rate', str(max_token_num))
+            if max_edit_rate<0:
+                max_edit_rate = get_key_value(wm_config, 'max_edit_rate', str(max_token_num))
             len_weight = get_key_value(wm_config, 'len_weight', str(max_token_num))
             fitness_threshold = get_key_value(wm_config, 'fitness_threshold', str(max_token_num))
             
@@ -79,7 +84,8 @@ for max_token_num in max_token_num_list:
                 std=std, #
                 ab_std=ab_std, #
                 atk_style=atk_style, #
-                ori_flag=ori_flag #
+                ori_flag=ori_flag, #
+                device=device
             )
             print(tmp_sh)
             os.system(tmp_sh)
@@ -98,6 +104,7 @@ for max_token_num in max_token_num_list:
             #     std=std, #
             #     ab_std=ab_std, #
             #     atk_style=atk_style, #
-            #     ori_flag=ori_flag #
+            #     ori_flag=ori_flag, #
+            #     device=device
             # )
 

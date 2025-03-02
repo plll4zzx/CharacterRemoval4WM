@@ -10,24 +10,26 @@
 from read_data import c4
 # import textattack.attack_sems
 import numpy as np
-from textattack.utils import Logger, to_string, load_json, text_homo_back
+from textattack.utils import Logger, to_string, load_json
 # import datetime
 from llm_wm import LLM_WM
 from random_attack import RandomAttack, rouge_f1, belu_func
 import argparse
 import Levenshtein
-from text_OCR import text_OCR_text
+from defence_homo import defence_method
 
 def test_rand_attack(
     llm_name, wm_name, max_edit_rate, max_token_num=80, atk_style='char',
-    ref_tokenizer = None, ref_model=None, atk_times=1, ori_flag=False, ocr_flag=False
+    ref_tokenizer = None, ref_model=None, atk_times=1, ori_flag=False, def_stl='',
+    device=0
 ):
     
     
     dataset_name='../../dataset/c4/realnewslike'
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
-    wm_scheme=LLM_WM(model_name = llm_name, device = "cuda", wm_name=wm_name)
+    device="cuda:"+str(device)
+    wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)
     
     if ref_tokenizer is None:
         rand_attack=RandomAttack(
@@ -41,10 +43,12 @@ def test_rand_attack(
             ref_model=ref_model,
             ori_flag=ori_flag,
             wm_detector = wm_scheme.detect_wm,
+            device = device,
         )
         rand_attack.log_info(['ref_tokenizer:', ref_tokenizer])
         rand_attack.log_info(['ref_model:', ref_model])
     
+    rand_attack.log_info(['device:', device])
     rand_attack.log_info(['wm_name:', wm_name])
     rand_attack.log_info(['llm_name:', llm_name])
     rand_attack.log_info(['dataset_name:', dataset_name])
@@ -53,7 +57,7 @@ def test_rand_attack(
     rand_attack.log_info(['atk_style:', atk_style])
     rand_attack.log_info(['atk_times:', atk_times])
     rand_attack.log_info(['ori_flag:', ori_flag])
-    rand_attack.log_info(['ocr_flag:', ocr_flag])
+    rand_attack.log_info(['def_stl:', def_stl])
     
     count_num=0
     base_num=0
@@ -103,7 +107,7 @@ def test_rand_attack(
                 'ppl_rate': round(np.mean(ppl_l),4),
                 'adv_ppl': round(np.mean(adv_ppl_l),4),
             })
-            if ocr_flag:
+            if def_stl!='':
                 rand_attack.log_info({
                     'adv_ocr_score_rate': round(np.mean(adv_ocr_rate_l),4),
                     'adv_ocr_rate': round(adv_ocr_num/base_num, 4),
@@ -168,8 +172,8 @@ def test_rand_attack(
         if attk_rlt['is_watermarked']==False:
             count_num+=1
 
-        if ocr_flag:
-            ocr_adv_text=text_homo_back(adv_rlt['sentence'])#, img_path='text.png'
+        if def_stl!='':
+            ocr_adv_text=defence_method[def_stl](adv_rlt['sentence'])#, img_path='text.png'
             ocr_adv_rlt=wm_scheme.detect_wm(ocr_adv_text)
             rand_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
             rand_attack.log_info(['ocr_detect:', ocr_adv_rlt])
@@ -180,7 +184,7 @@ def test_rand_attack(
             ocr_adv_rouge_l.append(rouge_f1(wm_text, ocr_adv_text))
             ocr_adv_ppl_l.append((wm_scheme.get_perplexity(ocr_adv_text)-wm_ppl)/wm_ppl)
             
-            ocr_wm_text=text_homo_back(wm_text)
+            ocr_wm_text=defence_method[def_stl](wm_text)
             ocr_wm_rlt=wm_scheme.detect_wm(ocr_wm_text)
             rand_attack.log_info(['ocr_wm_text:', ocr_wm_text.replace('\n',' ')])
             rand_attack.log_info(['ocr_wm_detect:', ocr_wm_rlt])
@@ -205,7 +209,7 @@ if __name__=="__main__":
     parser.add_argument('--ref_model', type=str)#, default='saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-01-14')
     parser.add_argument('--atk_times', type=int, default=0)
     parser.add_argument('--ori_flag', type=str, default='False')
-    parser.add_argument('--ocr_flag', type=str, default='False')
+    parser.add_argument('--def_stl', type=str, default='')
     
     args = parser.parse_args()
     test_rand_attack(
@@ -218,6 +222,6 @@ if __name__=="__main__":
         ref_model=args.ref_model,
         atk_times=args.atk_times,
         ori_flag=bool(args.ori_flag=='True'),
-        ocr_flag=bool(args.ocr_flag=='True')
+        def_stl=args.def_stl
     )
     

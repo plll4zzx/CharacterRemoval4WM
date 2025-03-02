@@ -13,6 +13,8 @@ from dipper import DipperParaphraser
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_score import rouge_scorer
 import Levenshtein
+
+
 def check_num(x_str):
     num_str_list=[str(idx) for idx in range(10)]
     if x_str in num_str_list:

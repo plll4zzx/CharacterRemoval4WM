@@ -134,17 +134,19 @@ def find_homo(input_char):
         # random_char = random.choice(unprintable_char)
         return input_char
 
-def homo_back(input_char):
+def homo_back(input_char, style='del'):
     for key in homos:
         if input_char==homos[key][0]:
-            return key
-            # return ''
+            if style=='map':
+                return key
+            elif style=='del':
+                return ''
     return input_char
 
-def text_homo_back(text):
+def text_homo_back(text, style='del'):
     new_text=''
     for tmp_char in text:
-        new_text=new_text+homo_back(tmp_char)
+        new_text=new_text+homo_back(tmp_char, style='del')
     return new_text
 
 def to_string(inputs):

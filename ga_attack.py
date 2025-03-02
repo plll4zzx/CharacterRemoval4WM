@@ -244,6 +244,8 @@ class GA_Attack:
             fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
         # if eva_fitness>self.eva_thr:
         #     fit_score=eva_fitness-(solu_len/solution.size)*self.len_weight+(self.max_edit_rate)*self.len_weight
+        if (fit_score-self.best_fitness)<0.05:
+            return min(fit_score, self.best_fitness-0.0001)#
         return fit_score
 
     def get_adv(

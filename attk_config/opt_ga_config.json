@@ -4,7 +4,7 @@
         "victim_model":{
             "0":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-15",
             "5":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-16",
-            "9":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-02"
+            "9":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_0.15_9"
         },
         "num_generations":15,
         "max_edit_rate":{"100":0.13, "200":0.13},

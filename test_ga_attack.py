@@ -32,11 +32,13 @@ def test_ga_attack(
     std=1,
     ab_std=1,
     atk_style='char',
-    ori_flag=False
+    ori_flag=False,
+    device=0
 ):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
-    wm_scheme=LLM_WM(model_name = llm_name, device = "cuda", wm_name=wm_name)
+    device="cuda:"+str(device)
+    wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)
     
     ga_attack=GA_Attack(
         victim_model = victim_model,
@@ -50,10 +52,13 @@ def test_ga_attack(
         std=std,
         ab_std=ab_std,
         atk_style=atk_style,
-        ori_flag=ori_flag
+        ori_flag=ori_flag,
+        device=device,
     )
     if ori_flag==True:
         ab_std=100
+        
+    ga_attack.log_info(['device:', device])
     ga_attack.log_info(['wm_name:', wm_name])
     ga_attack.log_info(['llm_name:', llm_name])
     ga_attack.log_info(['victim_tokenizer:', victim_tokenizer])
@@ -175,6 +180,7 @@ if __name__=="__main__":
     parser.add_argument('--ab_std', type=float, default=3)
     parser.add_argument('--atk_style', type=str, default='char')
     parser.add_argument('--ori_flag', type=str, default='False')
+    parser.add_argument('--device', type=int, default=0)
     
     args = parser.parse_args()
     test_ga_attack(
@@ -192,6 +198,7 @@ if __name__=="__main__":
         std=args.std, #
         ab_std=args.ab_std, #
         atk_style=args.atk_style, #
-        ori_flag=bool(args.ori_flag=='True') #
+        ori_flag=bool(args.ori_flag=='True'), #
+        device=args.device #
     )
     

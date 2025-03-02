@@ -33,6 +33,8 @@ class LLM_WM:
                     "bnb_4bit_quant_type": "nf4"         # 量化类型（nf4 通常表现更好）
                 }
             )
+            tokenizer.pad_token = "[PAD]"
+            model.config.pad_token_id = tokenizer.eos_token_id
             # model = BetterTransformer.transform(model)#.to(self.device)
         else:
             model=AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device)
@@ -49,7 +51,7 @@ class LLM_WM:
             vocab_size=vocab_size,
             device=self.device,
             max_new_tokens=350,
-            min_length=230,
+            min_length=300,
             do_sample=True,
             no_repeat_ngram_size=4
         )

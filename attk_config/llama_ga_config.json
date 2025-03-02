@@ -7,7 +7,7 @@
             "9":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
         },
         "num_generations":15,
-        "max_edit_rate":{"100":0.11, "200":0.11},
+        "max_edit_rate":{"100":0.13, "200":0.13},
         "len_weight":{"100":0.5, "200":0.5},
         "fitness_threshold":{"100":0.9, "200":0.9},
         "eva_thr":-0.5,
@@ -39,7 +39,7 @@
             "9":"saved_model/RefDetector_SynthID_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
         },
         "num_generations":15,
-        "max_edit_rate":{"100":0.11, "200":0.11},
+        "max_edit_rate":{"100":0.13, "200":0.13},
         "len_weight":{"100":0.5, "200":0.5},
         "fitness_threshold":{"100":0.9, "200":0.9},
         "eva_thr":-0.3,
@@ -71,7 +71,7 @@
             "9":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
         },
         "num_generations":15,
-        "max_edit_rate":{"100":0.11, "200":0.11},
+        "max_edit_rate":{"100":0.13, "200":0.13},
         "len_weight":{"100":0.5, "200":0.5},
         "fitness_threshold":{"100":0.9, "200":0.9},
         "eva_thr":-0.05,

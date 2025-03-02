@@ -42,8 +42,8 @@ def plot_scatter(true_values, predicted_values, fig_path=None, title='', mid_poi
     plt.plot([left_bond, right_bond], [left_bond, right_bond], color='red', linestyle='--', label="Ideal Line (y=x)")  # 参考对角线
 
     # 图表美化
-    plt.xlabel("Original Watermark Score")
-    plt.ylabel("Reference Watermark Score")
+    plt.xlabel("Original Watermark Score", fontsize=20)
+    plt.ylabel("Reference Watermark Score", fontsize=20)
     # plt.fill_betweenx([-tmp_max, tmp_max], 0, -tmp_max, color='lightgrey', alpha=0.5)
     # plt.fill_betweenx([left_bond, right_bond], 0, tmp_max, where=[False, False], color='lightgrey', alpha=0.5)
     x_fill = np.linspace(left_bond, mid_point, 100)  # 取 x 轴左半部分
@@ -52,7 +52,7 @@ def plot_scatter(true_values, predicted_values, fig_path=None, title='', mid_poi
     plt.fill_between(x_fill, left_bond, mid_point, color='lightgray', alpha=0.5)
 
     if len(title)>0:
-        plt.title(title)
+        plt.title(title, fontsize=20)
     # plt.legend()
     plt.grid(True)
 
@@ -291,7 +291,7 @@ class RefDetector:
             
         print('loss', np.round(np.mean(loss_l), 6))
     
-    def test_epoch(self, wm_threshold=None):
+    def test_epoch(self, wm_threshold=None, epoch_num=-1):
         self.model.eval()
         if wm_threshold is not None:
             wm_threshold=(wm_threshold-self.d_mean)/self.d_std
@@ -348,7 +348,8 @@ class RefDetector:
                     self.dataset_name.replace('/', '_'), 
                     self.llm_name.replace('/', '_'), 
                     self.tokenizer_path.replace('/', '_'),
-                    str(self.rand_times)
+                    str(self.rand_times),
+                    str(epoch_num)
                 ])
             )  
             plot_scatter(t_score, p_score, fig_path=fig_path+'.pdf', title=self.wm_name, mid_point=wm_threshold)
@@ -444,19 +445,19 @@ class RefDetector:
                 print('lr', self.optimizer.param_groups[0]['lr'])
             print('epoch:', epoch)
             self.train_epoch()
-            self.test_epoch(wm_threshold=wm_threshold)
+            self.test_epoch(wm_threshold=wm_threshold, epoch_num=epoch)
     
-    def save_model(self, name='RefDetector'):
-        model_path=os.path.join(
-            'saved_model', '_'.join([
-                name,
-                self.wm_name,
-                self.dataset_name.replace('/', '_'), 
-                self.llm_name.replace('/', '_'), 
-                self.tokenizer_path.replace('/', '_'),
-                str(datetime.datetime.now().date())
-            ])
-        )    
+    def save_model(self, model_path):
+        # model_path=os.path.join(
+        #     'saved_model', '_'.join([
+        #         name,
+        #         self.wm_name,
+        #         self.dataset_name.replace('/', '_'), 
+        #         self.llm_name.replace('/', '_'), 
+        #         self.tokenizer_path.replace('/', '_'),
+        #         str(datetime.datetime.now().date())
+        #     ])
+        # )    
         self.model.save_pretrained(model_path)
         # torch.save(self.model.state_dict(), model_path+".pth")
 
@@ -464,7 +465,7 @@ class RefDetector:
 if __name__=='__main__':
     # llm_name="facebook/opt-1.3b"#"../model/Llama3.1-8B_hg"
     dataset_name='../../dataset/c4/realnewslike'
-    
+    tokenizer_path='bert-base-uncased'
     # python train_ref_detector.py --wm_name "Unbiased" --num_epochs 15 --rand_char_rate 0.1
     parser = argparse.ArgumentParser(description='train ref detector')
     parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
@@ -485,7 +486,7 @@ if __name__=='__main__':
     ref_model=RefDetector(
         llm_name=args.llm_name, 
         wm_name=args.wm_name, 
-        tokenizer_path='bert-base-uncased'
+        tokenizer_path=tokenizer_path
     )
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 
@@ -505,4 +506,16 @@ if __name__=='__main__':
     ref_model.test_epoch(wm_threshold=args.ths)
     ref_model.start_train(num_epochs=args.num_epochs, lr_step=args.lr_step, wm_threshold=args.ths)
     if args.num_epochs>0:
-        ref_model.save_model(name='RefDetector')
+        
+        model_path=os.path.join(
+            'saved_model', '_'.join([
+                'RefDetector',
+                args.wm_name,
+                dataset_name.replace('/', '_'), 
+                args.llm_name.replace('/', '_'), 
+                tokenizer_path.replace('/', '_'),
+                str(args.rand_char_rate),
+                str(args.rand_times),
+            ])
+        )   
+        ref_model.save_model(model_path=model_path)

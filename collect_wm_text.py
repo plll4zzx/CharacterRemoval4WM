@@ -18,11 +18,12 @@ def get_wm_data(
     wm_name='SIR',#'SemStamp'
     model_name = "facebook/opt-1.3b",
     rand_seed=123,
+    device=0
 ):
     c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num, rand_seed=rand_seed)
     c4_dataset.load_data(text_len)
 
-    wm_scheme=LLM_WM(model_name = model_name, device = "cuda", wm_name=wm_name)
+    wm_scheme=LLM_WM(model_name = model_name, device = "cuda:"+str(device), wm_name=wm_name)
     
     count_num=0
     base_num=0
@@ -111,6 +112,7 @@ if __name__=="__main__":
     parser.add_argument('--file_data_num', type=int, default=100)
     parser.add_argument('--text_len', type=int, default=50)
     parser.add_argument('--rand_seed', type=int, default=123)
+    parser.add_argument('--device', type=int, default=1)
 
     args = parser.parse_args()
     # for wm_name in ['Unbiased', 'KGW', 'Unigram']:#'SIR', 'SemStamp', 
@@ -121,6 +123,7 @@ if __name__=="__main__":
         text_len=args.text_len, 
         wm_name=args.wm_name, 
         model_name=args.model_name,
-        rand_seed=args.rand_seed
+        rand_seed=args.rand_seed,
+        device=args.device
     )
     

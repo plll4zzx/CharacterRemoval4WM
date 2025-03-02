@@ -1,7 +1,7 @@
 import tiktoken
 from transformers import AutoTokenizer
 
-tokenizer_type='bert-base-uncased'
+tokenizer_type='facebook/opt-1.3b'
 tokenizer = AutoTokenizer.from_pretrained(tokenizer_type)
 # tokenizer = tiktoken.get_encoding("cl100k_base")  # GPT-4 的 BPE 词表
 text_l=['language', "lanɡuage", "lanuage","large lan𝐠uage model"]
