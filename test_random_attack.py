@@ -87,10 +87,10 @@ def test_rand_attack(
 
     data_records=[]
 
-    if max_token_num>200:
-        text_num=text_num*4
-    for idx in range(text_num+1):
-        if idx%25==0 and idx>0:
+    # if max_token_num>200:
+    #     text_num=text_num*4
+    for idx in range(int(text_num*3)+1):
+        if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
             rand_attack.log_info('******')
             rand_attack.log_info({
                 'edit_dist': round(np.mean(t_edit_dist_l),4),
@@ -122,7 +122,7 @@ def test_rand_attack(
                     'ocr_wm_ppl': round(np.mean(ocr_wm_ppl_l),4),
                 })
             rand_attack.log_info('******')
-            if idx==text_num:
+        if idx>=text_num and base_num>=text_num*0.8:
                 break
         
         rand_attack.log_info(str(idx))

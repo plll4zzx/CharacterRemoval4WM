@@ -106,8 +106,8 @@ def test_ga_attack(
     data_records=[]
 
     text_num=300
-    for idx in range(text_num+1):#[79]:#
-        if idx%25==0 and idx>0:
+    for idx in range(int(text_num*3)+1):#[79]:#
+        if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
             ga_attack.log_info('******')
             ga_attack.log_info({
                 'edit_dist': round(np.mean(t_edit_dist_l),4),
@@ -139,7 +139,7 @@ def test_ga_attack(
                     'ocr_wm_ppl': round(np.mean(ocr_wm_ppl_l),4),
                 })
             ga_attack.log_info('******')
-        if idx==text_num:
+        if idx>=text_num and base_num>=text_num*0.8:
             break
         
         ga_attack.log_info(str(idx))

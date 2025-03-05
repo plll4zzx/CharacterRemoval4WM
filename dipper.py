@@ -48,6 +48,7 @@ class DipperParaphraser(object):
         sentences = sent_tokenize(input_text)
         prefix = " ".join(prefix.replace("\n", " ").split())
         output_text = ""
+        outputs_list=[]
 
         for sent_idx in range(0, len(sentences), sent_interval):
             curr_sent_window = " ".join(sentences[sent_idx:sent_idx + sent_interval])
@@ -64,6 +65,7 @@ class DipperParaphraser(object):
             outputs = self.tokenizer.batch_decode(outputs, skip_special_tokens=True)
             prefix += " " + outputs[0]
             output_text += " " + outputs[0]
+            outputs_list.append(outputs[0])
 
         return output_text
 

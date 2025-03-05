@@ -2,9 +2,9 @@
     "KGW":{
         "victim_tokenizer": "bert-base-uncased",
         "victim_model":{
-            "0":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-16",
-            "5":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-17",
-            "9":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
+            "0":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_0",
+            "5":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_5",
+            "9":"saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_9"
         },
         "num_generations":15,
         "max_edit_rate":{"100":0.13, "200":0.13},
@@ -13,7 +13,7 @@
         "eva_thr":-0.5,
         "mean":3.7748,
         "std":3.9252,
-        "ab_std":1
+        "ab_std":3
     },
     "DIP":{
         "victim_tokenizer": "bert-base-uncased",
@@ -29,7 +29,7 @@
         "eva_thr":-0.1,
         "mean":1.297289,
         "std":1.212317757,
-        "ab_std":1
+        "ab_std":2
     },
     "SynthID":{
         "victim_tokenizer": "bert-base-uncased",
@@ -45,14 +45,14 @@
         "eva_thr":-0.3,
         "mean":0.5179338,
         "std":0.0185409,
-        "ab_std":2
+        "ab_std":0
     },
     "Unigram":{
         "victim_tokenizer": "bert-base-uncased",
         "victim_model":{
-            "0":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-16",
-            "5":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-17",
-            "9":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
+            "0":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_0",
+            "5":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_5",
+            "9":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_9"
         },
         "num_generations":15,
         "max_edit_rate":{"100":0.21, "200":0.21},

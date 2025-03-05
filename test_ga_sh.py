@@ -90,24 +90,24 @@ for max_token_num in max_token_num_list:
                 def_stl=def_stl,
             )
             print(tmp_sh)
-            # os.system(tmp_sh)
-            test_ga_attack(
-                llm_name=llm_name, #
-                wm_name=wm_name, 
-                max_edit_rate=max_edit_rate,
-                max_token_num=max_token_num,
-                num_generations=num_generations,
-                victim_model=victim_model,
-                victim_tokenizer=victim_tokenizer,
-                len_weight=len_weight,
-                fitness_threshold=fitness_threshold,
-                eva_thr=eva_thr,
-                mean=mean, #
-                std=std, #
-                ab_std=ab_std, #
-                atk_style=atk_style, #
-                ori_flag=ori_flag, #
-                device=device,
-                def_stl=def_stl,
-            )
+            os.system(tmp_sh)
+            # test_ga_attack(
+            #     llm_name=llm_name, #
+            #     wm_name=wm_name, 
+            #     max_edit_rate=max_edit_rate,
+            #     max_token_num=max_token_num,
+            #     num_generations=num_generations,
+            #     victim_model=victim_model,
+            #     victim_tokenizer=victim_tokenizer,
+            #     len_weight=len_weight,
+            #     fitness_threshold=fitness_threshold,
+            #     eva_thr=eva_thr,
+            #     mean=mean, #
+            #     std=std, #
+            #     ab_std=ab_std, #
+            #     atk_style=atk_style, #
+            #     ori_flag=ori_flag, #
+            #     device=device,
+            #     def_stl=def_stl,
+            # )
 

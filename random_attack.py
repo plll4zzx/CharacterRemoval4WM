@@ -430,17 +430,21 @@ class RandomAttack:
         if self.paraphraser is None:
             # import Levenshtein
             self.paraphraser=DipperParaphraser()
-        sub_sentence_list=split_sentence(sentence)
-        re_sub_sentence_list=[]
+        # sub_sentence_list=split_sentence(sentence)
+        # re_sub_sentence_list=[]
 
-        for sub_sentence in sub_sentence_list:
-            re_sub_sentence = self.paraphraser.paraphrase(sentence, lex_diversity=60, order_diversity=0)
-            if len(re_sub_sentence[0])<=20:
-                re_sub_sentence_list.append(sub_sentence)
-            else:
-                re_sub_sentence_list.append(re_sub_sentence[0])
-        new_sentence='. '.join(re_sub_sentence_list)
-        # new_sentence=self.paraphraser.paraphrase(sentence, lex_diversity=20, order_diversity=0)
+        # for sub_sentence in sub_sentence_list:
+        #     re_sub_sentence = self.paraphraser.paraphrase(sub_sentence, lex_diversity=20, order_diversity=0)
+        #     if len(re_sub_sentence)<=20:
+        #         re_sub_sentence_list.append(sub_sentence)
+        #     else:
+        #         re_sub_sentence_list.append(re_sub_sentence)
+        # new_sentence=' '.join(re_sub_sentence_list)
+        sentence=sentence.replace(';', '.')
+        new_sentence=self.paraphraser.paraphrase(
+            sentence, lex_diversity=20, order_diversity=0, sent_interval=1, 
+            do_sample=True, top_p=0.75, top_k=None, max_length=512
+        )
         
         ori_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
         new_ids=self.tokenizer.encode(new_sentence, add_special_tokens=False)

@@ -24,10 +24,10 @@ llm_name='facebook/opt-1.3b'#'../model/Llama3.1-8B_hg'#
 data_aug=9
 ori_flag="False"
 def_stl=""
-atk_style_list=['char']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
-atk_times_list=[10]#1,,50,100
+atk_style_list=['sentence']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
+atk_times_list=[1]#1,,50,100
 max_token_num_list=[100]#100,50, 100,150,  
-device=1
+device=0
 
 if 'opt' in llm_name:
     rand_config=load_json(file_path='attk_config/opt_rand_config.json')
@@ -36,7 +36,7 @@ else:
 
 for data_aug in [9]:
     for max_token_num in max_token_num_list:
-        for wm_name in ['DIP']:#rand_config:#,'Unbiased''DIP', 'SynthID','Unigram','Unbiased','KGW'
+        for wm_name in ['KGW','DIP', 'SynthID','Unigram','Unbiased']:#rand_config:#,'Unbiased''DIP', 'SynthID','Unigram','Unbiased','KGW'
             wm_config=rand_config[wm_name]
             ref_tokenizer=wm_config['ref_tokenizer']
             if data_aug==-1:
@@ -62,17 +62,17 @@ for data_aug in [9]:
                             device=device
                         )
                         print(tmp_sh)
-                        # os.system(tmp_sh)
-                        test_rand_attack(
-                            llm_name=llm_name,
-                            wm_name=wm_name, 
-                            max_edit_rate=max_edit_rate,
-                            max_token_num=max_token_num,
-                            atk_style=atk_style,
-                            ref_tokenizer=ref_tokenizer,
-                            ref_model=ref_model,
-                            atk_times=atk_times,
-                            ori_flag=ori_flag,
-                            def_stl=def_stl,
-                            device=device
-                        )
+                        os.system(tmp_sh)
+                        # test_rand_attack(
+                        #     llm_name=llm_name,
+                        #     wm_name=wm_name, 
+                        #     max_edit_rate=max_edit_rate,
+                        #     max_token_num=max_token_num,
+                        #     atk_style=atk_style,
+                        #     ref_tokenizer=ref_tokenizer,
+                        #     ref_model=ref_model,
+                        #     atk_times=atk_times,
+                        #     ori_flag=ori_flag,
+                        #     def_stl=def_stl,
+                        #     device=device
+                        # )
