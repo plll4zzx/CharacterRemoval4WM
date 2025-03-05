@@ -19,7 +19,7 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" \
 --victim_model "{victim_model}" --wm_name "{wm_name}"  \
 --llm_name "{llm_name}" --eva_thr {eva_thr} --mean {mean} \
---std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}'
+--std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}  --def_stl "{def_stl}"'
 
 # python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
@@ -29,11 +29,12 @@ parser.add_argument('--wm_name', type=str, default='')
 parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
-parser.add_argument('--ab_std', type=int, default=-1)
-parser.add_argument('--device', type=int, default=0)
+parser.add_argument('--ab_std', type=int, default=1)
+parser.add_argument('--device', type=int, default=1)
 parser.add_argument('--max_edit_rate', type=float, default=-1)
 args = parser.parse_args()
 
+def_stl="ocr"
 atk_style=args.atk_style
 data_aug=args.data_aug
 device=args.device
@@ -85,26 +86,28 @@ for max_token_num in max_token_num_list:
                 ab_std=ab_std, #
                 atk_style=atk_style, #
                 ori_flag=ori_flag, #
-                device=device
+                device=device,
+                def_stl=def_stl,
             )
             print(tmp_sh)
-            os.system(tmp_sh)
-            # test_ga_attack(
-            #     llm_name=llm_name, #
-            #     wm_name=wm_name, 
-            #     max_edit_rate=max_edit_rate,
-            #     max_token_num=max_token_num,
-            #     num_generations=num_generations,
-            #     victim_model=victim_model,
-            #     victim_tokenizer=victim_tokenizer,
-            #     len_weight=len_weight,
-            #     fitness_threshold=fitness_threshold,
-            #     eva_thr=eva_thr,
-            #     mean=mean, #
-            #     std=std, #
-            #     ab_std=ab_std, #
-            #     atk_style=atk_style, #
-            #     ori_flag=ori_flag, #
-            #     device=device
-            # )
+            # os.system(tmp_sh)
+            test_ga_attack(
+                llm_name=llm_name, #
+                wm_name=wm_name, 
+                max_edit_rate=max_edit_rate,
+                max_token_num=max_token_num,
+                num_generations=num_generations,
+                victim_model=victim_model,
+                victim_tokenizer=victim_tokenizer,
+                len_weight=len_weight,
+                fitness_threshold=fitness_threshold,
+                eva_thr=eva_thr,
+                mean=mean, #
+                std=std, #
+                ab_std=ab_std, #
+                atk_style=atk_style, #
+                ori_flag=ori_flag, #
+                device=device,
+                def_stl=def_stl,
+            )
 

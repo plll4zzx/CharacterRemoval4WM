@@ -7,21 +7,23 @@
 # import transformers
 
 # import textattack
-from read_data import c4
+# from read_data import c4
 # import textattack.attack_sems
-import numpy as np
-from textattack.utils import Logger, to_string, load_json
 # import datetime
+import numpy as np
+from textattack.utils import to_string, load_json, save_json
 from llm_wm import LLM_WM
 from ga_attack import GA_Attack
 import argparse
 import Levenshtein
 from random_attack import rouge_f1, belu_func
+from defence_homo import defence_method
 
 
 def test_ga_attack(
     wm_name, max_edit_rate, num_generations, 
-    max_token_num=80, victim_tokenizer = 'bert-base-uncased',
+    max_token_num=80, 
+    victim_tokenizer = 'bert-base-uncased',
     victim_model = 'saved_model/RefDetector_KGW_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_2024-12-31',
     llm_name="facebook/opt-1.3b",
     dataset_name='../../dataset/c4/realnewslike',
@@ -33,7 +35,8 @@ def test_ga_attack(
     ab_std=1,
     atk_style='char',
     ori_flag=False,
-    device=0
+    device=0,
+    def_stl='',
 ):
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
@@ -89,6 +92,19 @@ def test_ga_attack(
     ppl_l=[]
     adv_ppl_l=[]
 
+    adv_ocr_num=0
+    wm_ocr_num=0
+    adv_ocr_rate_l=[]
+    wm_ocr_rate_l=[]
+    ocr_adv_belu_l=[]
+    ocr_wm_belu_l=[]
+    ocr_adv_rouge_l=[]
+    ocr_wm_rouge_l=[]
+    ocr_adv_ppl_l=[]
+    ocr_wm_ppl_l=[]
+
+    data_records=[]
+
     text_num=300
     for idx in range(text_num+1):#[79]:#
         if idx%25==0 and idx>0:
@@ -109,6 +125,19 @@ def test_ga_attack(
                 'ppl_rate': round(np.mean(ppl_l),4),
                 'adv_ppl': round(np.mean(adv_ppl_l),4)
             })
+            if def_stl!='':
+                ga_attack.log_info({
+                    'adv_ocr_score_rate': round(np.mean(adv_ocr_rate_l),4),
+                    'adv_ocr_rate': round(adv_ocr_num/base_num, 4),
+                    'ocr_adv_belu': round(np.mean(ocr_adv_belu_l),4),
+                    'ocr_adv_rouge': round(np.mean(ocr_adv_rouge_l),4),
+                    'ocr_adv_ppl': round(np.mean(ocr_adv_ppl_l),4),
+                    'wm_ocr_score_rate': round(np.mean(wm_ocr_rate_l),4),
+                    'wm_ocr_rate': round(wm_ocr_num/base_num, 4),
+                    'ocr_wm_belu': round(np.mean(ocr_wm_belu_l),4),
+                    'ocr_wm_rouge': round(np.mean(ocr_wm_rouge_l),4),
+                    'ocr_wm_ppl': round(np.mean(ocr_wm_ppl_l),4),
+                })
             ga_attack.log_info('******')
         if idx==text_num:
             break
@@ -120,44 +149,124 @@ def test_ga_attack(
         if len(wm_text)==0:
             continue
 
-        wm_rlt=wm_scheme.detect_wm(wm_text)
-        if wm_rlt['is_watermarked']==True:
+        wm_det=wm_scheme.detect_wm(wm_text)
+        if wm_det['is_watermarked']==True:
             base_num+=1
         else:
             continue
         
         ori_fitness=ga_attack.evaluate_fitness(wm_text, target_class)
         ga_attack.log_info(['ori_fitness:', ori_fitness])
-        ga_attack.log_info(['wm_detect:', wm_rlt])
+        ga_attack.log_info(['wm_detect:', wm_det])
 
-        attk_text, edit_dist, attk_score=ga_attack.get_adv(
+        adv_text, edit_dist, adv_ref_score=ga_attack.get_adv(
             wm_text, target_class, ori_fitness,
             max_edit_rate=max_edit_rate,
             num_generations=num_generations,
         )
         try:
-            attk_rlt=wm_scheme.detect_wm(attk_text)
-            ga_attack.log_info(['ak_detect:', attk_rlt])
-            wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
-            wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
-            rouge_score_l.append(rouge_f1(wm_text, attk_text))
-            belu_score_l.append(belu_func(wm_text, attk_text))
+            adv_det=wm_scheme.detect_wm(adv_text)
+            ga_attack.log_info(['ak_detect:', adv_det])
+            wm_score_l.append(wm_det['score']-adv_det['score'])
+            wm_score_drop_rate_l.append((wm_det['score']-adv_det['score'])/wm_det['score'])
+            
+            rouge_score=rouge_f1(wm_text, adv_text)
+            belu_score=belu_func(wm_text, adv_text)
+            c_edit_dist=Levenshtein.distance(wm_text, adv_text)
+            rouge_score_l.append(rouge_score)
+            belu_score_l.append(belu_score)
             char_num_l.append(len(wm_text))
-            c_edit_dist_l.append(Levenshtein.distance(wm_text, attk_text))
+            c_edit_dist_l.append(c_edit_dist)
 
             wm_ppl=wm_scheme.get_perplexity(wm_text)
-            adv_ppl=wm_scheme.get_perplexity(attk_text)
+            adv_ppl=wm_scheme.get_perplexity(adv_text)
             ppl_l.append((adv_ppl-wm_ppl)/wm_ppl)
             adv_ppl_l.append(adv_ppl)
+        
+            data_record={
+                'wm_text': wm_text,
+                'token_num': token_num,
+                'char_num': len(wm_text),
+                'wm_detect': wm_det,
+                'wm_ref_score': float(ori_fitness),
+                'wm_ppl': wm_ppl,
+                'adv_text': adv_text,
+                'adv_detect': adv_det,
+                'adv_ppl': adv_ppl,
+                'adv_ref_score': float(adv_ref_score),
+                'wm_score_drop': wm_det['score']-adv_det['score'],
+                'rouge-f1': rouge_score,
+                'belu': belu_score,
+                't_edit_dist': edit_dist,
+                'c_edit_dist': c_edit_dist,
+                'ppl_rate': (adv_ppl-wm_ppl)/wm_ppl,
+            }
 
-            if attk_rlt['is_watermarked']==False:
+            if adv_det['is_watermarked']==False:
                 count_num+=1
         except:
             ga_attack.log_info('ERROR')
         ga_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
-        ga_attack.log_info(['ak_text:', attk_text.replace('\n',' ')])
+        ga_attack.log_info(['ak_text:', adv_text.replace('\n',' ')])
         t_edit_dist_l.append(edit_dist)
         token_num_l.append(token_num)
+
+        if def_stl!='':
+            ocr_adv_text=defence_method[def_stl](adv_text)#, img_path='text.png'
+            ocr_adv_rlt=wm_scheme.detect_wm(ocr_adv_text)
+            ocr_adv_ppl=wm_scheme.get_perplexity(ocr_adv_text)
+            ga_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
+            ga_attack.log_info(['ocr_detect:', ocr_adv_rlt])
+            if ocr_adv_rlt['is_watermarked']==False and adv_det['is_watermarked']==False:
+                adv_ocr_num+=1
+            adv_ocr_rate_l.append((ocr_adv_rlt['score']-adv_det['score'])/(adv_det['score']+1e-4))
+            ocr_adv_belu_l.append(belu_func(wm_text, ocr_adv_text))
+            ocr_adv_rouge_l.append(rouge_f1(wm_text, ocr_adv_text))
+            ocr_adv_ppl_l.append((ocr_adv_ppl-wm_ppl)/wm_ppl)
+            
+            ocr_wm_text=defence_method[def_stl](wm_text)
+            ocr_wm_rlt=wm_scheme.detect_wm(ocr_wm_text)
+            ga_attack.log_info(['ocr_wm_text:', ocr_wm_text.replace('\n',' ')])
+            ga_attack.log_info(['ocr_wm_detect:', ocr_wm_rlt])
+            if ocr_wm_rlt['is_watermarked']==False:
+                wm_ocr_num+=1
+            wm_ocr_rate_l.append((wm_det['score']-ocr_wm_rlt['score'])/wm_det['score'])
+            ocr_wm_rouge_l.append(rouge_f1(wm_text, ocr_wm_text))
+            ocr_wm_belu_l.append(belu_func(wm_text, ocr_wm_text))
+            ocr_wm_ppl=wm_scheme.get_perplexity(ocr_wm_text)
+            ocr_wm_ppl_l.append((ocr_wm_ppl-wm_ppl)/wm_ppl)
+            
+            data_record['ocr_adv_text']=ocr_adv_text
+            data_record['ocr_adv_detect']=ocr_adv_rlt
+            data_record['ocr_adv_belu']=ocr_adv_belu_l[-1]
+            data_record['ocr_adv_rouge']=ocr_adv_rouge_l[-1]
+            data_record['ocr_adv_ppl']=ocr_adv_ppl
+            data_record['ocr_wm_text']=ocr_wm_text
+            data_record['ocr_wm_detect']=ocr_wm_rlt
+            data_record['ocr_wm_belu']=ocr_wm_belu_l[-1]
+            data_record['ocr_wm_rouge']=ocr_wm_rouge_l[-1]
+            data_record['ocr_wm_ppl']=ocr_wm_ppl
+        
+        data_records.append(data_record)
+    
+    save_json(
+        data_records,
+        "saved_attk_data/"+"_".join([
+            'GA', 
+            str(max_edit_rate), str(num_generations), 
+            str(max_token_num), 
+            str(len_weight),
+            str(fitness_threshold),
+            str(eva_thr),
+            str(mean),
+            str(std),
+            str(ab_std),
+            atk_style,
+            str(ori_flag),
+            def_stl,
+            victim_model.replace('saved_model/',''),
+        ])+".json"
+    )
     
     # ga_attack.save()
 
@@ -181,6 +290,7 @@ if __name__=="__main__":
     parser.add_argument('--atk_style', type=str, default='char')
     parser.add_argument('--ori_flag', type=str, default='False')
     parser.add_argument('--device', type=int, default=0)
+    parser.add_argument('--def_stl', type=str, default='')
     
     args = parser.parse_args()
     test_ga_attack(
@@ -199,6 +309,7 @@ if __name__=="__main__":
         ab_std=args.ab_std, #
         atk_style=args.atk_style, #
         ori_flag=bool(args.ori_flag=='True'), #
-        device=args.device #
+        device=args.device, #
+        def_stl=args.def_stl, #
     )
     

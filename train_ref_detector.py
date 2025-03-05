@@ -207,10 +207,10 @@ class WMDataset(Dataset):
 
 class RefDetector:
 
-    def __init__(self, llm_name, wm_name, tokenizer_path="bert-base-uncased"):
+    def __init__(self, llm_name, wm_name, tokenizer_path="bert-base-uncased", device=0):
         self.llm_name=llm_name
         self.wm_name=wm_name
-        self.device='cuda'
+        self.device='cuda:'+str(device)
         self.tokenizer_path=tokenizer_path
         self.tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
         print(wm_name, llm_name)
@@ -231,7 +231,7 @@ class RefDetector:
                 self.dataset=WMDataset(data_path, data_num, stored_flag=True)
             else:
                 data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
-                wm_scheme=LLM_WM(model_name = self.llm_name, device = "cuda", wm_name=self.wm_name)
+                wm_scheme=LLM_WM(model_name = self.llm_name, device = self.device, wm_name=self.wm_name)
                 self.dataset=WMDataset(
                     data_path, data_num, self.tokenizer, 
                     # text_len=text_len, 
@@ -245,7 +245,7 @@ class RefDetector:
                 self.dataset=WMDataset(data_path, data_num, stored_flag=True)
             else:
                 data_path="saved_data/"+"_".join([self.wm_name, dataset_name.replace('/','_'), self.llm_name.replace('/','_')])+"_5000.json"
-                wm_scheme=LLM_WM(model_name = self.llm_name, device = "cuda", wm_name=self.wm_name)
+                wm_scheme=LLM_WM(model_name = self.llm_name, device = self.device, wm_name=self.wm_name)
                 self.dataset=WMDataset(
                     data_path, data_num, self.tokenizer, 
                     # text_len=text_len, 
@@ -474,6 +474,7 @@ if __name__=='__main__':
     parser.add_argument('--lr', type=float, default=1e-5)
     parser.add_argument('--rand_char_rate', type=float, default=0.15)
     parser.add_argument('--lr_step', type=int, default=3)
+    parser.add_argument('--device', type=int, default=0)
     parser.add_argument(
         '--model_path', type=str, 
         # default=None,
@@ -486,7 +487,8 @@ if __name__=='__main__':
     ref_model=RefDetector(
         llm_name=args.llm_name, 
         wm_name=args.wm_name, 
-        tokenizer_path=tokenizer_path
+        tokenizer_path=tokenizer_path,
+        device=args.device,
     )
     ref_model.load_data(
         dataset_name=dataset_name, data_num=5000, 

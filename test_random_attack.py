@@ -7,11 +7,11 @@
 # import transformers
 
 # import textattack
-from read_data import c4
+# from read_data import c4
 # import textattack.attack_sems
-import numpy as np
-from textattack.utils import Logger, to_string, load_json
 # import datetime
+import numpy as np
+from textattack.utils import to_string, load_json, save_json
 from llm_wm import LLM_WM
 from random_attack import RandomAttack, rouge_f1, belu_func
 import argparse
@@ -23,7 +23,6 @@ def test_rand_attack(
     ref_tokenizer = None, ref_model=None, atk_times=1, ori_flag=False, def_stl='',
     device=0
 ):
-    
     
     dataset_name='../../dataset/c4/realnewslike'
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
@@ -86,6 +85,8 @@ def test_rand_attack(
     ocr_adv_ppl_l=[]
     ocr_wm_ppl_l=[]
 
+    data_records=[]
+
     if max_token_num>200:
         text_num=text_num*4
     for idx in range(text_num+1):
@@ -131,8 +132,8 @@ def test_rand_attack(
         if len(wm_text)==0:
             continue
 
-        wm_rlt=wm_scheme.detect_wm(wm_text)
-        if wm_rlt['is_watermarked']==True:
+        wm_det=wm_scheme.detect_wm(wm_text)
+        if wm_det['is_watermarked']==True:
             base_num+=1
         else:
             continue
@@ -144,45 +145,68 @@ def test_rand_attack(
             atk_times=atk_times,
         )
 
-        attk_rlt=wm_scheme.detect_wm(adv_rlt['sentence'])
+        adv_det=wm_scheme.detect_wm(adv_rlt['sentence'])
         if atk_times>0:
             ori_score=rand_attack.ref_score(wm_text, target_class)
             rand_attack.log_info(['ori_score:', ori_score[0]])
             rand_attack.log_info(['ref_score:', adv_rlt['ref_score']])
         rand_attack.log_info(['token_num:', token_num])
-        rand_attack.log_info(['wm_detect:', wm_rlt])
-        rand_attack.log_info(['ak_detect:', attk_rlt])
+        rand_attack.log_info(['wm_detect:', wm_det])
+        rand_attack.log_info(['ak_detect:', adv_det])
         rand_attack.log_info(['wm_text:', wm_text.replace('\n',' ')])
         rand_attack.log_info(['ak_text:', adv_rlt['sentence'].replace('\n',' ')])
 
         t_edit_dist_l.append(adv_rlt['edit_dist'])
         token_num_l.append(token_num)
-        wm_score_l.append(wm_rlt['score']-attk_rlt['score'])
-        wm_score_drop_rate_l.append((wm_rlt['score']-attk_rlt['score'])/wm_rlt['score'])
-        rouge_score_l.append(rouge_f1(wm_text, adv_rlt['sentence']))
-        belu_score_l.append(belu_func(wm_text, adv_rlt['sentence']))
+        wm_score_l.append(wm_det['score']-adv_det['score'])
         char_num_l.append(len(wm_text))
-        c_edit_dist_l.append(Levenshtein.distance(wm_text, adv_rlt['sentence']))
+        wm_score_drop_rate_l.append((wm_det['score']-adv_det['score'])/wm_det['score'])
 
+        rouge_score=rouge_f1(wm_text, adv_rlt['sentence'])
+        belu_score=belu_func(wm_text, adv_rlt['sentence'])
+        c_edit_dist=Levenshtein.distance(wm_text, adv_rlt['sentence'])
         wm_ppl=wm_scheme.get_perplexity(wm_text)
         adv_ppl=wm_scheme.get_perplexity(adv_rlt['sentence'])
+        rouge_score_l.append(rouge_score)
+        belu_score_l.append(belu_score)
+        c_edit_dist_l.append(c_edit_dist)
         ppl_l.append((adv_ppl-wm_ppl)/wm_ppl)
         adv_ppl_l.append(adv_ppl)
+        
+        data_record={
+            'wm_text': wm_text,
+            'token_num': token_num,
+            'char_num': len(wm_text),
+            'wm_detect': wm_det,
+            'wm_ref_score': float(ori_score[0]),
+            'wm_ppl': wm_ppl,
+            'adv_text': adv_rlt['sentence'],
+            'adv_detect': adv_det,
+            'adv_ppl': adv_ppl,
+            'adv_ref_score': float(adv_rlt['ref_score']),
+            'wm_score_drop': wm_det['score']-adv_det['score'],
+            'rouge-f1': rouge_score,
+            'belu': belu_score,
+            't_edit_dist': adv_rlt['edit_dist'],
+            'c_edit_dist': c_edit_dist,
+            'ppl_rate': (adv_ppl-wm_ppl)/wm_ppl,
+        }
 
-        if attk_rlt['is_watermarked']==False:
+        if adv_det['is_watermarked']==False:
             count_num+=1
 
         if def_stl!='':
             ocr_adv_text=defence_method[def_stl](adv_rlt['sentence'])#, img_path='text.png'
             ocr_adv_rlt=wm_scheme.detect_wm(ocr_adv_text)
+            ocr_adv_ppl=wm_scheme.get_perplexity(ocr_adv_text)
             rand_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
             rand_attack.log_info(['ocr_detect:', ocr_adv_rlt])
-            if ocr_adv_rlt['is_watermarked']==False and attk_rlt['is_watermarked']==False:
+            if ocr_adv_rlt['is_watermarked']==False and adv_det['is_watermarked']==False:
                 adv_ocr_num+=1
-            adv_ocr_rate_l.append((ocr_adv_rlt['score']-attk_rlt['score'])/attk_rlt['score'])
+            adv_ocr_rate_l.append((ocr_adv_rlt['score']-adv_det['score'])/(adv_det['score']+1e-4))
             ocr_adv_belu_l.append(belu_func(wm_text, ocr_adv_text))
             ocr_adv_rouge_l.append(rouge_f1(wm_text, ocr_adv_text))
-            ocr_adv_ppl_l.append((wm_scheme.get_perplexity(ocr_adv_text)-wm_ppl)/wm_ppl)
+            ocr_adv_ppl_l.append((ocr_adv_ppl-wm_ppl)/wm_ppl)
             
             ocr_wm_text=defence_method[def_stl](wm_text)
             ocr_wm_rlt=wm_scheme.detect_wm(ocr_wm_text)
@@ -190,11 +214,32 @@ def test_rand_attack(
             rand_attack.log_info(['ocr_wm_detect:', ocr_wm_rlt])
             if ocr_wm_rlt['is_watermarked']==False:
                 wm_ocr_num+=1
-            wm_ocr_rate_l.append((wm_rlt['score']-ocr_wm_rlt['score'])/wm_rlt['score'])
+            wm_ocr_rate_l.append((wm_det['score']-ocr_wm_rlt['score'])/wm_det['score'])
             ocr_wm_rouge_l.append(rouge_f1(wm_text, ocr_wm_text))
             ocr_wm_belu_l.append(belu_func(wm_text, ocr_wm_text))
-            ocr_wm_ppl_l.append((wm_scheme.get_perplexity(ocr_wm_text)-wm_ppl)/wm_ppl)
-    # rand_attack.save()
+            ocr_wm_ppl=wm_scheme.get_perplexity(ocr_wm_text)
+            ocr_wm_ppl_l.append((ocr_wm_ppl-wm_ppl)/wm_ppl)
+            data_record['ocr_adv_text']=ocr_adv_text
+            data_record['ocr_adv_detect']=ocr_adv_rlt
+            data_record['ocr_adv_belu']=ocr_adv_belu_l[-1]
+            data_record['ocr_adv_rouge']=ocr_adv_rouge_l[-1]
+            data_record['ocr_adv_ppl']=ocr_adv_ppl
+            data_record['ocr_wm_text']=ocr_wm_text
+            data_record['ocr_wm_detect']=ocr_wm_rlt
+            data_record['ocr_wm_belu']=ocr_wm_belu_l[-1]
+            data_record['ocr_wm_rouge']=ocr_wm_rouge_l[-1]
+            data_record['ocr_wm_ppl']=ocr_wm_ppl
+        data_records.append(data_record)
+    save_json(
+        data_records,
+        "saved_attk_data/"+"_".join([
+            'Rand', 
+            # llm_name.replace('/','_'), wm_name.replace('/','_'), 
+            str(max_edit_rate), str(max_token_num), atk_style, 
+            str(atk_times), str(ori_flag), def_stl, 
+            ref_model.replace('saved_model/',''), 
+        ])+".json"
+    )
 
 if __name__=="__main__":
     # python test_random_attack.py --max_edit_rate 0.2 --atk_style "char" --max_token_num 200
@@ -210,6 +255,7 @@ if __name__=="__main__":
     parser.add_argument('--atk_times', type=int, default=0)
     parser.add_argument('--ori_flag', type=str, default='False')
     parser.add_argument('--def_stl', type=str, default='')
+    parser.add_argument('--device', type=int, default=0)
     
     args = parser.parse_args()
     test_rand_attack(
@@ -222,6 +268,7 @@ if __name__=="__main__":
         ref_model=args.ref_model,
         atk_times=args.atk_times,
         ori_flag=bool(args.ori_flag=='True'),
-        def_stl=args.def_stl
+        def_stl=args.def_stl,
+        device=args.device,
     )
     

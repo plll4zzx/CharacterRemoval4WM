@@ -36,8 +36,8 @@ def find_max_font_size(text, max_width, max_height, font_path, line_spacing, pad
 
 def text_to_image(
     text, max_width=600, max_height=200, font_color="black", bg_color="white",
-    font_path="/usr/share/fonts/truetype/unifont/unifont.ttf",#
-    # font_path="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+    # font_path="/usr/share/fonts/truetype/unifont/unifont.ttf",#
+    font_path="/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
     padding=10, line_spacing=4
 ):
     """
