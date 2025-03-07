@@ -127,8 +127,8 @@ homos_lo = {
 def find_homo(input_char):
     # input_char=input_char.lower()
     if input_char in homos:
-        return homos[input_char][0]
-        # return homos[input_char][homos_lo[input_char]]
+        # return homos[input_char][0]
+        return homos[input_char][homos_lo[input_char]]
         # return homos[input_char][max(0, homos_lo[input_char]-1)]
     else:
         # random_char = random.choice(unprintable_char)
@@ -149,7 +149,7 @@ def text_homo_back(text, style='del'):
         new_text=new_text+homo_back(tmp_char, style='del')
     return new_text
 
-def to_string(inputs):
+def to_string(inputs, step_char=' '):
     output_str=''
     for input in inputs:
         if isinstance(input, list) and len(input)>20:
@@ -158,8 +158,8 @@ def to_string(inputs):
             output_str+=input
         else:
             output_str+=str(input)
-        output_str+=' '
-    return output_str
+        output_str+=step_char
+    return output_str[0:-1]
 
 def load_json(file_path):
     with open(file_path, 'r') as file:
@@ -234,13 +234,7 @@ class Logger(object):
         fmt_file='%(asctime)s - %(levelname)s: %(message)s'
         t_format_str = logging.Formatter(fmt_file)#设置日志格式
 
-        s_fmt_file='%(message)s'
-        s_format_str = logging.Formatter(s_fmt_file)#设置日志格式
-
         self.logger.setLevel(self.level_relations.get(level))#设置日志级别
-        sh = logging.StreamHandler()#往屏幕上输出
-        sh.setFormatter(s_format_str) #设置屏幕上显示的格式
-        sh.addFilter(self._screen_filter)  # Add custom filter to screen handler
         th = handlers.TimedRotatingFileHandler(filename=filename,when=when,backupCount=backCount,encoding='utf-8')#往文件里写入#指定间隔时间自动生成文件的处理器
         #实例化TimedRotatingFileHandler
         #interval是时间间隔，backupCount是备份文件的个数，如果超过这个个数，就会自动删除，when是间隔的时间单位，单位有以下几种：
@@ -251,9 +245,15 @@ class Logger(object):
         # W 每星期（interval==0时代表星期一）
         # midnight 每天凌晨
         th.setFormatter(t_format_str)#设置文件里写入的格式
-        if screen:
-            self.logger.addHandler(sh) #把对象加到logger里
         self.logger.addHandler(th)
+        
+        if screen:
+            s_fmt_file='%(message)s'
+            s_format_str = logging.Formatter(s_fmt_file)#设置日志格式
+            sh = logging.StreamHandler()#往屏幕上输出
+            sh.setFormatter(s_format_str) #设置屏幕上显示的格式
+            sh.addFilter(self._screen_filter)  # Add custom filter to screen handler
+            self.logger.addHandler(sh) #把对象加到logger里
 
     @staticmethod
     def _screen_filter(record):

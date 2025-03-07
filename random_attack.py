@@ -136,7 +136,7 @@ class RandomAttack:
         
         if logger is None:
             self.log=Logger(
-                'attack_log/opt-1/RandomAttack'+'-'.join([
+                'attack_log/len/RandomAttack'+'-'.join([
                     wm_name, 
                     # self.attack_name, 
                     # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),

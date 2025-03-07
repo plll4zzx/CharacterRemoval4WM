@@ -22,8 +22,8 @@ def get_wm_data(
 ):
     c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num, rand_seed=rand_seed)
     c4_dataset.load_data(text_len)
-
-    wm_scheme=LLM_WM(model_name = model_name, device = "cuda:"+str(device), wm_name=wm_name)
+    device = "cuda:"+str(device)
+    wm_scheme=LLM_WM(model_name = model_name, device = device, wm_name=wm_name)
     
     count_num=0
     base_num=0
@@ -35,7 +35,8 @@ def get_wm_data(
     len_list=[]
     for idx in tqdm(range(0, c4_dataset.data_num, batch_size), ncols=100):#c4_dataset.data_num
         prompt=c4_dataset.data[idx][0]#[0:500]
-    #     token_id_list=wm_scheme.transformers_config.tokenizer.encode(prompt)
+        token_id_list=wm_scheme.transformers_config.tokenizer.encode(prompt, add_special_tokens=False)
+        prompt=wm_scheme.transformers_config.tokenizer.decode(token_id_list[0:50], skip_special_tokens=True)
     #     token_list=[
     #         wm_scheme.transformers_config.tokenizer.decode(token_id, skip_special_tokens=True)
     #         for token_id in token_id_list
@@ -106,7 +107,7 @@ if __name__=="__main__":
 
     parser = argparse.ArgumentParser(description='collect wm data')
     parser.add_argument('--dataset_name', type=str, default='../../dataset/c4/realnewslike')
-    parser.add_argument('--model_name', type=str, default="facebook/opt-1.3b")
+    parser.add_argument('--model_name', type=str, default="../model/Llama3.1-8B_hg")
     parser.add_argument('--wm_name', type=str, default="KGW")
     parser.add_argument('--file_num', type=int, default=10)
     parser.add_argument('--file_data_num', type=int, default=100)

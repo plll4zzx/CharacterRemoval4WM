@@ -23,18 +23,19 @@ class LLM_WM:
         if "llama" in model_name.lower():
             model = AutoModelForCausalLM.from_pretrained(
                 self.model_name,
-                device_map="auto",
+                device_map=self.device,#"auto",
                 torch_dtype="auto",
-                quantization_config={
-                    "load_in_4bit":True, 
-                    # "load_in_8bit": True,  
-                    "bnb_4bit_compute_dtype": "float16",  # 指定计算精度
-                    "bnb_4bit_use_double_quant": True,   # 是否使用双量化
-                    "bnb_4bit_quant_type": "nf4"         # 量化类型（nf4 通常表现更好）
-                }
+                # quantization_config={
+                #     "load_in_4bit":True, 
+                #     # "load_in_8bit": True,  
+                #     "bnb_4bit_compute_dtype": "float16",  # 指定计算精度
+                #     "bnb_4bit_use_double_quant": True,   # 是否使用双量化
+                #     "bnb_4bit_quant_type": "nf4"         # 量化类型（nf4 通常表现更好）
+                # }
             )
             tokenizer.pad_token = "[PAD]"
             model.config.pad_token_id = tokenizer.eos_token_id
+            model=model.to(self.device)
             # model = BetterTransformer.transform(model)#.to(self.device)
         else:
             model=AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device)

@@ -72,7 +72,7 @@ def test_rand_attack(
     rouge_score_l=[]
     ppl_l=[]
     adv_ppl_l=[]
-    text_num=300
+    text_num=1000
 
     adv_ocr_num=0
     wm_ocr_num=0

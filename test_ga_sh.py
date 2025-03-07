@@ -3,6 +3,10 @@ from textattack.utils import load_json
 import os
 from test_ga_attack import test_ga_attack
 import argparse
+import sys
+
+def is_debug_mode():
+    return sys.gettrace() is not None
 
 def get_key_value(x_dict, key1, key2=None):
     if key2 is not None:
@@ -19,19 +23,20 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" \
 --victim_model "{victim_model}" --wm_name "{wm_name}"  \
 --llm_name "{llm_name}" --eva_thr {eva_thr} --mean {mean} \
---std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}  --def_stl "{def_stl}"'
+--std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}  --def_stl "{def_stl}" --remove_spoof "{remove_spoof}"'
 
 # python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
-parser.add_argument('--wm_name', type=str, default='')
+parser.add_argument('--wm_name', type=str, default='KGW')
 parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
 parser.add_argument('--ab_std', type=int, default=1)
 parser.add_argument('--device', type=int, default=1)
 parser.add_argument('--max_edit_rate', type=float, default=-1)
+parser.add_argument('--remove_spoof', type=str, default='False')
 args = parser.parse_args()
 
 def_stl="ocr"
@@ -40,6 +45,7 @@ data_aug=args.data_aug
 device=args.device
 max_edit_rate=args.max_edit_rate
 ori_flag=bool(args.ori_flag=='True')
+remove_spoof=bool(args.remove_spoof=='True')
 llm_name=args.llm_name
 if 'opt' in llm_name:
     ga_config=load_json(file_path='attk_config/opt_ga_config.json')
@@ -67,7 +73,8 @@ for max_token_num in max_token_num_list:
             eva_thr=wm_config['eva_thr']
             mean=wm_config['mean']
             std=wm_config['std']
-            # ab_std=wm_config['ab_std']
+            if ab_std==-2:
+                ab_std=wm_config['ab_std']
             if max_edit_rate<0:
                 max_edit_rate = get_key_value(wm_config, 'max_edit_rate', str(max_token_num))
             len_weight = get_key_value(wm_config, 'len_weight', str(max_token_num))
@@ -88,26 +95,32 @@ for max_token_num in max_token_num_list:
                 ori_flag=ori_flag, #
                 device=device,
                 def_stl=def_stl,
+                remove_spoof=remove_spoof,
             )
             print(tmp_sh)
-            os.system(tmp_sh)
-            # test_ga_attack(
-            #     llm_name=llm_name, #
-            #     wm_name=wm_name, 
-            #     max_edit_rate=max_edit_rate,
-            #     max_token_num=max_token_num,
-            #     num_generations=num_generations,
-            #     victim_model=victim_model,
-            #     victim_tokenizer=victim_tokenizer,
-            #     len_weight=len_weight,
-            #     fitness_threshold=fitness_threshold,
-            #     eva_thr=eva_thr,
-            #     mean=mean, #
-            #     std=std, #
-            #     ab_std=ab_std, #
-            #     atk_style=atk_style, #
-            #     ori_flag=ori_flag, #
-            #     device=device,
-            #     def_stl=def_stl,
-            # )
+            if is_debug_mode():
+                print("Running in DEBUG mode")
+                test_ga_attack(
+                    llm_name=llm_name, #
+                    wm_name=wm_name, 
+                    max_edit_rate=max_edit_rate,
+                    max_token_num=max_token_num,
+                    num_generations=num_generations,
+                    victim_model=victim_model,
+                    victim_tokenizer=victim_tokenizer,
+                    len_weight=len_weight,
+                    fitness_threshold=fitness_threshold,
+                    eva_thr=eva_thr,
+                    mean=mean, #
+                    std=std, #
+                    ab_std=ab_std, #
+                    atk_style=atk_style, #
+                    ori_flag=ori_flag, #
+                    device=device,
+                    def_stl=def_stl,
+                    remove_spoof=remove_spoof,
+                )
+            else:
+                print("Running in Normal mode")
+                os.system(tmp_sh)
 

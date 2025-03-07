@@ -1,8 +1,13 @@
 
-from textattack.utils import load_json
+from textattack.utils import load_json, to_string
 import os
 from test_random_attack import test_rand_attack
 import argparse
+import numpy as np
+import sys
+
+def is_debug_mode():
+    return sys.gettrace() is not None
 
 sh_templte='python test_random_attack.py --atk_style "{atk_style}" --max_edit_rate {max_edit_rate} --atk_times {atk_times} \
 --max_token_num {max_token_num} --ref_tokenizer "{ref_tokenizer}" --ref_model "{ref_model}" --wm_name "{wm_name}" \
@@ -20,11 +25,11 @@ parser.add_argument('--max_edit_rate', type=float, default=-1)
 args = parser.parse_args()
 
 
-llm_name='facebook/opt-1.3b'#'../model/Llama3.1-8B_hg'#
+llm_name='../model/Llama3.1-8B_hg'#'facebook/opt-1.3b'#
 data_aug=9
 ori_flag="False"
 def_stl=""
-atk_style_list=['sentence']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
+atk_style_list=['char', 'token', ]#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
 atk_times_list=[1]#1,,50,100
 max_token_num_list=[100]#100,50, 100,150,  
 device=0
@@ -35,7 +40,7 @@ else:
     rand_config=load_json(file_path='attk_config/llama_rand_config.json')
 
 for data_aug in [9]:
-    for max_token_num in max_token_num_list:
+    for atk_style in atk_style_list:
         for wm_name in ['KGW','DIP', 'SynthID','Unigram','Unbiased']:#rand_config:#,'Unbiased''DIP', 'SynthID','Unigram','Unbiased','KGW'
             wm_config=rand_config[wm_name]
             ref_tokenizer=wm_config['ref_tokenizer']
@@ -44,8 +49,9 @@ for data_aug in [9]:
                 data_aug=9
             ori_flag=bool(ori_flag=='True')
             ref_model=wm_config['ref_model'][str(data_aug)]
-            max_edit_rate_list=[0.1]#wm_config['max_edit_rate']0.05,0.1,
-            for atk_style in atk_style_list:
+            max_edit_rate_list=[0.05,0.1,0.15,0.2,0.3,0.4,0.5]#wm_config['max_edit_rate']0.05,0.1,0.05,0.1,0.15,0.2,0.3,0.4,0.5
+            print(to_string([wm_name, atk_style], step_char='\t'))
+            for max_token_num in max_token_num_list:
                 for max_edit_rate in max_edit_rate_list:
                     for atk_times in atk_times_list:
                         tmp_sh=sh_templte.format(
@@ -62,17 +68,41 @@ for data_aug in [9]:
                             device=device
                         )
                         print(tmp_sh)
-                        os.system(tmp_sh)
-                        # test_rand_attack(
-                        #     llm_name=llm_name,
-                        #     wm_name=wm_name, 
-                        #     max_edit_rate=max_edit_rate,
-                        #     max_token_num=max_token_num,
-                        #     atk_style=atk_style,
-                        #     ref_tokenizer=ref_tokenizer,
-                        #     ref_model=ref_model,
-                        #     atk_times=atk_times,
-                        #     ori_flag=ori_flag,
-                        #     def_stl=def_stl,
-                        #     device=device
-                        # )
+                        if is_debug_mode():
+                            print("Running in DEBUG mode")
+                            test_rand_attack(
+                                llm_name=llm_name,
+                                wm_name=wm_name, 
+                                max_edit_rate=max_edit_rate,
+                                max_token_num=max_token_num,
+                                atk_style=atk_style,
+                                ref_tokenizer=ref_tokenizer,
+                                ref_model=ref_model,
+                                atk_times=atk_times,
+                                ori_flag=ori_flag,
+                                def_stl=def_stl,
+                                device=device
+                            )
+                        else:
+                            print("Running in Normal mode")
+                            os.system(tmp_sh)
+                        data_records=load_json(
+                            "saved_attk_data/"+"_".join([
+                                'Rand', 
+                                # llm_name.replace('/','_'), wm_name.replace('/','_'), 
+                                str(max_edit_rate), str(max_token_num), atk_style, 
+                                str(atk_times), str(ori_flag), def_stl, 
+                                ref_model.replace('saved_model/',''), 
+                            ])+".json"
+                        )
+                        
+                        wm_score_drop=np.mean([data_record['wm_score_drop']/data_record['wm_detect']['score'] for data_record in data_records])
+                        asr=np.mean([data_record['adv_detect']['is_watermarked']==False for data_record in data_records])
+                        token_budget_rate=np.mean([data_record['t_edit_dist']/data_record['token_num'] for data_record in data_records])
+                        char_budget_rate=np.mean([data_record['c_edit_dist']/data_record['char_num'] for data_record in data_records])
+                        belu=np.mean([data_record['belu'] for data_record in data_records])
+                        rouge=np.mean([data_record['rouge-f1'] for data_record in data_records])
+                        ppl_rate=np.mean([data_record['ppl_rate'] for data_record in data_records])
+                        adv_ppl=np.mean([data_record['adv_ppl'] for data_record in data_records])
+                        
+                        print(to_string([wm_score_drop, asr, token_budget_rate, char_budget_rate, belu, rouge, ppl_rate, adv_ppl], step_char=' '))

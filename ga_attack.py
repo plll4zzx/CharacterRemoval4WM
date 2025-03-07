@@ -244,9 +244,12 @@ class GA_Attack:
             fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
         # if eva_fitness>self.eva_thr:
         #     fit_score=eva_fitness-(solu_len/solution.size)*self.len_weight+(self.max_edit_rate)*self.len_weight
-        if (fit_score-self.best_fitness)<0.05:
+        if abs(fit_score-self.best_fitness)<0.05:
             return min(fit_score, self.best_fitness-0.0001)#
-        return fit_score
+        if self.remove_spoof:
+            return fit_score
+        else:
+            return -fit_score
 
     def get_adv(
         self, sentence, target_class, ori_fitness,
@@ -254,13 +257,15 @@ class GA_Attack:
         num_parents_mating=50, 
         population_size=100, 
         max_edit_rate=0.1, 
-        mutation_percent_genes=30
+        mutation_percent_genes=30,
+        remove_spoof=True, #remove=True spoof=False
     ):
 
         # sentence=sentence.lower()
         # tmp_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
         # sentence=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
         
+        self.remove_spoof=remove_spoof
         self.tokens = sentence.split()
         self.ori_fitness=ori_fitness
         self.target_class = target_class
