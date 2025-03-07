@@ -39,7 +39,7 @@ def test_ga_attack(
     def_stl='',
     remove_spoof=True, #remove: True; spoof: False
 ):
-    wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
+    wm_data=load_json("../saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
     device="cuda:"+str(device)
     wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)

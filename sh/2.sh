@@ -1,0 +1,3 @@
+python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "DIP" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 0 --remove_spoof "True"
+python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "SynthID" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 0 --remove_spoof "True"
+python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "Unbiased" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 0 --remove_spoof "True"

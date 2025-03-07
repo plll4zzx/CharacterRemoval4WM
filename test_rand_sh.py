@@ -67,25 +67,25 @@ for data_aug in [9]:
                             def_stl=def_stl,
                             device=device
                         )
-                        print(tmp_sh)
-                        if is_debug_mode():
-                            print("Running in DEBUG mode")
-                            test_rand_attack(
-                                llm_name=llm_name,
-                                wm_name=wm_name, 
-                                max_edit_rate=max_edit_rate,
-                                max_token_num=max_token_num,
-                                atk_style=atk_style,
-                                ref_tokenizer=ref_tokenizer,
-                                ref_model=ref_model,
-                                atk_times=atk_times,
-                                ori_flag=ori_flag,
-                                def_stl=def_stl,
-                                device=device
-                            )
-                        else:
-                            print("Running in Normal mode")
-                            os.system(tmp_sh)
+                        # print(tmp_sh)
+                        # if is_debug_mode():
+                        #     print("Running in DEBUG mode")
+                        #     test_rand_attack(
+                        #         llm_name=llm_name,
+                        #         wm_name=wm_name, 
+                        #         max_edit_rate=max_edit_rate,
+                        #         max_token_num=max_token_num,
+                        #         atk_style=atk_style,
+                        #         ref_tokenizer=ref_tokenizer,
+                        #         ref_model=ref_model,
+                        #         atk_times=atk_times,
+                        #         ori_flag=ori_flag,
+                        #         def_stl=def_stl,
+                        #         device=device
+                        #     )
+                        # else:
+                        #     print("Running in Normal mode")
+                        #     os.system(tmp_sh)
                         data_records=load_json(
                             "saved_attk_data/"+"_".join([
                                 'Rand', 

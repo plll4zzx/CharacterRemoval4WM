@@ -124,9 +124,12 @@ homos_lo = {
     "y": 4,
     "z": 2,
 }
+import homoglyphs as hg
+hgc = hg.Homoglyphs(categories=('CYRILLIC', ))
 def find_homo(input_char):
     # input_char=input_char.lower()
     if input_char in homos:
+        # return hgc.get_combinations(input_char)[0]
         # return homos[input_char][0]
         return homos[input_char][homos_lo[input_char]]
         # return homos[input_char][max(0, homos_lo[input_char]-1)]

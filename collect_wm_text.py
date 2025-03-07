@@ -91,7 +91,7 @@ def get_wm_data(
         model_name.replace('/','_'), 
         str(c4_dataset.data_num)
     ])+'.json'
-    file_path=os.path.join('saved_data', filename)
+    file_path=os.path.join('../saved_data', filename)
     save_json(data=result_list, file_path=file_path)
 
 if __name__=="__main__":

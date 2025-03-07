@@ -83,7 +83,7 @@ if __name__ == "__main__":
     c_dict={}
     for key in homos:
         c_dict[key]={}
-        # homo_from_hg=hg.Homoglyphs().get_combinations(key)
+        homo_from_hg=hgc.get_combinations(key)
         for h in homos[key]:
             # if h !=key:
             t=homoglyphs.to_ascii(h)[0]
