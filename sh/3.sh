@@ -1,3 +1,3 @@
-python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "DIP" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 1 --remove_spoof "True"
-python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "SynthID" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 1 --remove_spoof "True"
-python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "Unbiased" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 1 --remove_spoof "True"
+python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 1 --remove_spoof "True"
+python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "SIR" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 1 --remove_spoof "True"
+python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "TS" --atk_style "token" --ori_flag "False" --data_aug 9 --ab_std -2 --device 1 --remove_spoof "True"

@@ -9,6 +9,7 @@ import datetime
 from copy import copy
 from difflib import SequenceMatcher
 from random_attack import GensimModel
+from text_OCR import text_OCR_text
 
 class GA_Attack:
     def __init__(
@@ -26,7 +27,8 @@ class GA_Attack:
         std=1,
         ab_std=1,
         atk_style='char',
-        ori_flag=False
+        ori_flag=False,
+        ocr_flag=False,
     ):
         self.gensimi=None 
         self.simi_num_for_token=5
@@ -49,6 +51,7 @@ class GA_Attack:
         self.ab_std=ab_std
         self.atk_style=atk_style
         self.ori_flag=ori_flag
+        self.ocr_flag=ocr_flag
 
         self.model.to(self.device)
 
@@ -232,6 +235,8 @@ class GA_Attack:
     def fitness_function(self, ga_instance, solution, solution_idx):
         
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
+        if self.ocr_flag:
+            modified_sentence=text_OCR_text(modified_sentence)
 
         # Evaluate fitness using the helper function
         eva_fitness=-self.evaluate_fitness(modified_sentence, self.target_class)

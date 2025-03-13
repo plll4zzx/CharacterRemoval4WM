@@ -35,11 +35,12 @@ def test_ga_attack(
     ab_std=1,
     atk_style='char',
     ori_flag=False,
+    ocr_flag=False,
     device=0,
     def_stl='',
     remove_spoof=True, #remove: True; spoof: False
 ):
-    wm_data=load_json("../saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
+    wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
     device="cuda:"+str(device)
     wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)
@@ -58,6 +59,7 @@ def test_ga_attack(
         atk_style=atk_style,
         ori_flag=ori_flag,
         device=device,
+        ocr_flag=ocr_flag,
     )
     if ori_flag==True:
         ab_std=100
@@ -78,6 +80,8 @@ def test_ga_attack(
     ga_attack.log_info(['atk_style:', atk_style])
     ga_attack.log_info(['ori_flag:', ori_flag])
     ga_attack.log_info(['remove_spoof:', remove_spoof])
+    ga_attack.log_info(['def_stl:', def_stl])
+    ga_attack.log_info(['ocr_flag:', ocr_flag])
     
     target_class=0
     count_num=0
@@ -255,10 +259,13 @@ def test_ga_attack(
         
         data_records.append(data_record)
     
+    attk_name='GA'
+    if ocr_flag:
+        attk_name='GAocr'
     save_json(
         data_records,
         "saved_attk_data/"+"_".join([
-            'GA', 
+            attk_name, 
             str(max_edit_rate), str(num_generations), 
             str(max_token_num), 
             str(len_weight),
@@ -298,6 +305,7 @@ if __name__=="__main__":
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--def_stl', type=str, default='')
     parser.add_argument('--remove_spoof', type=str, default='True')
+    parser.add_argument('--ocr_flag', type=str, default='True')
     
     args = parser.parse_args()
     test_ga_attack(
@@ -319,5 +327,6 @@ if __name__=="__main__":
         device=args.device, #
         def_stl=args.def_stl, #
         remove_spoof=bool(args.remove_spoof=='True'), #
+        ocr_flag=bool(args.ocr_flag=='True'),
     )
     

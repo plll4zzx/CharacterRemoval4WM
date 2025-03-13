@@ -1,9 +1,10 @@
 
-from textattack.utils import load_json
+from textattack.utils import load_json, to_string
 import os
 from test_ga_attack import test_ga_attack
 import argparse
 import sys
+import numpy as np
 
 def is_debug_mode():
     return sys.gettrace() is not None
@@ -23,7 +24,8 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 --fitness_threshold {fitness_threshold} --max_token_num {max_token_num} --victim_tokenizer "{victim_tokenizer}" \
 --victim_model "{victim_model}" --wm_name "{wm_name}"  \
 --llm_name "{llm_name}" --eva_thr {eva_thr} --mean {mean} \
---std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}  --def_stl "{def_stl}" --remove_spoof "{remove_spoof}"'
+--std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}  \
+--def_stl "{def_stl}" --remove_spoof "{remove_spoof}" --ocr_flag "{ocr_flag}"'
 
 # python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
@@ -37,6 +39,7 @@ parser.add_argument('--ab_std', type=int, default=1)
 parser.add_argument('--device', type=int, default=1)
 parser.add_argument('--max_edit_rate', type=float, default=-1)
 parser.add_argument('--remove_spoof', type=str, default='False')
+parser.add_argument('--ocr_flag', type=str, default='False')
 args = parser.parse_args()
 
 def_stl="ocr"
@@ -46,6 +49,7 @@ device=args.device
 max_edit_rate=args.max_edit_rate
 ori_flag=bool(args.ori_flag=='True')
 remove_spoof=bool(args.remove_spoof=='True')
+ocr_flag=bool(args.ocr_flag=='True')
 llm_name=args.llm_name
 if 'opt' in llm_name:
     ga_config=load_json(file_path='attk_config/opt_ga_config.json')
@@ -96,6 +100,7 @@ for max_token_num in max_token_num_list:
                 device=device,
                 def_stl=def_stl,
                 remove_spoof=remove_spoof,
+                ocr_flag=ocr_flag
             )
             print(tmp_sh)
             if is_debug_mode():
@@ -119,8 +124,43 @@ for max_token_num in max_token_num_list:
                     device=device,
                     def_stl=def_stl,
                     remove_spoof=remove_spoof,
+                    ocr_flag=ocr_flag
                 )
             else:
                 print("Running in Normal mode")
                 os.system(tmp_sh)
+            
+            attk_name='GA'
+            if ocr_flag:
+                attk_name='GAocr'
+            data_records=load_json(
+                "saved_attk_data/"+"_".join([
+                    attk_name, 
+                    str(max_edit_rate), str(num_generations), 
+                    str(max_token_num), 
+                    str(len_weight),
+                    str(fitness_threshold),
+                    str(eva_thr),
+                    str(mean),
+                    str(std),
+                    str(float(ab_std)),
+                    atk_style,
+                    str(ori_flag),
+                    def_stl,
+                    victim_model.replace('saved_model/',''),
+                ])+".json"
+            )
+            
+            wm_score_drop=np.mean([data_record['wm_score_drop']/data_record['wm_detect']['score'] for data_record in data_records])
+            asr=np.mean([data_record['adv_detect']['is_watermarked']==False for data_record in data_records])
+            token_budget_rate=np.mean([data_record['t_edit_dist']/data_record['token_num'] for data_record in data_records])
+            char_budget_rate=np.mean([data_record['c_edit_dist']/data_record['char_num'] for data_record in data_records])
+            belu=np.mean([data_record['belu'] for data_record in data_records])
+            rouge=np.mean([data_record['rouge-f1'] for data_record in data_records])
+            ppl_rate=np.mean([data_record['ppl_rate'] for data_record in data_records])
+            adv_ppl=np.mean([data_record['adv_ppl'] for data_record in data_records])
+            
+            print(to_string([wm_score_drop, asr, token_budget_rate, char_budget_rate, belu, rouge, ppl_rate, adv_ppl], step_char=' '))
 
+# saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2.0_token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json
+# saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2  _token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json
