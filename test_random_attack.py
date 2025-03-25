@@ -89,7 +89,7 @@ def test_rand_attack(
 
     # if max_token_num>200:
     #     text_num=text_num*4
-    for idx in range(int(text_num*3)+1):
+    for idx in range(min(int(text_num*3)+1, len(wm_data))):
         if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
             rand_attack.log_info('******')
             rand_attack.log_info({
@@ -123,7 +123,7 @@ def test_rand_attack(
                 })
             rand_attack.log_info('******')
         if idx>=text_num and base_num>=text_num*0.8:
-                break
+            break
         
         rand_attack.log_info(str(idx))
         
@@ -133,6 +133,8 @@ def test_rand_attack(
             continue
 
         wm_det=wm_scheme.detect_wm(wm_text)
+        # if 'Llama3' in llm_name and wm_name == 'Unigram' and wm_det['score']<5:
+        #     continue
         if wm_det['is_watermarked']==True:
             base_num+=1
         else:

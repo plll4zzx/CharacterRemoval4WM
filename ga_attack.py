@@ -249,8 +249,11 @@ class GA_Attack:
             fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
         # if eva_fitness>self.eva_thr:
         #     fit_score=eva_fitness-(solu_len/solution.size)*self.len_weight+(self.max_edit_rate)*self.len_weight
-        if abs(fit_score-self.best_fitness)<0.05:
-            return min(fit_score, self.best_fitness-0.0001)#
+        if self.ori_flag==False:
+            if abs(fit_score-self.best_fitness)<0.05:
+                return min(fit_score, self.best_fitness-0.0001)#
+            if abs(solu_len-self.edit_distance)>3 and self.edit_distance>0:
+                return min(fit_score, self.best_fitness-0.0001)#
         if self.remove_spoof:
             return fit_score
         else:
@@ -324,7 +327,7 @@ class GA_Attack:
         self.best_solution=best_solution
         self.log_info(f"Generation: {ga_instance.generations_completed}, Best Fitness: {best_fitness}")
         if self.wm_detector is not None:
-            best_sentence, edit_distance, solu_len = self.modify_sentence(best_solution)
+            best_sentence, edit_distance, _ = self.modify_sentence(best_solution)
             wm_rlt=self.wm_detector(best_sentence)
             self.log_info(f"el_detect: {wm_rlt}, edit_distance: {edit_distance}")
             self.log_info(f"tp_sentence: {best_sentence}")

@@ -1,15 +1,28 @@
 from PIL import Image, ImageDraw, ImageFont
+# import mmocr.utils
 import pytesseract
+import numpy as np
+from paddleocr import PaddleOCR
+# from mmocr.apis import MMOCR
 
-def text_OCR_text(text, img_path=None):
+
+def text_OCR_text(text, img_path=None, style='ocr_t'):
     
     img=text_to_image(text)
     if img_path is not None:
         img.save(img_path)
     
-    extracted_text = pytesseract.image_to_string(img)
-    
-    return extracted_text
+    if style=='ocr_t':
+        extracted_text = pytesseract.image_to_string(img)
+        return extracted_text
+    else:
+        ocr = PaddleOCR(use_angle_cls=True, lang="en") 
+        img=np.array(img)
+        try:
+            extracted_text = ocr.ocr(img, cls=True)[0][0][1][0]
+        except:
+            return text
+        return extracted_text
 
 def find_max_font_size(text, max_width, max_height, font_path, line_spacing, padding, bg_color):
     min_size, max_size = 10, 200  # Define a reasonable font size range
@@ -76,25 +89,27 @@ homoglyphs = hg.Homoglyphs(
     ascii_strategy=hg.STRATEGY_REMOVE,
 )
 if __name__ == "__main__":
-    # text = "Step 1: Input a text from the user BʙΒВвᏴᏼᗷᛒℬꓐꞴＢ𐊂𐊡𐌁𝐁𝐵𝑩𝓑𝔅𝔹𝕭𝖡𝗕𝘉𝘽𝙱𝚩𝛣𝜝𝝗𝞑"
-    # print(text)
-    from textattack.utils import homos
-    print(hg.Categories.get_all())
-    c_dict={}
-    for key in homos:
-        c_dict[key]={}
-        homo_from_hg=hgc.get_combinations(key)
-        for h in homos[key]:
-            # if h !=key:
-            t=homoglyphs.to_ascii(h)[0]
-            if t!=key:
-                c=hg.Categories.detect(t)
-                try:
-                    c_dict[key][c].append(t)
-                except:
-                    c_dict[key][c]=[t]
+    text = "Step 1: Input a text from the user BʙΒВвᏴᏼᗷᛒℬꓐꞴＢ𐊂𐊡𐌁𝐁𝐵𝑩𝓑𝔅𝔹𝕭𝖡𝗕𝘉𝘽𝙱𝚩𝛣𝜝𝝗𝞑"
+    print(text)
+    t=text_OCR_text(text)
+    print(t)
+    # from textattack.utils import homos
+    # print(hg.Categories.get_all())
+    # c_dict={}
+    # for key in homos:
+    #     c_dict[key]={}
+    #     homo_from_hg=hgc.get_combinations(key)
+    #     for h in homos[key]:
+    #         # if h !=key:
+    #         t=homoglyphs.to_ascii(h)[0]
+    #         if t!=key:
+    #             c=hg.Categories.detect(t)
+    #             try:
+    #                 c_dict[key][c].append(t)
+    #             except:
+    #                 c_dict[key][c]=[t]
 
-    print()
+    # print()
         # print(homo, len(homo))
         # for h in homo:
         #     ocr_char=text_OCR_text(h, img_path='text.png')

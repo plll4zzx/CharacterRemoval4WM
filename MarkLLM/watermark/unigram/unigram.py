@@ -72,10 +72,17 @@ class UnigramUtils:
                 config (UnigramConfig): Configuration for the Unigram algorithm.
         """
         self.config = config
-        self.mask = np.array([True] * int(self.config.gamma * self.config.vocab_size) + 
-                             [False] * (self.config.vocab_size - int(self.config.gamma * self.config.vocab_size)))
-        self.rng = np.random.default_rng(self._hash_fn(self.config.hash_key))
-        self.rng.shuffle(self.mask)
+        # self.mask = np.array([True] * int(self.config.gamma * self.config.vocab_size) + 
+        #                      [False] * (self.config.vocab_size - int(self.config.gamma * self.config.vocab_size)))
+        # self.rng = np.random.default_rng(self._hash_fn(self.config.hash_key))
+        # self.rng.shuffle(self.mask)
+
+        self.rng = torch.Generator(device=self.config.device)
+        self.rng.manual_seed(self.config.hash_key)
+        self.p=torch.randperm(self.config.vocab_size, device=self.config.device, generator=self.rng)
+        self.mask = np.array([True] * self.config.vocab_size)
+        for pp in self.p[0:(self.config.vocab_size - int(self.config.gamma * self.config.vocab_size))]:
+            self.mask[pp]=False
         
     @staticmethod
     def _hash_fn(x: int) -> int:

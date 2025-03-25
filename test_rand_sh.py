@@ -24,14 +24,14 @@ parser.add_argument('--device', type=int, default=1)
 parser.add_argument('--max_edit_rate', type=float, default=-1)
 args = parser.parse_args()
 
-
+do_flag=True
 llm_name='../model/Llama3.1-8B_hg'#'facebook/opt-1.3b'#
 data_aug=9
 ori_flag="False"
 def_stl=""
-atk_style_list=['char', 'token', ]#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
+atk_style_list=['token']#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
 atk_times_list=[1]#1,,50,100
-max_token_num_list=[100]#100,50, 100,150,  
+max_token_num_list=[50, 100, 150, 200]#100, 50, 100, 150, 200 
 device=0
 
 if 'opt' in llm_name:
@@ -41,7 +41,7 @@ else:
 
 for data_aug in [9]:
     for atk_style in atk_style_list:
-        for wm_name in ['KGW','DIP', 'SynthID','Unigram','Unbiased']:#rand_config:#,'Unbiased''DIP', 'SynthID','Unigram','Unbiased','KGW'
+        for wm_name in ['Unigram']:#,rand_config:#,'KGW','DIP', 'SynthID','Unigram','Unbiased'
             wm_config=rand_config[wm_name]
             ref_tokenizer=wm_config['ref_tokenizer']
             if data_aug==-1:
@@ -49,7 +49,7 @@ for data_aug in [9]:
                 data_aug=9
             ori_flag=bool(ori_flag=='True')
             ref_model=wm_config['ref_model'][str(data_aug)]
-            max_edit_rate_list=[0.05,0.1,0.15,0.2,0.3,0.4,0.5]#wm_config['max_edit_rate']0.05,0.1,0.05,0.1,0.15,0.2,0.3,0.4,0.5
+            max_edit_rate_list=[0.2]#,0.2wm_config['max_edit_rate'][0.05,0.1,0.15,0.2,0.3,0.4,0.5
             print(to_string([wm_name, atk_style], step_char='\t'))
             for max_token_num in max_token_num_list:
                 for max_edit_rate in max_edit_rate_list:
@@ -67,25 +67,26 @@ for data_aug in [9]:
                             def_stl=def_stl,
                             device=device
                         )
-                        # print(tmp_sh)
-                        # if is_debug_mode():
-                        #     print("Running in DEBUG mode")
-                        #     test_rand_attack(
-                        #         llm_name=llm_name,
-                        #         wm_name=wm_name, 
-                        #         max_edit_rate=max_edit_rate,
-                        #         max_token_num=max_token_num,
-                        #         atk_style=atk_style,
-                        #         ref_tokenizer=ref_tokenizer,
-                        #         ref_model=ref_model,
-                        #         atk_times=atk_times,
-                        #         ori_flag=ori_flag,
-                        #         def_stl=def_stl,
-                        #         device=device
-                        #     )
-                        # else:
-                        #     print("Running in Normal mode")
-                        #     os.system(tmp_sh)
+                        if do_flag:
+                            print(tmp_sh)
+                            if is_debug_mode():
+                                print("Running in DEBUG mode")
+                                test_rand_attack(
+                                    llm_name=llm_name,
+                                    wm_name=wm_name, 
+                                    max_edit_rate=max_edit_rate,
+                                    max_token_num=max_token_num,
+                                    atk_style=atk_style,
+                                    ref_tokenizer=ref_tokenizer,
+                                    ref_model=ref_model,
+                                    atk_times=atk_times,
+                                    ori_flag=ori_flag,
+                                    def_stl=def_stl,
+                                    device=device
+                                )
+                            else:
+                                print("Running in Normal mode")
+                                os.system(tmp_sh)
                         data_records=load_json(
                             "saved_attk_data/"+"_".join([
                                 'Rand', 

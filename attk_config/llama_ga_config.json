@@ -50,13 +50,13 @@
     "Unigram":{
         "victim_tokenizer": "bert-base-uncased",
         "victim_model":{
-            "0":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_0",
-            "5":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_5",
-            "9":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_9"
+            "0":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.25_0",
+            "5":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.25_5",
+            "9":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.25_9"
         },
         "num_generations":15,
         "max_edit_rate":{"100":0.21, "200":0.21},
-        "len_weight":{"100":0.5, "200":0.5},
+        "len_weight":{"100":0.1, "200":0.1},
         "fitness_threshold":{"100":0.9, "200":0.9},
         "eva_thr":-0.05,
         "mean":2.49626564,

@@ -30,18 +30,20 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 # python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 parser = argparse.ArgumentParser(description='test_ga_attack')
-parser.add_argument('--llm_name', type=str, default='facebook/opt-1.3b')
+parser.add_argument('--llm_name', type=str, default='../model/Llama3.1-8B_hg')
 parser.add_argument('--wm_name', type=str, default='KGW')
 parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
-parser.add_argument('--ab_std', type=int, default=1)
+parser.add_argument('--ab_std', type=int, default=3)
 parser.add_argument('--device', type=int, default=1)
 parser.add_argument('--max_edit_rate', type=float, default=-1)
-parser.add_argument('--remove_spoof', type=str, default='False')
+parser.add_argument('--remove_spoof', type=str, default='True')
 parser.add_argument('--ocr_flag', type=str, default='False')
+parser.add_argument('--num_generations', type=int, default=-1)
 args = parser.parse_args()
 
+do_flag=True
 def_stl="ocr"
 atk_style=args.atk_style
 data_aug=args.data_aug
@@ -51,6 +53,8 @@ ori_flag=bool(args.ori_flag=='True')
 remove_spoof=bool(args.remove_spoof=='True')
 ocr_flag=bool(args.ocr_flag=='True')
 llm_name=args.llm_name
+num_generations=args.num_generations
+
 if 'opt' in llm_name:
     ga_config=load_json(file_path='attk_config/opt_ga_config.json')
 else:
@@ -63,9 +67,13 @@ else:
     wm_name_list=[args.wm_name]
 
 if args.ab_std==-1:
-    ab_std_list=[0,1,2,3,4]
+    ab_std_list=[1,2,3,4,0,]
 else:
     ab_std_list=[args.ab_std]
+
+if ori_flag:
+    data_aug=0
+    ab_std_list=[0]
 
 for max_token_num in max_token_num_list:
     for wm_name in wm_name_list:
@@ -73,7 +81,10 @@ for max_token_num in max_token_num_list:
             wm_config=ga_config[wm_name]
             victim_tokenizer=wm_config['victim_tokenizer']
             victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))
-            num_generations=wm_config['num_generations']
+            if num_generations<0:
+                num_generations=wm_config['num_generations']
+            if ocr_flag:
+                num_generations=5
             eva_thr=wm_config['eva_thr']
             mean=wm_config['mean']
             std=wm_config['std']
@@ -102,34 +113,35 @@ for max_token_num in max_token_num_list:
                 remove_spoof=remove_spoof,
                 ocr_flag=ocr_flag
             )
-            print(tmp_sh)
-            if is_debug_mode():
-                print("Running in DEBUG mode")
-                test_ga_attack(
-                    llm_name=llm_name, #
-                    wm_name=wm_name, 
-                    max_edit_rate=max_edit_rate,
-                    max_token_num=max_token_num,
-                    num_generations=num_generations,
-                    victim_model=victim_model,
-                    victim_tokenizer=victim_tokenizer,
-                    len_weight=len_weight,
-                    fitness_threshold=fitness_threshold,
-                    eva_thr=eva_thr,
-                    mean=mean, #
-                    std=std, #
-                    ab_std=ab_std, #
-                    atk_style=atk_style, #
-                    ori_flag=ori_flag, #
-                    device=device,
-                    def_stl=def_stl,
-                    remove_spoof=remove_spoof,
-                    ocr_flag=ocr_flag
-                )
-            else:
-                print("Running in Normal mode")
-                os.system(tmp_sh)
-            
+            if do_flag:
+                print(tmp_sh)
+                if is_debug_mode():
+                    print("Running in DEBUG mode")
+                    test_ga_attack(
+                        llm_name=llm_name, #
+                        wm_name=wm_name, 
+                        max_edit_rate=max_edit_rate,
+                        max_token_num=max_token_num,
+                        num_generations=num_generations,
+                        victim_model=victim_model,
+                        victim_tokenizer=victim_tokenizer,
+                        len_weight=len_weight,
+                        fitness_threshold=fitness_threshold,
+                        eva_thr=eva_thr,
+                        mean=mean, #
+                        std=std, #
+                        ab_std=ab_std, #
+                        atk_style=atk_style, #
+                        ori_flag=ori_flag, #
+                        device=device,
+                        def_stl=def_stl,
+                        remove_spoof=remove_spoof,
+                        ocr_flag=ocr_flag
+                    )
+                else:
+                    print("Running in Normal mode")
+                    os.system(tmp_sh)
+                
             attk_name='GA'
             if ocr_flag:
                 attk_name='GAocr'
