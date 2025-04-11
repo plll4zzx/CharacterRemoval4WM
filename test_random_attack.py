@@ -21,7 +21,7 @@ from defence_homo import defence_method
 def test_rand_attack(
     llm_name, wm_name, max_edit_rate, max_token_num=80, atk_style='char',
     ref_tokenizer = None, ref_model=None, atk_times=1, ori_flag=False, def_stl='',
-    device=0
+    device=0, char_op=2,
 ):
     
     dataset_name='../../dataset/c4/realnewslike'
@@ -30,10 +30,17 @@ def test_rand_attack(
     device="cuda:"+str(device)
     wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)
     
+    # if 'ZWJ' in atk_style:
+    #     char_op=3
+    #     atk_style='char'
+    # else:
+    #     char_op=2
+
     if ref_tokenizer is None:
         rand_attack=RandomAttack(
             wm_name=wm_name,
             tokenizer=wm_scheme.transformers_config.tokenizer,
+            char_op=char_op,
         )
     else:
         rand_attack=RandomAttack(
@@ -43,6 +50,7 @@ def test_rand_attack(
             ori_flag=ori_flag,
             wm_detector = wm_scheme.detect_wm,
             device = device,
+            char_op=char_op,
         )
         rand_attack.log_info(['ref_tokenizer:', ref_tokenizer])
         rand_attack.log_info(['ref_model:', ref_model])
@@ -54,6 +62,7 @@ def test_rand_attack(
     rand_attack.log_info(['max_edit_rate:', max_edit_rate])
     rand_attack.log_info(['max_token_num:', max_token_num])
     rand_attack.log_info(['atk_style:', atk_style])
+    rand_attack.log_info(['char_op:', char_op])
     rand_attack.log_info(['atk_times:', atk_times])
     rand_attack.log_info(['ori_flag:', ori_flag])
     rand_attack.log_info(['def_stl:', def_stl])
@@ -84,11 +93,12 @@ def test_rand_attack(
     ocr_wm_rouge_l=[]
     ocr_adv_ppl_l=[]
     ocr_wm_ppl_l=[]
+    ref_l=[]
 
     data_records=[]
 
-    # if max_token_num>200:
-    #     text_num=text_num*4
+    if len(atk_style)>10 or len(def_stl)>10:
+        text_num=110
     for idx in range(min(int(text_num*3)+1, len(wm_data))):
         if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
             rand_attack.log_info('******')
@@ -97,6 +107,7 @@ def test_rand_attack(
                 'token_num': round(np.mean(token_num_l),4),
                 'wm_score_drop': round(np.mean(wm_score_l),4),
                 'count': (count_num, base_num),
+                'ref_score': round(np.mean(ref_l),4),
             })
             rand_attack.log_info({
                 'wm_drop_rate': round(np.mean(wm_score_drop_rate_l),4),
@@ -133,7 +144,7 @@ def test_rand_attack(
             continue
 
         wm_det=wm_scheme.detect_wm(wm_text)
-        # if 'Llama3' in llm_name and wm_name == 'Unigram' and wm_det['score']<5:
+        # if wm_name == 'Unigram' and wm_det['score']<5:
         #     continue
         if wm_det['is_watermarked']==True:
             base_num+=1
@@ -152,6 +163,7 @@ def test_rand_attack(
             ori_score=rand_attack.ref_score(wm_text, target_class)
             rand_attack.log_info(['ori_score:', ori_score[0]])
             rand_attack.log_info(['ref_score:', adv_rlt['ref_score']])
+            ref_l.append((ori_score[0]-adv_rlt['ref_score'])/(ori_score[0]+1.5))
         rand_attack.log_info(['token_num:', token_num])
         rand_attack.log_info(['wm_detect:', wm_det])
         rand_attack.log_info(['ak_detect:', adv_det])
@@ -232,10 +244,14 @@ def test_rand_attack(
             data_record['ocr_wm_rouge']=ocr_wm_rouge_l[-1]
             data_record['ocr_wm_ppl']=ocr_wm_ppl
         data_records.append(data_record)
+    
+    attk_name='Rand'
+    if char_op!=2 and 'char' in atk_style:
+        attk_name='RandChar_'+str(char_op)
     save_json(
         data_records,
         "saved_attk_data/"+"_".join([
-            'Rand', 
+            attk_name, 
             # llm_name.replace('/','_'), wm_name.replace('/','_'), 
             str(max_edit_rate), str(max_token_num), atk_style, 
             str(atk_times), str(ori_flag), def_stl, 
@@ -258,6 +274,7 @@ if __name__=="__main__":
     parser.add_argument('--ori_flag', type=str, default='False')
     parser.add_argument('--def_stl', type=str, default='')
     parser.add_argument('--device', type=int, default=0)
+    parser.add_argument('--char_op', type=int, default=2)
     
     args = parser.parse_args()
     test_rand_attack(
@@ -272,5 +289,6 @@ if __name__=="__main__":
         ori_flag=bool(args.ori_flag=='True'),
         def_stl=args.def_stl,
         device=args.device,
+        char_op=args.char_op,
     )
     

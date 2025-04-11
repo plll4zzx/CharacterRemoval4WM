@@ -6,6 +6,7 @@ from paddleocr import PaddleOCR
 # from mmocr.apis import MMOCR
 
 
+ocr = PaddleOCR(use_angle_cls=True, lang="en") 
 def text_OCR_text(text, img_path=None, style='ocr_t'):
     
     img=text_to_image(text)
@@ -16,7 +17,6 @@ def text_OCR_text(text, img_path=None, style='ocr_t'):
         extracted_text = pytesseract.image_to_string(img)
         return extracted_text
     else:
-        ocr = PaddleOCR(use_angle_cls=True, lang="en") 
         img=np.array(img)
         try:
             extracted_text = ocr.ocr(img, cls=True)[0][0][1][0]

@@ -112,6 +112,8 @@ def test_ga_attack(
     data_records=[]
 
     text_num=300
+    # if ocr_flag:
+    #     text_num=110
     for idx in range(int(text_num*3)+1):#[79]:#
         if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
             ga_attack.log_info('******')
@@ -227,7 +229,7 @@ def test_ga_attack(
             ocr_adv_ppl=wm_scheme.get_perplexity(ocr_adv_text)
             ga_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
             ga_attack.log_info(['ocr_detect:', ocr_adv_rlt])
-            if ocr_adv_rlt['is_watermarked']==(not remove_spoof) and adv_det['is_watermarked']==(not remove_spoof):
+            if ocr_adv_rlt['is_watermarked']==(not remove_spoof):# and adv_det['is_watermarked']==(not remove_spoof)
                 adv_ocr_num+=1
             adv_ocr_rate_l.append((ocr_adv_rlt['score']-adv_det['score'])/(adv_det['score']+1e-4))
             ocr_adv_belu_l.append(belu_func(wm_text, ocr_adv_text))

@@ -2,7 +2,7 @@
 import gensim.downloader
 from tqdm import tqdm
 import numpy as np
-from textattack.utils import Logger, to_string, truncation,find_homo
+from textattack.utils import Logger, to_string, truncation,find_homo, random_keyboard_neighbor
 import datetime
 from copy import deepcopy
 import string
@@ -13,6 +13,7 @@ from dipper import DipperParaphraser
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_score import rouge_scorer
 import Levenshtein
+import random
 
 
 def check_num(x_str):
@@ -104,6 +105,11 @@ class GensimModel:
             found_words=found_words[0:simi_num]
         return found_words
 
+zwsp = chr(0x200B)
+zwj = chr(0x200D)
+ZWNJ=chr(0x200C)
+WJ=chr(0x2060)
+VS16=chr(0xFE0F)
 
 class RandomAttack:
     def __init__(
@@ -115,13 +121,14 @@ class RandomAttack:
         wm_name='',
         ori_flag=False,
         wm_detector=None,
+        char_op=2,
     ):
-        
+        self.char_op=char_op
         self.gensimi=None 
         self.paraphraser=None
         self.token_len_flag=True
         self.simi_num_for_token=5
-        self.special_char=string.whitespace
+        self.special_char=[' ']#zwsp, VS16, [WJ]#, VS16, zwj, ZWNJ,
         self.device=device
         self.wm_detector=wm_detector
         self.ori_flag=ori_flag
@@ -253,6 +260,7 @@ class RandomAttack:
                 query_budget=50,
                 # temperature=self.temperature,
                 # max_single_query=20,
+                # edit_distance=len(sentence)*max_edit_rate,
             )
             atk_method=self.grad_attack
             
@@ -391,7 +399,7 @@ class RandomAttack:
                 # # Treat operation as part of the solution
                 # operation = solution[len(self.tokens) + i]  # Operation encoded in the extended solution
                 # operation=gene
-                operation = 2 #random.choice([1, 2, 3])
+                operation = self.char_op #2#random.choice([2, 3])#
 
                 tmp_token=copy(edited_sentence[i])
                 for m_loc in m_locs:
@@ -399,11 +407,19 @@ class RandomAttack:
                         continue
                     if operation == 1:  # Delete
                         tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1:]
-                    elif operation == 2:  # Replace
+                    elif operation == 2:  # homo
                         tmp_char=tmp_token[m_loc]
                         tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+ tmp_token[m_loc+1:] 
                     elif operation == 3:  # Insert
-                        tmp_token = tmp_token[:m_loc] + self.special_char+ tmp_token[m_loc:]
+                        tmp_token = tmp_token[:m_loc] + random.choice(self.special_char)+ tmp_token[m_loc:]
+                    elif operation == 4:  # swap
+                        tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1]+tmp_token[m_loc]+ tmp_token[m_loc+2:]
+                    elif operation == 5:  # typo
+                        tmp_char=tmp_token[m_loc]
+                        tmp_token = tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:]
+                    elif operation == 6:  # c homo
+                        tmp_char=tmp_token[m_loc]
+                        tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:]
                 edited_sentence[i]=tmp_token
         # Reconstruct sentence
         new_sentence = " ".join(edited_sentence)
@@ -455,7 +471,7 @@ class RandomAttack:
         self, sentence, max_edit_rate=None
     ):
         attacked=self.grad_method.attack(
-            sentence, 0.1, 
+            sentence, 0, 
         )
         
         cls_score=attacked.perturbed_result.score

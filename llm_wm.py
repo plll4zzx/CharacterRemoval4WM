@@ -15,7 +15,7 @@ from textattack.utils import Logger, to_string
 
 class LLM_WM:
 
-    def __init__(self, model_name = "facebook/opt-1.3b", device = "cuda", wm_name='KGW'):
+    def __init__(self, model_name = "facebook/opt-1.3b", device = "cuda", wm_name='KGW', context_len=1):
         self.model_name = model_name
         self.wm_name=wm_name
         self.device = device if torch.cuda.is_available() else "cpu"

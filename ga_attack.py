@@ -4,12 +4,13 @@ from pygad import GA
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 import torch
 from llm_wm import LLM_WM
-from textattack.utils import Logger, to_string, save_json, save_jsonl, truncation, find_homo
+from textattack.utils import Logger, to_string, save_json, save_jsonl, truncation, find_homo, random_keyboard_neighbor
 import datetime
 from copy import copy
 from difflib import SequenceMatcher
 from random_attack import GensimModel
 from text_OCR import text_OCR_text
+import random
 
 class GA_Attack:
     def __init__(
@@ -211,9 +212,9 @@ class GA_Attack:
                     continue
 
                 # # Treat operation as part of the solution
-                # operation = solution[len(self.tokens) + i]  # Operation encoded in the extended solution
+                # operation = random.choice([2,2, 4, 5])
                 # operation=gene
-                operation = 2 #random.choice([1, 2, 3])
+                operation = 2 
                 for m_loc in m_locs:
                     if m_loc>=(len_t-1):
                         continue
@@ -221,9 +222,19 @@ class GA_Attack:
                         tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1:]
                     elif operation == 2:  # Replace
                         tmp_char=tmp_token[m_loc]
-                        tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+ tmp_token[m_loc+1:] 
+                        if self.ocr_flag:
+                            tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:]
+                            # tmp_token = tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:]
+                            # tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+find_homo(tmp_char)+ tmp_token[m_loc+1:] 
+                        else:
+                            tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+ tmp_token[m_loc+1:] 
                     elif operation == 3:  # Insert
-                        tmp_token = tmp_token[:m_loc] + self.special_char+ tmp_token[m_loc:]
+                        tmp_token = tmp_token[:m_loc] + random.choice(self.special_char)+ tmp_token[m_loc:]
+                    elif operation == 4:  # swap
+                        tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1]+tmp_token[m_loc]+ tmp_token[m_loc+2:]
+                    elif operation == 5:  # typo
+                        tmp_char=tmp_token[m_loc]
+                        tmp_token = tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:]
                 edited_sentence[i]=tmp_token
                 
                 selected_tokens.append(i)
@@ -235,8 +246,8 @@ class GA_Attack:
     def fitness_function(self, ga_instance, solution, solution_idx):
         
         modified_sentence, solu_len, _ = self.modify_sentence(solution)
-        if self.ocr_flag:
-            modified_sentence=text_OCR_text(modified_sentence)
+        # if self.ocr_flag:
+        #     modified_sentence=text_OCR_text(modified_sentence)
 
         # Evaluate fitness using the helper function
         eva_fitness=-self.evaluate_fitness(modified_sentence, self.target_class)
@@ -252,7 +263,7 @@ class GA_Attack:
         if self.ori_flag==False:
             if abs(fit_score-self.best_fitness)<0.05:
                 return min(fit_score, self.best_fitness-0.0001)#
-            if abs(solu_len-self.edit_distance)>3 and self.edit_distance>0:
+            if abs(solu_len-self.edit_distance)>2 and self.edit_distance>0:
                 return min(fit_score, self.best_fitness-0.0001)#
         if self.remove_spoof:
             return fit_score
@@ -272,6 +283,11 @@ class GA_Attack:
         # sentence=sentence.lower()
         # tmp_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
         # sentence=self.tokenizer.decode(tmp_ids, skip_special_tokens=True)
+        
+        # if self.ocr_flag:
+        #     population_size=20
+        #     mutation_percent_genes=50#5
+        #     num_parents_mating=10
         
         self.remove_spoof=remove_spoof
         self.tokens = sentence.split()
@@ -323,8 +339,8 @@ class GA_Attack:
     def on_generation(self, ga_instance):
         # self.log_info(f"Generation: {ga_instance.generations_completed}")
         # steps=ga_instance.generations_completed
+        # self.best_solution=best_solution
         (best_solution, best_fitness, _)=ga_instance.best_solution()
-        self.best_solution=best_solution
         self.log_info(f"Generation: {ga_instance.generations_completed}, Best Fitness: {best_fitness}")
         if self.wm_detector is not None:
             best_sentence, edit_distance, _ = self.modify_sentence(best_solution)

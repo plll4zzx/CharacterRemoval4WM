@@ -18,12 +18,13 @@ def get_wm_data(
     wm_name='SIR',#'SemStamp'
     model_name = "facebook/opt-1.3b",
     rand_seed=123,
-    device=0
+    device=0,
+    context_len=1,
 ):
     c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num, rand_seed=rand_seed)
     c4_dataset.load_data(text_len)
     device = "cuda:"+str(device)
-    wm_scheme=LLM_WM(model_name = model_name, device = device, wm_name=wm_name)
+    wm_scheme=LLM_WM(model_name = model_name, device = device, wm_name=wm_name, context_len=context_len)
     
     count_num=0
     base_num=0
@@ -89,7 +90,7 @@ def get_wm_data(
         wm_name, 
         dataset_name.replace('/','_'), 
         model_name.replace('/','_'), 
-        str(c4_dataset.data_num)
+        str(c4_dataset.data_num), str(3)
     ])+'.json'
     file_path=os.path.join('saved_data', filename)
     save_json(data=result_list, file_path=file_path)
@@ -114,6 +115,7 @@ if __name__=="__main__":
     parser.add_argument('--text_len', type=int, default=50)
     parser.add_argument('--rand_seed', type=int, default=123)
     parser.add_argument('--device', type=int, default=1)
+    parser.add_argument('--context_len', type=int, default=1)
 
     args = parser.parse_args()
     # for wm_name in ['Unbiased', 'KGW', 'Unigram']:#'SIR', 'SemStamp', 
@@ -125,6 +127,7 @@ if __name__=="__main__":
         wm_name=args.wm_name, 
         model_name=args.model_name,
         rand_seed=args.rand_seed,
-        device=args.device
+        device=args.device,
+        context_len=args.context_len,
     )
     

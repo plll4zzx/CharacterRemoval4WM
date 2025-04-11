@@ -13,7 +13,7 @@
         "eva_thr":-0.05,
         "mean":2.9263,
         "std":3.2487,
-        "ab_std":2
+        "ab_std":3
     },
     "DIP":{
         "victim_tokenizer": "bert-base-uncased",
@@ -29,7 +29,7 @@
         "eva_thr":-0.05,
         "mean":1.268103,
         "std":1.1784888,
-        "ab_std":2
+        "ab_std":3
     },
     "SynthID":{
         "victim_tokenizer": "bert-base-uncased",
@@ -45,7 +45,7 @@
         "eva_thr":-0.3,
         "mean":0.5188,
         "std":0.0199,
-        "ab_std":3
+        "ab_std":2
     },
     "Unigram":{
         "victim_tokenizer": "bert-base-uncased",
@@ -55,13 +55,13 @@
             "9":"saved_model/RefDetector_Unigram_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_0.15_9"
         },
         "num_generations":15,
-        "max_edit_rate":{"100":0.21, "200":0.21},
+        "max_edit_rate":{"100":0.13, "200":0.13},
         "len_weight":{"100":0.5, "200":0.5},
         "fitness_threshold":{"100":0.9, "200":0.9},
         "eva_thr":-0.05,
         "mean":3.6317376,
         "std":3.6826357,
-        "ab_std":2
+        "ab_std":4
     },
     "Unbiased":{
         "victim_tokenizer": "bert-base-uncased",
@@ -77,7 +77,7 @@
         "eva_thr":-0.05,
         "mean":1.266152,
         "std":1.18968802,
-        "ab_std":3
+        "ab_std":4
     },
     "UPV":{
         "victim_tokenizer": "bert-base-uncased",

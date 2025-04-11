@@ -3,6 +3,20 @@ import logging
 from logging import handlers
 import random
 
+keyboard_neighbors = {
+    'a': 'qs', 'b': 'vn', 'c': 'xv', 'd': 'sf', 'e': 'wr',
+    'f': 'dg', 'g': 'fh', 'h': 'gj', 'i': 'uo', 'j': 'hk',
+    'k': 'jl', 'l': 'k', 'm': 'n', 'n': 'bm', 'o': 'ip',
+    'p': 'o', 'q': 'wa', 'r': 'et', 's': 'ad', 't': 'ry',
+    'u': 'iy', 'v': 'cb', 'w': 'qe', 'x': 'zc', 'y': 'tu',
+    'z': 'x'
+}
+
+def random_keyboard_neighbor(char):
+    neighbors = keyboard_neighbors.get(char.lower(), '')
+    return random.choice(neighbors) if neighbors else char
+
+
 unprintable_char=''.join([chr(i) for i in range(1000) if chr(i).isprintable()==False])[0:10]
 homos = {
     "A":"ΑАᎪᗅᴀꓮꭺＡ𐊠𖽀𝐀𝐴𝑨𝖠𝗔𝘈𝘼𝙰𝚨𝛢𝜜𝝖𝞐",
@@ -227,6 +241,7 @@ def find_homo(input_char):
     if input_char in homos:
         # return homos[input_char][0]
         return homos[input_char][homos_lo1[input_char]]
+        # return homos[input_char][homos_lo2[input_char]]
         # return homos[input_char][max(0, homos_lo[input_char]-1)]
     else:
         # random_char = random.choice(unprintable_char)

@@ -12,7 +12,7 @@ from textattack.constraints.pre_transformation import (
     RepeatModification,
     StopwordModification,
 )
-from textattack.goal_functions import UntargetedClassification
+from textattack.goal_functions import UntargetedClassification,InputReduction
 from textattack.search_methods import GreedyWordSwapWIR
 from textattack.transformations import (
     CompositeTransformation,
@@ -35,7 +35,7 @@ class DeepWordBugGao2018(AttackRecipe):
     """
 
     @staticmethod
-    def build(model_wrapper, use_all_transformations=True, query_budget=100, edit_distance=0.2):
+    def build(model_wrapper, use_all_transformations=True, query_budget=100, edit_distance=20):
         #
         # Swap characters out from words. Choose the best of four potential transformations.
         #
@@ -51,7 +51,8 @@ class DeepWordBugGao2018(AttackRecipe):
                     WordSwapRandomCharacterDeletion(),
                     # (4) Insertion: Insert a random letter in the word.
                     WordSwapRandomCharacterInsertion(),
-                ]
+                ],
+                max_trans_num=20
             )
         else:
             # We use the Combined Score and the Substitution Transformer to generate
@@ -74,6 +75,6 @@ class DeepWordBugGao2018(AttackRecipe):
         #
         # Greedily swap words with "Word Importance Ranking".
         #
-        search_method = GreedyWordSwapWIR()
+        search_method = GreedyWordSwapWIR(max_index_num=20)
 
         return Attack(goal_function, constraints, transformation, search_method)

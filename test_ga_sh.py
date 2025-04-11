@@ -41,10 +41,11 @@ parser.add_argument('--max_edit_rate', type=float, default=-1)
 parser.add_argument('--remove_spoof', type=str, default='True')
 parser.add_argument('--ocr_flag', type=str, default='False')
 parser.add_argument('--num_generations', type=int, default=-1)
+parser.add_argument('--do_flag', type=str, default='True')
 args = parser.parse_args()
 
-do_flag=True
-def_stl="ocr"
+do_flag=bool(args.do_flag=='True')
+def_stl="spell_check_ltp"
 atk_style=args.atk_style
 data_aug=args.data_aug
 device=args.device
@@ -73,7 +74,7 @@ else:
 
 if ori_flag:
     data_aug=0
-    ab_std_list=[0]
+    ab_std_list=[100]
 
 for max_token_num in max_token_num_list:
     for wm_name in wm_name_list:
@@ -81,10 +82,13 @@ for max_token_num in max_token_num_list:
             wm_config=ga_config[wm_name]
             victim_tokenizer=wm_config['victim_tokenizer']
             victim_model=get_key_value(wm_config, 'victim_model', str(data_aug))
+            len_weight = get_key_value(wm_config, 'len_weight', str(max_token_num))
+            fitness_threshold = get_key_value(wm_config, 'fitness_threshold', str(max_token_num))
             if num_generations<0:
                 num_generations=wm_config['num_generations']
             if ocr_flag:
-                num_generations=5
+                # num_generations=5
+                len_weight=0.0
             eva_thr=wm_config['eva_thr']
             mean=wm_config['mean']
             std=wm_config['std']
@@ -92,8 +96,6 @@ for max_token_num in max_token_num_list:
                 ab_std=wm_config['ab_std']
             if max_edit_rate<0:
                 max_edit_rate = get_key_value(wm_config, 'max_edit_rate', str(max_token_num))
-            len_weight = get_key_value(wm_config, 'len_weight', str(max_token_num))
-            fitness_threshold = get_key_value(wm_config, 'fitness_threshold', str(max_token_num))
             
             tmp_sh=sh_templte.format(
                 llm_name=llm_name,
@@ -171,8 +173,11 @@ for max_token_num in max_token_num_list:
             rouge=np.mean([data_record['rouge-f1'] for data_record in data_records])
             ppl_rate=np.mean([data_record['ppl_rate'] for data_record in data_records])
             adv_ppl=np.mean([data_record['adv_ppl'] for data_record in data_records])
-            
             print(to_string([wm_score_drop, asr, token_budget_rate, char_budget_rate, belu, rouge, ppl_rate, adv_ppl], step_char=' '))
+            
+            if ocr_flag:
+                adv_ocr_rate=np.mean([(data_record['ocr_adv_detect']['is_watermarked']==False and data_record['ocr_adv_detect']['is_watermarked']==False) for data_record in data_records])
+                print(to_string([adv_ocr_rate], step_char=' '))
 
 # saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2.0_token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json
 # saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2  _token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json

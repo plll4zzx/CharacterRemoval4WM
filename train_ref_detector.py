@@ -477,8 +477,8 @@ if __name__=='__main__':
     parser.add_argument('--device', type=int, default=0)
     parser.add_argument(
         '--model_path', type=str, 
-        # default=None,
-        default="saved_model/RefDetector_UPV_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-16"
+        default=None,
+        # default="saved_model/RefDetector_UPV_.._.._dataset_c4_realnewslike_facebook_opt-1.3b_bert-base-uncased_2025-02-16"
     )
     parser.add_argument('--ths', type=float, default=0.5)
     parser.add_argument('--rand_times', type=int, default=5)

@@ -37,7 +37,7 @@ class TextBuggerLi2018(AttackRecipe):
     """
 
     @staticmethod
-    def build(model_wrapper, query_budget=100, edit_distance=0.2):
+    def build(model_wrapper, query_budget=100, edit_distance=20):
         #
         #  we propose five bug generation methods for TEXTBUGGER:
         #
@@ -73,7 +73,8 @@ class TextBuggerLi2018(AttackRecipe):
                 # GloVe model [30] provided by Stanford for word embedding and set
                 # topk = 5 in the experiment.
                 WordSwapEmbedding(max_candidates=5),
-            ]
+            ],
+            max_trans_num=20
         )
 
         constraints = [RepeatModification(), StopwordModification()]
@@ -88,6 +89,10 @@ class TextBuggerLi2018(AttackRecipe):
         # strength of the generated adversarial text."
         constraints.append(
             UniversalSentenceEncoder(threshold=0.8),
+            # LevenshteinEditDistance(edit_distance)
+        )
+        constraints.append(
+            # UniversalSentenceEncoder(threshold=0.8),
             LevenshteinEditDistance(edit_distance)
         )
         #
@@ -98,6 +103,6 @@ class TextBuggerLi2018(AttackRecipe):
         #
         # Greedily swap words with "Word Importance Ranking".
         #
-        search_method = GreedyWordSwapWIR(wir_method="delete")
+        search_method = GreedyWordSwapWIR(wir_method="delete",max_index_num=20)
 
         return Attack(goal_function, constraints, transformation, search_method)

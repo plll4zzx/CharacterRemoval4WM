@@ -39,4 +39,4 @@ class UntargetedClassification(ClassificationGoalFunction):
             # return abs(model_output.item() - self.ground_truth_output)
             return -model_output.item()
         else:
-            return 1 - model_output[self.ground_truth_output]
+            return 1 - model_output[self.ground_truth_output]#
