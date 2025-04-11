@@ -14,7 +14,7 @@ from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_score import rouge_scorer
 import Levenshtein
 import random
-
+from spellchecker import SpellChecker
 
 def check_num(x_str):
     num_str_list=[str(idx) for idx in range(10)]
@@ -132,6 +132,7 @@ class RandomAttack:
         self.device=device
         self.wm_detector=wm_detector
         self.ori_flag=ori_flag
+        self.spellchecker = SpellChecker()
         if isinstance(tokenizer,str):
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
         else:
@@ -419,7 +420,28 @@ class RandomAttack:
                         tmp_token = tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:]
                     elif operation == 6:  # c homo
                         tmp_char=tmp_token[m_loc]
-                        tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:]
+                        tmp_token_list=[
+                            tmp_token[:m_loc] + tmp_token[m_loc+1:], #1
+                            tmp_token[:m_loc] + find_homo(tmp_char)+ tmp_token[m_loc+1:], #2
+                            tmp_token[:m_loc] + random.choice(self.special_char)+ tmp_token[m_loc:], #3
+                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+tmp_token[m_loc] + tmp_token[m_loc+2:], #4
+                            # tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #5
+                            # tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + tmp_token[m_loc+1:], #2 3
+                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
+                            # tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
+                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+ random.choice(self.special_char)+tmp_token[m_loc] + tmp_token[m_loc+2:], #3 4
+                            # tmp_token[:m_loc] + random.choice(self.special_char)+ random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #3 5
+                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+2:], #4 5
+                        ]
+                        dist_dict={}
+                        for idx, word in enumerate(tmp_token_list):
+                            c_word=self.spellchecker.correction(word)
+                            if c_word is None:
+                                dist_dict[idx]=0
+                            else:
+                                dist_dict[idx]=Levenshtein.distance(word, self.spellchecker.correction(word))
+                        sorted_keys_desc = sorted(dist_dict, key=dist_dict.get, reverse=True)
+                        tmp_token=tmp_token_list[sorted_keys_desc[0]]
                 edited_sentence[i]=tmp_token
         # Reconstruct sentence
         new_sentence = " ".join(edited_sentence)

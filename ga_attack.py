@@ -11,6 +11,8 @@ from difflib import SequenceMatcher
 from random_attack import GensimModel
 from text_OCR import text_OCR_text
 import random
+from spellchecker import SpellChecker
+import Levenshtein
 
 class GA_Attack:
     def __init__(
@@ -37,7 +39,7 @@ class GA_Attack:
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
         self.model.eval()
         self.device=device
-        self.special_char = '@'
+        self.special_char = [' ', chr(0x200B), chr(0xFE0F)]#
         self.wm_detector=wm_detector
         self.wm_name=wm_name
         self.fitness_threshold=fitness_threshold
@@ -53,6 +55,9 @@ class GA_Attack:
         self.atk_style=atk_style
         self.ori_flag=ori_flag
         self.ocr_flag=ocr_flag
+
+        if ocr_flag:
+            self.spellchecker = SpellChecker()
 
         self.model.to(self.device)
 
@@ -218,22 +223,42 @@ class GA_Attack:
                 for m_loc in m_locs:
                     if m_loc>=(len_t-1):
                         continue
+                    
+                    tmp_char=tmp_token[m_loc]
+                    if self.ocr_flag:
+                        tmp_token_list=[
+                            tmp_token[:m_loc] + tmp_token[m_loc+1:], #1
+                            tmp_token[:m_loc] + find_homo(tmp_char)+ tmp_token[m_loc+1:], #2
+                            tmp_token[:m_loc] + random.choice(self.special_char)+ tmp_token[m_loc:], #3
+                            tmp_token[:m_loc] + tmp_token[m_loc+1]+tmp_token[m_loc] + tmp_token[m_loc+2:], #4
+                            tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #5
+                            tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + tmp_token[m_loc+1:], #2 3
+                            tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
+                            tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
+                            tmp_token[:m_loc] + tmp_token[m_loc+1]+ random.choice(self.special_char)+tmp_token[m_loc] + tmp_token[m_loc+2:], #3 4
+                            tmp_token[:m_loc] + random.choice(self.special_char)+ random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #3 5
+                            tmp_token[:m_loc] + tmp_token[m_loc+1]+random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+2:], #4 5
+                        ]
+                        # misspelled = self.spellchecker.unknown(tmp_token_list)
+                        dist_dict={}
+                        for idx, word in enumerate(tmp_token_list):
+                            c_word=self.spellchecker.correction(word)
+                            if c_word is None:
+                                dist_dict[idx]=0
+                            else:
+                                dist_dict[idx]=Levenshtein.distance(word, self.spellchecker.correction(word))
+                        sorted_keys_desc = sorted(dist_dict, key=dist_dict.get, reverse=True)
+                        tmp_token=tmp_token_list[sorted_keys_desc[0]]
+                        continue
                     if operation == 1:  # Delete
                         tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1:]
                     elif operation == 2:  # Replace
-                        tmp_char=tmp_token[m_loc]
-                        if self.ocr_flag:
-                            tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:]
-                            # tmp_token = tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:]
-                            # tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+find_homo(tmp_char)+ tmp_token[m_loc+1:] 
-                        else:
-                            tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+ tmp_token[m_loc+1:] 
+                        tmp_token = tmp_token[:m_loc] +find_homo(tmp_char)+ tmp_token[m_loc+1:] 
                     elif operation == 3:  # Insert
                         tmp_token = tmp_token[:m_loc] + random.choice(self.special_char)+ tmp_token[m_loc:]
                     elif operation == 4:  # swap
                         tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1]+tmp_token[m_loc]+ tmp_token[m_loc+2:]
                     elif operation == 5:  # typo
-                        tmp_char=tmp_token[m_loc]
                         tmp_token = tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:]
                 edited_sentence[i]=tmp_token
                 

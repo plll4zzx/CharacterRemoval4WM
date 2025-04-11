@@ -48,7 +48,7 @@ for max_token_num in max_token_num_list:
             ori_flag=bool(ori_flag=='True')
             max_edit_rate_list=[0.2]#,0.2wm_config['max_edit_rate'][0.05,0.1,0.15,0.2,0.3,0.4,0.5
             print(to_string([wm_name, atk_style, char_op], step_char='\t'))
-            for data_aug in [0,5,9,-1]:
+            for data_aug in [9]:
                 if data_aug==-1:
                     tmp_ori_flag="True"
                     data_aug=9
@@ -124,3 +124,6 @@ for max_token_num in max_token_num_list:
                         adv_ref_score=np.mean(adv_ref_score_l)-np.min(adv_ref_score_l)
                         ref_drop=(wm_ref_score-adv_ref_score)/wm_ref_score
                         print(to_string([wm_score_drop, asr, token_budget_rate, char_budget_rate, belu, rouge, ppl_rate, adv_ppl, ref_drop], step_char=' '))
+                        if len(def_stl)>0:
+                            adv_ocr_rate=np.mean([(data_record['ocr_adv_detect']['is_watermarked']==False and data_record['ocr_adv_detect']['is_watermarked']==False) for data_record in data_records])
+                            print(to_string([adv_ocr_rate], step_char=' '))
