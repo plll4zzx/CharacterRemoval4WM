@@ -1,12 +1,4 @@
 
-# import torch
-# import json
-# from MarkLLM.watermark.auto_watermark import AutoWatermark
-# from MarkLLM.utils.transformers_config import TransformersConfig
-# from transformers import AutoModelForCausalLM, AutoTokenizer
-# import transformers
-
-# import textattack
 from read_data import c4
 # import textattack.attack_sems
 import numpy as np

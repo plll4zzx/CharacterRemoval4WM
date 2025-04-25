@@ -107,33 +107,29 @@ class GA_Attack:
     
     def get_abnormal_tokens(self, text):
         inputs = self.tokenizer(text, return_tensors="pt", padding=True, truncation=True)
-        # 将输入数据放到设备上
+        
         inputs = {key: val.to(self.device) for key, val in inputs.items()}
         
-        # 这里我们希望计算模型输出对每个 token 的梯度，
-        # 因为 token 是离散的，所以我们获取对应的 embedding。
+        
         input_ids = inputs["input_ids"]         # shape: [1, seq_length]
         attention_mask = inputs["attention_mask"]
         
-        # 获取输入的 token embedding，并设置 requires_grad=True 开启梯度计算
         embeddings = self.model.bert.embeddings.word_embeddings(input_ids)
         embeddings.requires_grad_()
         embeddings.retain_grad()
         
-        # 前向传播：将 embeddings 传入模型，注意此时使用 inputs_embeds 代替 input_ids
         outputs = self.model(inputs_embeds=embeddings, attention_mask=attention_mask)
-        # 模型输出 logits 的形状为 [batch_size, 1]，代表预测的分数
-        score = outputs.logits  # 形状：[1, 1]
+        
+        score = outputs.logits  
         print(f"Predicted score: {score.item():.4f}")
         
-        # 反向传播：对输出的标量分数求梯度
-        self.model.zero_grad()  # 清空模型内已有的梯度
+        
+        self.model.zero_grad()  
         score.backward()
         
-        # embeddings.grad 的形状为 [1, seq_length, embedding_dim]，
-        # 表示每个 token embedding 对输出分数的梯度
-        gradients = embeddings.grad.detach()  # detach后转换为 numpy 处理
-        # 计算每个 token 的梯度范数，作为衡量 token 敏感程度的一个指标
+        
+        gradients = embeddings.grad.detach()  
+        
         token_grad_norms = gradients.norm(dim=-1).squeeze(0) 
 
         tokens = self.tokenizer.convert_ids_to_tokens(input_ids[0])
@@ -159,21 +155,16 @@ class GA_Attack:
     def evaluate_fitness(self, modified_sentence, target_class):
         if self.ori_flag:
             return (self.wm_detector(modified_sentence)['score']-self.mean)/self.std
-        # Tokenize the modified sentence
+        
         inputs = self.tokenizer(modified_sentence, return_tensors="pt", padding=True, truncation=True)
         batch = {k: v.to(self.device) for k, v in inputs.items()}
-        # Evaluate fitness using the fine-tuned classification model
+        
         with torch.no_grad():
             outputs = self.model(**batch)
         logits = outputs.logits
         fitness=logits
-        # predictions = torch.softmax(logits, dim=1)
-
-        # Define a fitness value based on the target misclassification
-        # fitness = predictions[0][target_class]
-
+        
         return fitness.item()
-        # return fitness.cpu().detach().numpy()
     
     def substitute(self, token):
         if self.gensimi is None:

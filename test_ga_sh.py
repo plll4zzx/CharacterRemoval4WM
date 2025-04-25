@@ -182,6 +182,3 @@ for max_token_num in max_token_num_list:
             if ocr_flag:
                 adv_ocr_rate=np.mean([(data_record['ocr_adv_detect']['is_watermarked']==False and data_record['ocr_adv_detect']['is_watermarked']==False) for data_record in data_records])
                 print(to_string([adv_ocr_rate], step_char=' '))
-
-# saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2.0_token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json
-# saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2  _token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json

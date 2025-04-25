@@ -28,9 +28,9 @@ class LLM_WM:
                 # quantization_config={
                 #     "load_in_4bit":True, 
                 #     # "load_in_8bit": True,  
-                #     "bnb_4bit_compute_dtype": "float16",  # 指定计算精度
-                #     "bnb_4bit_use_double_quant": True,   # 是否使用双量化
-                #     "bnb_4bit_quant_type": "nf4"         # 量化类型（nf4 通常表现更好）
+                #     "bnb_4bit_compute_dtype": "float16",  
+                #     "bnb_4bit_use_double_quant": True,   
+                #     "bnb_4bit_quant_type": "nf4"         
                 # }
             )
             tokenizer.pad_token = "[PAD]"
@@ -90,7 +90,7 @@ class LLM_WM:
 
         with torch.no_grad():
             outputs = self.transformers_config.model(**encodings, labels=encodings["input_ids"])
-            loss = outputs.loss  # 交叉熵损失
+            loss = outputs.loss  
 
         perplexity = torch.exp(loss)  # PPL = e^loss
         return perplexity.item()

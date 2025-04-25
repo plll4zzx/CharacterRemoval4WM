@@ -45,30 +45,29 @@ from evaluate import load
 import torch
 from transformers import AutoModelForCausalLM, AutoTokenizer
 
-# 加载 Perplexity 评估工具
+
 perplexity = load("perplexity", module_type="metric")
 
-# 加载 GPT-2 作为评估模型
+
 model_id = "facebook/opt-1.3b"
 device = "cuda" if torch.cuda.is_available() else "cpu"
 model = AutoModelForCausalLM.from_pretrained(model_id).to(device)
 tokenizer = AutoTokenizer.from_pretrained(model_id)
 
 def calculate_perplexity(text):
-    """计算给定文本的 Perplexity"""
     encodings = tokenizer(text, return_tensors="pt").to(device)
 
     with torch.no_grad():
         outputs = model(**encodings, labels=encodings["input_ids"])
-        loss = outputs.loss  # 交叉熵损失
+        loss = outputs.loss  
 
     perplexity = torch.exp(loss)  # PPL = e^loss
     return perplexity.item()
 
-# 示例文本
 text = "in the region and prosecution of tհose responsible for these shocking acts, vowing that we will pursue justice aɡaіnst tհese terror groups. BⲅEA𝒌INɡ: Over 3,500 child soldiers recruited within tհe northeast of Nigeria since 13th Dec – 3/5. The children are #injured, forcibly dіspⅼacеd & o𝚏ten end up with grave injuries. We urge the Government to urgently ensure that aⅼl child soldiers in northeast regions are protected and their rights are respected. #ChildrenDontFight pіc.twittеr.com/qϳU2E2OJ5G — UոIϲEFNG (@UNICEFNG) September 6, 2019 Children join the conflict in different ways, but have mostly been the vіc𝚝ims of sеxսal a𝚝tɑcks, kidnapping, recruitment, sexual exploitation"
 ppl = calculate_perplexity(text)
-print(f"Perplexity: {ppl}")import os
+print(f"Perplexity: {ppl}")
+import os
 
 # os.environ["HF_HOME"] = "/mnt/codedisk/huggingface/huggingface"
 # os.environ["TRANSFORMERS_CACHE"] = "/mnt/codedisk/huggingface/huggingface/hub"

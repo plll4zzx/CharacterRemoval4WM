@@ -1,26 +1,10 @@
-import importlib
-import json
-import os
-import time
+
 
 import textattack
 import transformers
 from read_data import c4
 import textattack.attack_sems
-# from datasets import load_dataset
-# from textattack.models.helpers import (LSTMForClassification,
-                                    #    WordCNNForClassification)
 
-# from utils.func import use_proxy
-
-# pid = os.getpid()
-# print(pid)
-# os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"  
-# os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
-
-
-# #advdata/imdb/ori_testTextFoolerbert_imdb是用原始Hugging faces imdb
-# #BAE在原始的huggingface imdb上生成不了对抗样本，改为在原始的huggingface imdb tokenize<512之后的ori_hug_token_imdb文件上生成对抗样本
 
 def main(
     dataset_name = '../../dataset/c4/realnewslike',
