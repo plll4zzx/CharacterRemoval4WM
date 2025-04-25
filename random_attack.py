@@ -15,6 +15,8 @@ from rouge_score import rouge_scorer
 import Levenshtein
 import random
 from spellchecker import SpellChecker
+import language_tool_python
+from text_OCR import text_OCR_text
 
 def check_num(x_str):
     num_str_list=[str(idx) for idx in range(10)]
@@ -48,8 +50,7 @@ def belu_func(ref_sen, ground_sen):
     reference = [ref_sen.split(' ')]
     candidate = ground_sen.split(' ')
 
-    # 计算 BLEU 分数
-    smooth = SmoothingFunction().method1  # 避免 BLEU 得分为 0
+    smooth = SmoothingFunction().method1  
     score = sentence_bleu(reference, candidate, smoothing_function=smooth)
     return score
 
@@ -121,18 +122,23 @@ class RandomAttack:
         wm_name='',
         ori_flag=False,
         wm_detector=None,
+        ppl_checker=None,
         char_op=2,
+        def_stl='',
     ):
         self.char_op=char_op
         self.gensimi=None 
         self.paraphraser=None
         self.token_len_flag=True
         self.simi_num_for_token=5
-        self.special_char=[' ']#zwsp, VS16, [WJ]#, VS16, zwj, ZWNJ,
+        self.special_char=[zwsp, zwj]#, zwj, ZWNJ' ',, [WJ]#, VS16, zwj, ZWNJ,
         self.device=device
         self.wm_detector=wm_detector
+        self.ppl_checker=ppl_checker
         self.ori_flag=ori_flag
-        self.spellchecker = SpellChecker()
+        self.def_stl=def_stl
+        # self.spellchecker = SpellChecker()
+        self.spellchecker = language_tool_python.LanguageTool('en-US')
         if isinstance(tokenizer,str):
             self.tokenizer = AutoTokenizer.from_pretrained(tokenizer)
         else:
@@ -233,6 +239,7 @@ class RandomAttack:
         atk_times=1, target_class=0,
         batch_size=8
     ): 
+        self.atk_style=atk_style
         adv_sentence_list=[]
         if atk_style=='char':
             atk_method=self.char_attack1
@@ -252,6 +259,8 @@ class RandomAttack:
             atk_method=self.token_attack
             sentence=self.low_attack(sentence)[0]
             sentence=self.ende_attack(sentence)[0]
+        elif 'sand' in atk_style:
+            atk_method=self.sand_attack
         else:
             import textattack
             # import textattack.attack_sems
@@ -421,27 +430,33 @@ class RandomAttack:
                     elif operation == 6:  # c homo
                         tmp_char=tmp_token[m_loc]
                         tmp_token_list=[
-                            tmp_token[:m_loc] + tmp_token[m_loc+1:], #1
-                            tmp_token[:m_loc] + find_homo(tmp_char)+ tmp_token[m_loc+1:], #2
-                            tmp_token[:m_loc] + random.choice(self.special_char)+ tmp_token[m_loc:], #3
-                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+tmp_token[m_loc] + tmp_token[m_loc+2:], #4
-                            # tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #5
-                            # tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + tmp_token[m_loc+1:], #2 3
-                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
-                            # tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
-                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+ random.choice(self.special_char)+tmp_token[m_loc] + tmp_token[m_loc+2:], #3 4
-                            # tmp_token[:m_loc] + random.choice(self.special_char)+ random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #3 5
-                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+2:], #4 5
+                            tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
+                            tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
+                            tmp_token[:m_loc]+ random.choice(self.special_char) + find_homo(tmp_token[m_loc])+ tmp_token[m_loc+1:],
                         ]
                         dist_dict={}
                         for idx, word in enumerate(tmp_token_list):
-                            c_word=self.spellchecker.correction(word)
-                            if c_word is None:
-                                dist_dict[idx]=0
+                            # c_word=''#self.spellchecker.correction(word)
+                            if 'ocr' in self.def_stl:
+                                c_word=text_OCR_text(word, style='ocr_t')
                             else:
-                                dist_dict[idx]=Levenshtein.distance(word, self.spellchecker.correction(word))
-                        sorted_keys_desc = sorted(dist_dict, key=dist_dict.get, reverse=True)
-                        tmp_token=tmp_token_list[sorted_keys_desc[0]]
+                                matches = self.spellchecker.check(word)
+                                c_word=language_tool_python.utils.correct(word, matches)
+                                if c_word is None:
+                                    c_word=word
+                            c_word=c_word.lower()
+                            word=word.lower()
+                            d0=Levenshtein.distance(word, c_word)
+                            d1=Levenshtein.distance(word, tmp_token)
+                            d2=Levenshtein.distance(c_word, tmp_token)
+                            # if d1*d2==0:
+                            #     dc=d0+len(c_word)-len(word)
+                            # else:
+                            #     dc=d0+len(c_word)-len(word)-1/(d1*d2)
+                            dc=d1*0.5+d2#
+                            dist_dict[idx]=(dc, tmp_token, word, c_word, d0, d1, d2)
+                        sorted_keys_desc = sorted(dist_dict.keys(), key=lambda k: dist_dict[k][0], reverse=True)#
+                        tmp_token=tmp_token_list[sorted_keys_desc[0]]#
                 edited_sentence[i]=tmp_token
         # Reconstruct sentence
         new_sentence = " ".join(edited_sentence)
@@ -461,6 +476,40 @@ class RandomAttack:
     ):
         new_sentence=sentence.lower()
         return new_sentence, 0 
+    
+    def sand_attack(self, sentence, max_edit_rate=None):
+        T=10#min(int(max_edit_rate/0.02),10)
+        new_sentence=deepcopy(sentence)
+        if self.ori_flag:
+            ori_score=self.wm_detector(new_sentence)['score']
+        else:
+            ori_score=self.ref_score(new_sentence, 0)
+            # ori_score=self.ppl_checker(new_sentence)
+        ori_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
+        for idx in range(T):
+            if 'token' in self.atk_style:
+                tmp_sentence, _=self.token_attack(sentence=new_sentence, max_edit_rate=min(max_edit_rate/T,0.02))
+            else:
+                tmp_sentence, _=self.char_attack1(sentence=new_sentence, max_edit_rate=min(max_edit_rate/T,0.02))
+            if self.ori_flag:
+                tmp_score=self.wm_detector(tmp_sentence)['score']
+                if tmp_score<ori_score:
+                    ori_score=tmp_score
+                    new_sentence=tmp_sentence
+            else:
+                tmp_score=self.ref_score(tmp_sentence, 0)
+                if tmp_score<ori_score:
+                    ori_score=tmp_score
+                    new_sentence=tmp_sentence
+                # tmp_score=self.ppl_checker(tmp_sentence)
+                # if (tmp_score-ori_score)/ori_score<1.5:
+                #     new_sentence=tmp_sentence
+            
+            new_ids=self.tokenizer.encode(new_sentence, add_special_tokens=False)
+            edit_dist=  Levenshtein.distance(ori_ids, new_ids)
+            # if edit_dist/len(ori_ids)>=max_edit_rate:
+            #     break
+        return new_sentence, edit_dist
     
     def sentence_attack(
         self, sentence, max_edit_rate=None

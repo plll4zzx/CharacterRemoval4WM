@@ -60,6 +60,7 @@ def test_ga_attack(
         ori_flag=ori_flag,
         device=device,
         ocr_flag=ocr_flag,
+        def_stl=def_stl,
     )
     if ori_flag==True:
         ab_std=100
@@ -112,8 +113,8 @@ def test_ga_attack(
     data_records=[]
 
     text_num=300
-    # if ocr_flag:
-    #     text_num=110
+    if ocr_flag:
+        text_num=150
     for idx in range(int(text_num*3)+1):#[79]:#
         if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
             ga_attack.log_info('******')

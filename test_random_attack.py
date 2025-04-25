@@ -51,6 +51,8 @@ def test_rand_attack(
             wm_detector = wm_scheme.detect_wm,
             device = device,
             char_op=char_op,
+            ppl_checker=wm_scheme.get_perplexity,
+            def_stl=def_stl
         )
         rand_attack.log_info(['ref_tokenizer:', ref_tokenizer])
         rand_attack.log_info(['ref_model:', ref_model])
@@ -81,7 +83,7 @@ def test_rand_attack(
     rouge_score_l=[]
     ppl_l=[]
     adv_ppl_l=[]
-    text_num=1000
+    text_num=500
 
     adv_ocr_num=0
     wm_ocr_num=0
@@ -97,8 +99,8 @@ def test_rand_attack(
 
     data_records=[]
 
-    if len(atk_style)>10 or len(def_stl)>10:
-        text_num=110
+    if len(atk_style)>5 or len(def_stl)>0 or atk_times>100:
+        text_num=300
     for idx in range(min(int(text_num*3)+1, len(wm_data))):
         if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
             rand_attack.log_info('******')
@@ -144,7 +146,7 @@ def test_rand_attack(
             continue
 
         wm_det=wm_scheme.detect_wm(wm_text)
-        # if wm_name == 'Unigram' and wm_det['score']<5:
+        # if wm_name == 'KGW' and wm_det['score']<6:
         #     continue
         if wm_det['is_watermarked']==True:
             base_num+=1
@@ -215,7 +217,7 @@ def test_rand_attack(
             ocr_adv_ppl=wm_scheme.get_perplexity(ocr_adv_text)
             rand_attack.log_info(['ocr_text:', ocr_adv_text.replace('\n',' ')])
             rand_attack.log_info(['ocr_detect:', ocr_adv_rlt])
-            if ocr_adv_rlt['is_watermarked']==False and adv_det['is_watermarked']==False:
+            if ocr_adv_rlt['is_watermarked']==False:# and adv_det['is_watermarked']==False:
                 adv_ocr_num+=1
             adv_ocr_rate_l.append((ocr_adv_rlt['score']-adv_det['score'])/(adv_det['score']+1e-4))
             ocr_adv_belu_l.append(belu_func(wm_text, ocr_adv_text))

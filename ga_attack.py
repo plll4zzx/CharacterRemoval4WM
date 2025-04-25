@@ -13,6 +13,13 @@ from text_OCR import text_OCR_text
 import random
 from spellchecker import SpellChecker
 import Levenshtein
+import language_tool_python
+
+zwsp = chr(0x200B)
+zwj = chr(0x200D)
+ZWNJ=chr(0x200C)
+WJ=chr(0x2060)
+VS16=chr(0xFE0F)
 
 class GA_Attack:
     def __init__(
@@ -32,6 +39,7 @@ class GA_Attack:
         atk_style='char',
         ori_flag=False,
         ocr_flag=False,
+        def_stl='',
     ):
         self.gensimi=None 
         self.simi_num_for_token=5
@@ -39,7 +47,7 @@ class GA_Attack:
         self.model = AutoModelForSequenceClassification.from_pretrained(victim_model)
         self.model.eval()
         self.device=device
-        self.special_char = [' ', chr(0x200B), chr(0xFE0F)]#
+        self.special_char = [zwsp, ZWNJ]#[' ', chr(0x200B), chr(0xFE0F)]#
         self.wm_detector=wm_detector
         self.wm_name=wm_name
         self.fitness_threshold=fitness_threshold
@@ -55,9 +63,11 @@ class GA_Attack:
         self.atk_style=atk_style
         self.ori_flag=ori_flag
         self.ocr_flag=ocr_flag
+        self.def_stl=def_stl
 
         if ocr_flag:
-            self.spellchecker = SpellChecker()
+            # self.spellchecker = SpellChecker()
+            self.spellchecker = language_tool_python.LanguageTool('en-US')
 
         self.model.to(self.device)
 
@@ -226,29 +236,39 @@ class GA_Attack:
                     
                     tmp_char=tmp_token[m_loc]
                     if self.ocr_flag:
+                        if tmp_token in self.best_adv_token:
+                            tmp_token=self.best_adv_token[tmp_token]
+                            continue
                         tmp_token_list=[
-                            tmp_token[:m_loc] + tmp_token[m_loc+1:], #1
-                            tmp_token[:m_loc] + find_homo(tmp_char)+ tmp_token[m_loc+1:], #2
-                            tmp_token[:m_loc] + random.choice(self.special_char)+ tmp_token[m_loc:], #3
-                            tmp_token[:m_loc] + tmp_token[m_loc+1]+tmp_token[m_loc] + tmp_token[m_loc+2:], #4
-                            tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #5
-                            tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + tmp_token[m_loc+1:], #2 3
-                            tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
-                            tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
-                            tmp_token[:m_loc] + tmp_token[m_loc+1]+ random.choice(self.special_char)+tmp_token[m_loc] + tmp_token[m_loc+2:], #3 4
-                            tmp_token[:m_loc] + random.choice(self.special_char)+ random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:], #3 5
-                            tmp_token[:m_loc] + tmp_token[m_loc+1]+random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+2:], #4 5
+                            tmp_token[:m_loc] + find_homo(tmp_char)+ ' ' + random_keyboard_neighbor(tmp_token[m_loc+1])+ tmp_token[m_loc+2:], #2 4
+                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
+                            # tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
+                            # tmp_token[:m_loc]+ ' ' + find_homo(tmp_char)+ tmp_token[m_loc+1:],
                         ]
-                        # misspelled = self.spellchecker.unknown(tmp_token_list)
+                        # w=[1,3,1]
                         dist_dict={}
                         for idx, word in enumerate(tmp_token_list):
-                            c_word=self.spellchecker.correction(word)
-                            if c_word is None:
-                                dist_dict[idx]=0
+                            # c_word=''#self.spellchecker.correction(word)
+                            if 'spell' in self.def_stl:
+                                matches = self.spellchecker.check(word)
+                                c_word=language_tool_python.utils.correct(word, matches)
+                                if c_word is None:
+                                    c_word=word
                             else:
-                                dist_dict[idx]=Levenshtein.distance(word, self.spellchecker.correction(word))
-                        sorted_keys_desc = sorted(dist_dict, key=dist_dict.get, reverse=True)
-                        tmp_token=tmp_token_list[sorted_keys_desc[0]]
+                                c_word=text_OCR_text(word, style='ocr_t')
+                                cid=c_word.find('\n')
+                                if cid>-1:
+                                    c_word=c_word[:cid]
+                            c_word=c_word.lower()
+                            word=word.lower()
+                            d0=Levenshtein.distance(word, c_word)
+                            d1=Levenshtein.distance(word, tmp_token)
+                            d2=Levenshtein.distance(c_word, tmp_token)
+                            dc=d1*0.5+d2
+                            dist_dict[idx]=(dc, tmp_token, word, c_word, d0, d1, d2)
+                        sorted_keys_desc = sorted(dist_dict.keys(), key=lambda k: dist_dict[k][0], reverse=True)#
+                        self.best_adv_token[tmp_token]=tmp_token_list[sorted_keys_desc[0]]
+                        tmp_token=tmp_token_list[sorted_keys_desc[0]]#
                         continue
                     if operation == 1:  # Delete
                         tmp_token = tmp_token[:m_loc] + tmp_token[m_loc+1:]
@@ -277,18 +297,18 @@ class GA_Attack:
         # Evaluate fitness using the helper function
         eva_fitness=-self.evaluate_fitness(modified_sentence, self.target_class)
         
-        if eva_fitness<self.eva_thr:
+        if eva_fitness<self.eva_thr and self.ori_flag==False:
             fit_score = eva_fitness
-        # elif eva_fitness>=self.fitness_threshold:
-        #     fit_score = self.fitness_threshold+(-solu_len/solution.size)*self.len_weight
         else:
             fit_score = eva_fitness+(self.max_edit_rate-solu_len/solution.size)*self.len_weight
+        # elif eva_fitness>=self.fitness_threshold:
+        #     fit_score = self.fitness_threshold+(-solu_len/solution.size)*self.len_weight
         # if eva_fitness>self.eva_thr:
         #     fit_score=eva_fitness-(solu_len/solution.size)*self.len_weight+(self.max_edit_rate)*self.len_weight
         if self.ori_flag==False:
             if abs(fit_score-self.best_fitness)<0.05:
                 return min(fit_score, self.best_fitness-0.0001)#
-            if abs(solu_len-self.edit_distance)>2 and self.edit_distance>0:
+            if abs(solu_len-self.edit_distance)>=2 and self.edit_distance>0:
                 return min(fit_score, self.best_fitness-0.0001)#
         if self.remove_spoof:
             return fit_score
@@ -334,6 +354,9 @@ class GA_Attack:
         if self.ab_std>0:
             self.abnormal_tokens=self.get_abnormal_tokens(sentence)
         self.simi_tokens_dict={}
+
+        if self.ocr_flag:
+            self.best_adv_token={}
 
         # Initialize PyGAD
         ga_instance = GA(

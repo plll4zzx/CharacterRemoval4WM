@@ -7,7 +7,7 @@ from paddleocr import PaddleOCR
 
 
 ocr = PaddleOCR(use_angle_cls=True, lang="en") 
-def text_OCR_text(text, img_path=None, style='ocr_t'):
+def text_OCR_text(text, img_path=None, style='ocr_p'):
     
     img=text_to_image(text)
     if img_path is not None:

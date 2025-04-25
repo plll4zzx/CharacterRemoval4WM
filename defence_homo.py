@@ -11,7 +11,7 @@ defence_method={
     ),
     'ocr':partial(
         text_OCR_text,
-        style='ocr_p'
+        style='ocr_t'
     ),
     'del':partial(
         text_homo_back,

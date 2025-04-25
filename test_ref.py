@@ -25,8 +25,8 @@ ths_dict={
     'Unbiased':1.513,
 }
 
-for data_aug in [9]:
-    for wm_name in ['KGW','DIP', 'SynthID','Unigram','Unbiased']:#,rand_config:#,'KGW','DIP', 'SynthID','Unigram','Unbiased'
+for data_aug in [0,5,9]:
+    for wm_name in ['KGW','DIP']:#,rand_config:#,'KGW','DIP', 'SynthID','Unigram','Unbiased'
         wm_config=rand_config[wm_name]
         model_path=wm_config['ref_model'][str(data_aug)]
         ths=ths_dict[wm_name]

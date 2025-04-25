@@ -27,34 +27,38 @@ args = parser.parse_args()
 do_flag=True
 # do_flag=False
 llm_name='facebook/opt-1.3b'#'../model/Llama3.1-8B_hg'#
-data_aug=9
-ori_flag="False"
-def_stl="spell_check_ltp"
-atk_style_list=['char',]#['low','ende', 'mix_char']#,'char','token', 'BERTAttackLi2020',
-atk_times_list=[1]#1,,50,100
+# data_aug=9
+ori_flag="False"#"True"#
+ori_flag=bool(ori_flag=='True')
+
+def_stl=""#"ocr"#spell_check_ltp
+atk_style_list=['char','token']#['low','ende', 'mix_char']'TextBuggerLi2018','char','token', 'BERTAttackLi2020','sand_token','sand_char'
+atk_times_list=[10]#1,,50,100
 max_token_num_list=[100]#100, 50, 100, 150, 200 
-device=1
+device=0
 
 if 'opt' in llm_name:
     rand_config=load_json(file_path='attk_config/opt_rand_config.json')
 else:
     rand_config=load_json(file_path='attk_config/llama_rand_config.json')
-char_op=6
+char_op=2
+
 for max_token_num in max_token_num_list:
     for atk_style in atk_style_list:
-        for wm_name in ['KGW','DIP', 'SynthID','Unigram','Unbiased']:#,'SynthID',rand_config:#,'KGW','DIP', 'SynthID','Unigram','Unbiased'
+        for wm_name in ['Unigram']:#,'SynthID',rand_config:#,'KGW','DIP', 'SynthID','Unigram','Unbiased'
             wm_config=rand_config[wm_name]
             ref_tokenizer=wm_config['ref_tokenizer']
-            ori_flag=bool(ori_flag=='True')
-            max_edit_rate_list=[0.2]#,0.2wm_config['max_edit_rate'][0.05,0.1,0.15,0.2,0.3,0.4,0.5
+            
+            max_edit_rate_list=[0.1]#,0.2wm_config['max_edit_rate'][0.05,0.1,0.15,0.2,0.3,0.4,0.5
             print(to_string([wm_name, atk_style, char_op], step_char='\t'))
-            for data_aug in [9]:
+            for data_aug in [0,5,9]:
                 if data_aug==-1:
                     tmp_ori_flag="True"
-                    data_aug=9
+                    tmp_data_aug=9
                 else:
                     tmp_ori_flag=ori_flag
-                ref_model=wm_config['ref_model'][str(data_aug)]
+                    tmp_data_aug=data_aug
+                ref_model=wm_config['ref_model'][str(tmp_data_aug)]
                 for max_edit_rate in max_edit_rate_list:
                     for atk_times in atk_times_list:
                         tmp_sh=sh_templte.format(
@@ -125,5 +129,11 @@ for max_token_num in max_token_num_list:
                         ref_drop=(wm_ref_score-adv_ref_score)/wm_ref_score
                         print(to_string([wm_score_drop, asr, token_budget_rate, char_budget_rate, belu, rouge, ppl_rate, adv_ppl, ref_drop], step_char=' '))
                         if len(def_stl)>0:
-                            adv_ocr_rate=np.mean([(data_record['ocr_adv_detect']['is_watermarked']==False and data_record['ocr_adv_detect']['is_watermarked']==False) for data_record in data_records])
+                            adv_ocr_rate=np.mean([
+                                (
+                                    data_record['ocr_adv_detect']['is_watermarked']==False 
+                                    # and data_record['adv_detect']['is_watermarked']==False
+                                ) 
+                                for data_record in data_records
+                            ])
                             print(to_string([adv_ocr_rate], step_char=' '))

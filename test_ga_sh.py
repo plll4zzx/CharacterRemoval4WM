@@ -31,12 +31,12 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='../model/Llama3.1-8B_hg')
-parser.add_argument('--wm_name', type=str, default='KGW')
+parser.add_argument('--wm_name', type=str, default='Unigram')
 parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
 parser.add_argument('--ab_std', type=int, default=3)
-parser.add_argument('--device', type=int, default=1)
+parser.add_argument('--device', type=int, default=0)
 parser.add_argument('--max_edit_rate', type=float, default=-1)
 parser.add_argument('--remove_spoof', type=str, default='True')
 parser.add_argument('--ocr_flag', type=str, default='False')
@@ -45,7 +45,7 @@ parser.add_argument('--do_flag', type=str, default='True')
 args = parser.parse_args()
 
 do_flag=bool(args.do_flag=='True')
-def_stl="spell_check_ltp"
+def_stl=""#"spell_check_ltp"#ocr
 atk_style=args.atk_style
 data_aug=args.data_aug
 device=args.device
@@ -147,6 +147,10 @@ for max_token_num in max_token_num_list:
             attk_name='GA'
             if ocr_flag:
                 attk_name='GAocr'
+            if ori_flag:
+                ab_std_str=str(ab_std)
+            else:
+                ab_std_str=str(float(ab_std))
             data_records=load_json(
                 "saved_attk_data/"+"_".join([
                     attk_name, 
@@ -157,7 +161,7 @@ for max_token_num in max_token_num_list:
                     str(eva_thr),
                     str(mean),
                     str(std),
-                    str(float(ab_std)),
+                    ab_std_str,
                     atk_style,
                     str(ori_flag),
                     def_stl,

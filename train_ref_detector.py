@@ -27,13 +27,12 @@ def plot_scatter(true_values, predicted_values, fig_path=None, title='', mid_poi
     max_value=max(true_values.max(), predicted_values.max())
     
 
-    # 绘制散点图，颜色深浅代表密度
-    plt.figure(figsize=(8, 6))
+    plt.figure(figsize=(9, 8))
     # xy = np.vstack([true_values, predicted_values])
     # density = gaussian_kde(xy)(xy)
     # plt.scatter(true_values, predicted_values, c=density, cmap="Blues", s=10, alpha=0.6)
     sns.kdeplot(x=true_values, y=predicted_values, cmap="Blues", fill=True)
-    # plt.colorbar(label="Density")  # 添加颜色条
+    # plt.colorbar(label="Density")  
     plt.scatter(true_values, predicted_values, color="black", alpha=0.3, s=10)
 
     tmp_max=max(abs(max_value-mid_point), abs(min_value-mid_point))
@@ -41,35 +40,36 @@ def plot_scatter(true_values, predicted_values, fig_path=None, title='', mid_poi
     right_bond=mid_point+tmp_max
     plt.plot([left_bond, right_bond], [left_bond, right_bond], color='red', linestyle='--', label="Ideal Line (y=x)")  # 参考对角线
 
-    # 图表美化
-    plt.xlabel("Original Watermark Score", fontsize=20)
-    plt.ylabel("Reference Watermark Score", fontsize=20)
+    fontsize=34
+    plt.xlabel("Original Watermark Score", fontsize=fontsize)
+    plt.ylabel("Reference Watermark Score", fontsize=fontsize)
     # plt.fill_betweenx([-tmp_max, tmp_max], 0, -tmp_max, color='lightgrey', alpha=0.5)
     # plt.fill_betweenx([left_bond, right_bond], 0, tmp_max, where=[False, False], color='lightgrey', alpha=0.5)
-    x_fill = np.linspace(left_bond, mid_point, 100)  # 取 x 轴左半部分
+    x_fill = np.linspace(left_bond, mid_point, 100)  
     plt.fill_between(x_fill, mid_point, right_bond, color='lightgray', alpha=0.5)
-    x_fill = np.linspace(mid_point, right_bond, 100)  # 取 x 轴右半部分
+    x_fill = np.linspace(mid_point, right_bond, 100)  
     plt.fill_between(x_fill, left_bond, mid_point, color='lightgray', alpha=0.5)
+    plt.xticks(fontsize=fontsize)
+    plt.yticks(fontsize=fontsize)
+    plt.rcParams['font.size'] = fontsize
 
     if len(title)>0:
-        plt.title(title, fontsize=20)
+        plt.title(title, fontsize=fontsize)
     # plt.legend()
     plt.grid(True)
 
     
-    # 设置坐标轴加粗
     ax = plt.gca()
     # ax.spines['top'].set_linewidth(2)
     # ax.spines['right'].set_linewidth(2)
     # ax.spines['bottom'].set_linewidth(2)
     # ax.spines['left'].set_linewidth(2)
     
-    # 将原点放在图像正中央
     ax.set_xlim([left_bond, right_bond])
     ax.set_ylim([left_bond, right_bond])
     # ax.axhline(0, color='black',linewidth=1)
     # ax.axvline(0, color='black',linewidth=1)
-
+    plt.tight_layout()
     if fig_path is not None:
         plt.savefig(fig_path)
     else:
@@ -276,14 +276,12 @@ class RefDetector:
             #     # norm_type='inf'
             # )
             
-            # # 打印每一层的参数更新前的统计信息
             # for name, param in self.model.named_parameters():
             #     if param.grad is not None:
             #         print(f"Layer: {name} | Param before update: {param.data.norm()}")
 
             self.optimizer.step()
 
-            # # 打印每一层的参数更新后的统计信息
             # for name, param in self.model.named_parameters():
             #     if param.grad is not None:
             #         print(f"Layer: {name} | Param after update: {param.data.norm()}")
@@ -360,12 +358,11 @@ class RefDetector:
 
     def froze_layer(self, f_num=10):
         for name, param in self.model.bert.named_parameters():
-            if "encoder.layer" in name:  # 只对 encoder 层操作
-                layer_num = int(name.split(".")[2])  # 提取层号
-                if layer_num < f_num:  # 冻结前 10 层
+            if "encoder.layer" in name:  
+                layer_num = int(name.split(".")[2])  
+                if layer_num < f_num:  
                     param.requires_grad = False
 
-        # 验证冻结结果
         # for name, param in self.model.named_parameters():
         #     print(f"{name}: requires_grad={param.requires_grad}")
 
