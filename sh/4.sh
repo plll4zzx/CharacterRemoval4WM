@@ -1,0 +1,3 @@
+python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "SynthIDfr" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std 1 --device 0 --remove_spoof "True" --num_generations 15   --do_flag "True" --ocr_flag "False" --max_edit_rate 0.23
+
+python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "KGWfr" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std 1 --device 0 --remove_spoof "True" --num_generations 15   --do_flag "True" --ocr_flag "False" --max_edit_rate 0.23

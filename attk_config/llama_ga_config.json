@@ -78,5 +78,37 @@
         "mean":1.2874049,
         "std":1.20660299,
         "ab_std":3
+    },
+    "KGWfr":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":{
+            "0":"saved_model/RefDetector_KGWfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_0",
+            "5":"saved_model/RefDetector_KGWfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_5",
+            "9":"saved_model/RefDetector_KGWfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_9"
+        },
+        "num_generations":15,
+        "max_edit_rate":{"100":0.13, "200":0.13},
+        "len_weight":{"100":0.5, "200":0.5},
+        "fitness_threshold":{"100":0.9, "200":0.9},
+        "eva_thr":-0.5,
+        "mean":3.7748,
+        "std":3.9252,
+        "ab_std":3
+    },
+    "SynthIDfr":{
+        "victim_tokenizer": "bert-base-uncased",
+        "victim_model":{
+            "0":"saved_model/RefDetector_SynthIDfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_9",
+            "5":"saved_model/RefDetector_SynthIDfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_5",
+            "9":"saved_model/RefDetector_SynthIDfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_0"
+        },
+        "num_generations":15,
+        "max_edit_rate":{"100":0.13, "200":0.13},
+        "len_weight":{"100":0.5, "200":0.5},
+        "fitness_threshold":{"100":0.9, "200":0.9},
+        "eva_thr":-0.3,
+        "mean":0.5179338,
+        "std":0.0185409,
+        "ab_std":4
     }
 }

@@ -54,20 +54,9 @@ class c4:
                 self.data.append((tmp_text[0:char_loc],0))
                 counter+=1
 
-# def parse(path):
-#     g = gzip.open(path, 'rb')
-#     for l in g:
-#         yield json.loads(l)
-
-# def get_data(dir_path, file_name):
-#     file_path=os.path.join(dir_path, file_name)
-#     for d in parse(file_path):
-#         print(d)
 
 if __name__=='__main__':
     dir_path='/home/plll/dataset/c4/realnewslike'
-    # file_name='c4-train.00000-of-00512.json.gz'
-    # get_data(dir_path, file_name)
     c4_dataset=c4(dir_path=dir_path)
     c4_dataset.load_data()
     print()

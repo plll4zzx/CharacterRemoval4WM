@@ -43,5 +43,23 @@
             "9":"saved_model/RefDetector_Unbiased_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13"
         },
         "max_edit_rate":[0.05, 0.1]
+    },
+    "KGWfr":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":{
+            "0":"saved_model/RefDetector_KGWfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_0",
+            "5":"saved_model/RefDetector_KGWfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_5",
+            "9":"saved_model/RefDetector_KGWfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_9"
+        },
+        "max_edit_rate":[0.05, 0.1]
+    },
+    "SynthIDfr":{
+        "ref_tokenizer": "bert-base-uncased",
+        "ref_model":{
+            "0":"saved_model/RefDetector_SynthIDfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_9",
+            "5":"saved_model/RefDetector_SynthIDfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_5",
+            "9":"saved_model/RefDetector_SynthIDfr_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_0.15_0"
+        },
+        "max_edit_rate":[0.05, 0.1]
     }
 }

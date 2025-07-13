@@ -251,6 +251,7 @@ class RefDetector:
                     # text_len=text_len, 
                     wm_detector=wm_scheme.detect_wm
                 )
+        print(data_path)
         wmscore_list=[tmp_d['score'] for tmp_d in self.dataset]
         self.d_mean = np.mean(wmscore_list)
         self.d_std = np.std(wmscore_list)

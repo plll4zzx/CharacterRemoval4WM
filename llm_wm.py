@@ -18,6 +18,8 @@ class LLM_WM:
     def __init__(self, model_name = "facebook/opt-1.3b", device = "cuda", wm_name='KGW', context_len=1):
         self.model_name = model_name
         self.wm_name=wm_name
+        if 'fr' in self.wm_name:
+            self.wm_name = self.wm_name[0:-2]
         self.device = device if torch.cuda.is_available() else "cpu"
         tokenizer=AutoTokenizer.from_pretrained(self.model_name)
         if "llama" in model_name.lower():

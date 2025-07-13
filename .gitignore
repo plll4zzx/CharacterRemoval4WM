@@ -5,6 +5,7 @@
 *.pdf
 *.zip
 *.png
+*.xlsx
 !attack_config/*
 !ga_config.json
 !rand_config.json

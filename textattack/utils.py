@@ -2,6 +2,10 @@ import json
 import logging
 from logging import handlers
 import random
+import numpy as np
+from sklearn.metrics import auc
+import unicodedata
+import matplotlib.pyplot as plt
 
 keyboard_neighbors = {
     'a': 'qs', 'b': 'vn', 'c': 'xv', 'd': 'sf', 'e': 'wr',
@@ -247,6 +251,9 @@ def find_homo(input_char):
         # random_char = random.choice(unprintable_char)
         return input_char
 
+def normalize_text(s):
+    return unicodedata.normalize('NFKC', s)
+
 def homo_back(input_char, style='del'):
     for key in homos:
         if input_char==homos[key][0]:
@@ -254,12 +261,14 @@ def homo_back(input_char, style='del'):
                 return key
             elif style=='del':
                 return ''
+            elif style=='nol':
+                return normalize_text(input_char)
     return input_char
 
 def text_homo_back(text, style='del'):
     new_text=''
     for tmp_char in text:
-        new_text=new_text+homo_back(tmp_char, style='del')
+        new_text=new_text+homo_back(tmp_char, style=style)
     return new_text
 
 def to_string(inputs, step_char=' '):
@@ -372,15 +381,133 @@ class Logger(object):
     def _screen_filter(record):
         return len(record.getMessage()) <= 200
 
+def compute_auc(a, b, num_thresholds=50, fig_path=None):
+    """
+    Compute AUC by threshold sweeping from scores in list a (positives) and b (negatives).
+
+    Args:
+        a (list or array): Scores for positive samples.
+        b (list or array): Scores for negative samples.
+        num_thresholds (int): Number of thresholds to evaluate.
+
+    Returns:
+        float: Computed AUC.
+    """
+    a = np.array(a)
+    b = np.array(b)
+
+    # Combine scores to get global min/max for threshold sweeping
+    scores = np.concatenate([a, b])
+    thresholds = np.linspace(scores.min(), scores.max(), num_thresholds)
+
+    tpr_list = []
+    fpr_list = []
+
+    for thresh in thresholds:
+        tp = np.sum(a >= thresh)
+        fn = np.sum(a < thresh)
+        fp = np.sum(b >= thresh)
+        tn = np.sum(b < thresh)
+
+        tpr = tp / (tp + fn + 1e-8)  # True Positive Rate
+        fpr = fp / (fp + tn + 1e-8)  # False Positive Rate
+
+        tpr_list.append(tpr)
+        fpr_list.append(fpr)
+
+    # Compute AUC using sklearn's auc function (x must be sorted)
+    sorted_pairs = sorted(zip(fpr_list, tpr_list))
+    fpr_sorted, tpr_sorted = zip(*sorted_pairs)
+
+
+    if fig_path is not None:
+        plt.figure()
+        plt.plot(fpr_list, tpr_list, label="Normalized log-log ROC")
+        plt.xlabel("log10(FPR)")
+        plt.ylabel("Normalized log10(TPR)")
+        plt.grid(True)
+        plt.legend()
+        plt.savefig(fig_path)
+    return auc(fpr_sorted, tpr_sorted)
+
+def compute_log_auc(a, b, log_min=1e-5, log_max=1.0, num_thresholds=1000, fig_path=None):
+    """
+    Compute the normalized log-log AUC and optionally plot the ROC curve in log-log space.
+
+    Parameters:
+        a (list or np.ndarray): Scores for positive examples. Higher values indicate positive class.
+        b (list or np.ndarray): Scores for negative examples.
+        log_fpr_min (float): Minimum value for FPR in log10 space to avoid log(0).
+        log_fpr_max (float): Maximum value for FPR in log10 space.
+        num_points (int): Number of interpolation points in log space.
+        plot (bool): Whether to display the ROC curve plot.
+
+    Returns:
+        float: Normalized log-log AUC value.
+    """
+    
+    # Combine and sort scores to determine thresholds
+    all_scores = np.sort(np.concatenate([a, b]))
+    thresholds = np.linspace(all_scores.min(), all_scores.max(), num_thresholds)
+
+    # Initialize lists to store FPR and TPR
+    fpr_list = []
+    tpr_list = []
+
+    P = len(a)
+    N = len(b)
+
+    for thresh in thresholds:
+        tp = np.sum(a >= thresh)
+        fp = np.sum(b >= thresh)
+        fn = np.sum(a < thresh)
+        tn = np.sum(b < thresh)
+
+        tpr = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        fpr = fp / (fp + tn) if (fp + tn) > 0 else 0.0
+
+        fpr_list.append(fpr)
+        tpr_list.append(tpr)
+
+    sorted_pairs = sorted(zip(fpr_list, tpr_list))
+    fpr_list, tpr_list = zip(*sorted_pairs)
+    fpr_array = np.array(fpr_list)
+    tpr_array = np.array(tpr_list)
+
+    # Clip to avoid log(0)
+    fpr_clipped = np.clip(fpr_array, log_min, log_max)
+    tpr_clipped = np.clip(tpr_array, log_min, log_max)
+
+    # Normalize log10(TPR) to [0, 1]
+    log_tpr = tpr_clipped#np.log10(tpr_clipped)/5+1
+    log_fpr = np.log10(fpr_clipped)/5+1
+    # log_tpr_min = np.log10(1e-5)
+    # log_tpr_max = np.log10(1.0)
+    # log_tpr_normalized = (log_tpr - log_tpr_min) / (log_tpr_max - log_tpr_min)
+
+    # Compute normalized log-log AUC manually
+    log_log_auc_normalized = auc(log_fpr, log_tpr)
+
+    # Plot the normalized log-log ROC curve
+    if fig_path is not None:
+        plt.figure()
+        plt.plot(log_fpr, log_tpr, label="Normalized log-log ROC")
+        plt.xlabel("log10(FPR)")
+        plt.ylabel("Normalized log10(TPR)")
+        plt.title(f"Normalized Log-Log AUC = {log_log_auc_normalized:.4f}")
+        plt.grid(True)
+        plt.legend()
+        plt.savefig(fig_path)
+
+    return log_log_auc_normalized
+
+
 if __name__=='__main__':
-    a=[]
-    for idx in range (10):
-        a.append({
-            '1':idx,
-            '2':str(idx)
-        })
-        if idx==4:
-            a[-1]['3']=True
-    save_json(a, 'saved_data/tmp.jspn')
-    a=load_json('saved_data/tmp.jspn')
-    print()
+    np.random.seed(0)
+    a = np.random.uniform(0.65, 1.0, 1000)  # positive samples
+    b = np.random.uniform(0.0, 0.55, 1000)  # negative samples
+
+    auc_v = compute_auc(a,b,num_thresholds=100,fig_path='2.png')
+    print(auc_v)
+    auc_v = compute_log_auc(a,b,num_thresholds=100,fig_path='1.png')
+    print(auc_v)

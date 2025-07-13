@@ -7,6 +7,8 @@ from tqdm import tqdm
 import argparse
 # from semantic_attack import SemanticAttack
 import numpy as np
+# from deep_translator import GoogleTranslator
+from transformers import pipeline
 # import datetime
 # import textattack.attack_sems
 
@@ -20,7 +22,21 @@ def get_wm_data(
     rand_seed=123,
     device=0,
     context_len=1,
+    language='en',
 ):
+    print(language)
+    if language!='en':
+        # translator = pipeline("translation_en_to_fr", model="Helsinki-NLP/opus-mt-en-fr")
+        # translator = GoogleTranslator(source='auto', target=language)
+        translator = pipeline(
+            "translation",
+            model="facebook/mbart-large-50-many-to-many-mmt",
+            tokenizer="facebook/mbart-large-50-many-to-many-mmt",
+            src_lang="en_XX",
+            tgt_lang="fr_XX",
+            device=0  
+        )
+
     c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num, rand_seed=rand_seed)
     c4_dataset.load_data(text_len)
     device = "cuda:"+str(device)
@@ -36,24 +52,13 @@ def get_wm_data(
     len_list=[]
     for idx in tqdm(range(0, c4_dataset.data_num, batch_size), ncols=100):#c4_dataset.data_num
         prompt=c4_dataset.data[idx][0]#[0:500]
+        if language!='en':
+            translated = translator(prompt)[0]['translation_text']
+            prompt=translated
         token_id_list=wm_scheme.transformers_config.tokenizer.encode(prompt, add_special_tokens=False)
         prompt=wm_scheme.transformers_config.tokenizer.decode(token_id_list[0:50], skip_special_tokens=True)
-    #     token_list=[
-    #         wm_scheme.transformers_config.tokenizer.decode(token_id, skip_special_tokens=True)
-    #         for token_id in token_id_list
-    #     ]
-    #     for token in token_list:
-    #         if len(token)==0:
-    #             continue
-    #         if token[0]==' ':
-    #             token=token[1:]
-    #         if len(token)<=2:
-    #             continue
-    #         len_list.append(len(token))
-    # print(np.mean(len_list))
         wm_text, un_wm_text = wm_scheme.generate(
             prompt, 
-            # [tmp[0][0:500] for tmp in c4_dataset.data[idx:idx+batch_size]],
             wm_seed=123, 
             un_wm_seed=123, 
             un_wm_flag=True
@@ -85,12 +90,14 @@ def get_wm_data(
             'wm_detect':wm_rlt,
             'un_detect':un_rlt,
         })
-    
+    if language != 'en':
+        wm_name=wm_name+language
     filename='_'.join([
         wm_name, 
         dataset_name.replace('/','_'), 
         model_name.replace('/','_'), 
-        str(c4_dataset.data_num), str(3)
+        str(c4_dataset.data_num), 
+        # str(3)
     ])+'.json'
     file_path=os.path.join('saved_data', filename)
     save_json(data=result_list, file_path=file_path)
@@ -100,7 +107,7 @@ if __name__=="__main__":
     file_num=10
     file_data_num=500
     dataset_name='../../dataset/c4/realnewslike'
-    model_name = "./model/Llama3.1-8B"#"facebook/opt-1.3b"
+    model_name = "mistralai/Mistral-7B-Instruct-v0.3"#"../model/Llama3.1-8B_hg"#"facebook/opt-1.3b"meta-llama/Llama-3.1-8B-Instruct
 
     text_len = 50
     # wm_name = 'SIR'#'SemStamp'
@@ -114,8 +121,9 @@ if __name__=="__main__":
     parser.add_argument('--file_data_num', type=int, default=100)
     parser.add_argument('--text_len', type=int, default=50)
     parser.add_argument('--rand_seed', type=int, default=123)
-    parser.add_argument('--device', type=int, default=1)
+    parser.add_argument('--device', type=int, default=0)
     parser.add_argument('--context_len', type=int, default=1)
+    parser.add_argument('--language', type=str, default="fr")
 
     args = parser.parse_args()
     # for wm_name in ['Unbiased', 'KGW', 'Unigram']:#'SIR', 'SemStamp', 
@@ -129,5 +137,6 @@ if __name__=="__main__":
         rand_seed=args.rand_seed,
         device=args.device,
         context_len=args.context_len,
+        language=args.language
     )
     

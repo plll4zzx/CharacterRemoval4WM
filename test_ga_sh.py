@@ -31,7 +31,7 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='../model/Llama3.1-8B_hg')
-parser.add_argument('--wm_name', type=str, default='Unigram')
+parser.add_argument('--wm_name', type=str, default='KGWfr')
 parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
@@ -183,5 +183,3 @@ for max_token_num in max_token_num_list:
                 adv_ocr_rate=np.mean([(data_record['ocr_adv_detect']['is_watermarked']==False and data_record['ocr_adv_detect']['is_watermarked']==False) for data_record in data_records])
                 print(to_string([adv_ocr_rate], step_char=' '))
 
-# saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2.0_token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json
-# saved_attk_data/GA_0.11_15_100_0.5_0.9_-0.1_1.297289_1.212317757_2  _token_False_ocr_RefDetector_DIP_.._.._dataset_c4_realnewslike_.._model_Llama3.1-8B_hg_bert-base-uncased_2025-02-13.json

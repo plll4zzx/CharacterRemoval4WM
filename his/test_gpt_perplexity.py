@@ -68,7 +68,8 @@ def calculate_perplexity(text):
 # 示例文本
 text = "in the region and prosecution of tհose responsible for these shocking acts, vowing that we will pursue justice aɡaіnst tհese terror groups. BⲅEA𝒌INɡ: Over 3,500 child soldiers recruited within tհe northeast of Nigeria since 13th Dec – 3/5. The children are #injured, forcibly dіspⅼacеd & o𝚏ten end up with grave injuries. We urge the Government to urgently ensure that aⅼl child soldiers in northeast regions are protected and their rights are respected. #ChildrenDontFight pіc.twittеr.com/qϳU2E2OJ5G — UոIϲEFNG (@UNICEFNG) September 6, 2019 Children join the conflict in different ways, but have mostly been the vіc𝚝ims of sеxսal a𝚝tɑcks, kidnapping, recruitment, sexual exploitation"
 ppl = calculate_perplexity(text)
-print(f"Perplexity: {ppl}")import os
+print(f"Perplexity: {ppl}")
+import os
 
 # os.environ["HF_HOME"] = "/mnt/codedisk/huggingface/huggingface"
 # os.environ["TRANSFORMERS_CACHE"] = "/mnt/codedisk/huggingface/huggingface/hub"

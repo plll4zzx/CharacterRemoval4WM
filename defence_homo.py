@@ -17,6 +17,10 @@ defence_method={
         text_homo_back,
         style='del'
     ),
+    'nol':partial(
+        text_homo_back,
+        style='nol'
+    ),
     'map':partial(
         text_homo_back,
         style='map'

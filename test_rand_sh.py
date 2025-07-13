@@ -1,7 +1,7 @@
 
 from textattack.utils import load_json, to_string
 import os
-from test_random_attack import test_rand_attack
+from test_random_attack_auc import test_rand_attack
 import argparse
 import numpy as np
 import sys
@@ -9,7 +9,7 @@ import sys
 def is_debug_mode():
     return sys.gettrace() is not None
 
-sh_templte='python test_random_attack.py --atk_style "{atk_style}" --max_edit_rate {max_edit_rate} --atk_times {atk_times} \
+sh_templte='python test_random_attack_auc.py --atk_style "{atk_style}" --max_edit_rate {max_edit_rate} --atk_times {atk_times} \
 --max_token_num {max_token_num} --ref_tokenizer "{ref_tokenizer}" --ref_model "{ref_model}" --wm_name "{wm_name}" \
 --llm_name "{llm_name}" --ori_flag "{ori_flag}" --def_stl "{def_stl}" --device {device} --char_op {char_op}'
 
@@ -26,15 +26,15 @@ args = parser.parse_args()
 
 do_flag=True
 # do_flag=False
-llm_name='facebook/opt-1.3b'#'../model/Llama3.1-8B_hg'#
+llm_name='../model/Llama3.1-8B_hg'#'facebook/opt-1.3b'#
 # data_aug=9
 ori_flag="False"#"True"#
 ori_flag=bool(ori_flag=='True')
 
 def_stl=""#"ocr"#spell_check_ltp
-atk_style_list=['char','token']#['low','ende', 'mix_char']'TextBuggerLi2018','char','token', 'BERTAttackLi2020','sand_token','sand_char'
+atk_style_list=['char',]#['char','low','ende', 'mix_char']'TextBuggerLi2018','char','token', 'BERTAttackLi2020','sand_token','sand_char'
 atk_times_list=[10]#1,,50,100
-max_token_num_list=[100]#100, 50, 100, 150, 200 
+max_token_num_list=[150]#100, 50, 100, 150, 200 
 device=0
 
 if 'opt' in llm_name:
@@ -45,13 +45,13 @@ char_op=2
 
 for max_token_num in max_token_num_list:
     for atk_style in atk_style_list:
-        for wm_name in ['Unigram']:#,'SynthID',rand_config:#,'KGW','DIP', 'SynthID','Unigram','Unbiased'
+        for wm_name in ['SynthID','Unigram']:#,'SynthID',rand_config:#,'KGW','DIP', 'SynthID','Unigram','Unbiased'
             wm_config=rand_config[wm_name]
             ref_tokenizer=wm_config['ref_tokenizer']
             
-            max_edit_rate_list=[0.1]#,0.2wm_config['max_edit_rate'][0.05,0.1,0.15,0.2,0.3,0.4,0.5
+            max_edit_rate_list=[0.3,0.5]#,0.2wm_config['max_edit_rate'][0.05,0.1,0.15,0.2,0.3,0.4,0.5
             print(to_string([wm_name, atk_style, char_op], step_char='\t'))
-            for data_aug in [0,5,9]:
+            for data_aug in [9]:#0,5,
                 if data_aug==-1:
                     tmp_ori_flag="True"
                     tmp_data_aug=9
@@ -109,7 +109,7 @@ for max_token_num in max_token_num_list:
                                 # llm_name.replace('/','_'), wm_name.replace('/','_'), 
                                 str(max_edit_rate), str(max_token_num), tmp_atk_style, 
                                 str(atk_times), str(tmp_ori_flag), def_stl, 
-                                ref_model.replace('saved_model/',''), 
+                                ref_model.replace('saved_model/',''), 'auc',
                             ])+".json"
                         )
                         

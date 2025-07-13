@@ -93,39 +93,3 @@ if __name__ == "__main__":
     print(text)
     t=text_OCR_text(text)
     print(t)
-    # from textattack.utils import homos
-    # print(hg.Categories.get_all())
-    # c_dict={}
-    # for key in homos:
-    #     c_dict[key]={}
-    #     homo_from_hg=hgc.get_combinations(key)
-    #     for h in homos[key]:
-    #         # if h !=key:
-    #         t=homoglyphs.to_ascii(h)[0]
-    #         if t!=key:
-    #             c=hg.Categories.detect(t)
-    #             try:
-    #                 c_dict[key][c].append(t)
-    #             except:
-    #                 c_dict[key][c]=[t]
-
-    # print()
-        # print(homo, len(homo))
-        # for h in homo:
-        #     ocr_char=text_OCR_text(h, img_path='text.png')
-        #     if ocr_char==key or ocr_char==h:
-        #         print(key, h, ocr_char)
-        # text=homoglyphs.to_ascii(homo)
-        # print(key, homo, text)
-        # ocr_str=text_OCR_text(homo, img_path='plot/text'+key+'.png')
-        # print("'{key}':".format(key=key), end='')
-        # print(ocr_str.replace('\n',' '), len(ocr_str))
-        # for id,ocr_char in enumerate(ocr_str):
-        #     lo=homo.find(ocr_char)
-        #     if ocr_char==key or lo>-1:
-        #         continue
-        #         # print(key, homo[lo], ocr_char)
-        #     else:
-        #         print(id,',')
-        #         break
-    # print()

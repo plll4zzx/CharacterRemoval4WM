@@ -2,14 +2,14 @@
 import gensim.downloader
 from tqdm import tqdm
 import numpy as np
-from textattack.utils import Logger, to_string, truncation,find_homo, random_keyboard_neighbor
+from textattack.utils import Logger, to_string, truncation,find_homo, random_keyboard_neighbor, load_json
 import datetime
 from copy import deepcopy
 import string
 import torch
 from transformers import AutoTokenizer, AutoModelForSequenceClassification
 from copy import copy
-from dipper import DipperParaphraser
+from paraphraser import DipperParaphraser, Authormist
 from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_score import rouge_scorer
 import Levenshtein
@@ -201,6 +201,20 @@ class RandomAttack:
         # simi_token_ids=[]
         simi_tokens=self.gensimi.find_simi_words(token, simi_num=self.simi_num_for_token)
 
+        if hasattr(self, 'token_fq_path'):
+            # filename='_'.join([
+            #     'TokenFq',wm_name, 
+            #     dataset_name.replace('/','_'), 
+            #     llm_name.replace('/','_'), 
+            # ])+'.json'
+            if hasattr(self, 'token_fq')==False:
+                self.token_fq=load_json(self.token_fq_path)
+            simi_tokens_fq={}
+            for tmp in simi_tokens:
+                tmp=tmp.lstrip("Ġ▁")
+                simi_tokens_fq[tmp]=self.token_fq.get(tmp, 0)
+            simi_tokens = sorted(simi_tokens_fq, key=simi_tokens_fq.get)#, reverse=True
+
         if space_flag:
             for idx in range(len(simi_tokens)):
                 if simi_tokens[idx][0]!=' ':
@@ -245,6 +259,10 @@ class RandomAttack:
             atk_method=self.char_attack1
         elif atk_style=='token':
             atk_method=self.token_attack
+        elif atk_style=='token_fq':
+            atk_method=self.token_attack
+        elif atk_style=='agg_sentence':
+            atk_method=self.agg_sentence
         elif atk_style=='sentence':
             atk_method=self.sentence_attack
         elif atk_style=='ende':
@@ -511,22 +529,22 @@ class RandomAttack:
             #     break
         return new_sentence, edit_dist
     
+    def agg_sentence(self, sentence):
+        if self.paraphraser is None:
+            self.paraphraser=Authormist()
+
+        new_sentence = self.paraphraser.paraphrase(sentence)
+        ori_ids=self.tokenizer.encode(sentence, add_special_tokens=False)
+        new_ids=self.tokenizer.encode(new_sentence, add_special_tokens=False)
+        edit_dist=  Levenshtein.distance(ori_ids, new_ids)
+        return new_sentence, edit_dist
+
     def sentence_attack(
         self, sentence, max_edit_rate=None
     ):  
         if self.paraphraser is None:
-            # import Levenshtein
             self.paraphraser=DipperParaphraser()
-        # sub_sentence_list=split_sentence(sentence)
-        # re_sub_sentence_list=[]
-
-        # for sub_sentence in sub_sentence_list:
-        #     re_sub_sentence = self.paraphraser.paraphrase(sub_sentence, lex_diversity=20, order_diversity=0)
-        #     if len(re_sub_sentence)<=20:
-        #         re_sub_sentence_list.append(sub_sentence)
-        #     else:
-        #         re_sub_sentence_list.append(re_sub_sentence)
-        # new_sentence=' '.join(re_sub_sentence_list)
+        
         sentence=sentence.replace(';', '.')
         new_sentence=self.paraphraser.paraphrase(
             sentence, lex_diversity=20, order_diversity=0, sent_interval=1, 

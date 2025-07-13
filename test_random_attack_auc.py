@@ -11,7 +11,7 @@
 # import textattack.attack_sems
 # import datetime
 import numpy as np
-from textattack.utils import to_string, load_json, save_json
+from textattack.utils import to_string, load_json, save_json, compute_auc, compute_log_auc
 from llm_wm import LLM_WM
 from random_attack import RandomAttack, rouge_f1, belu_func
 import argparse
@@ -58,6 +58,7 @@ def test_rand_attack(
         rand_attack.log_info(['ref_tokenizer:', ref_tokenizer])
         rand_attack.log_info(['ref_model:', ref_model])
     
+
     rand_attack.log_info(['device:', device])
     rand_attack.log_info(['wm_name:', wm_name])
     rand_attack.log_info(['llm_name:', llm_name])
@@ -108,7 +109,8 @@ def test_rand_attack(
 
     data_records=[]
 
-    # if len(atk_style)>5 or len(def_stl)>0 or atk_times>100:
+    pre_wm_list,pre_un_list,adv_wm_list,adv_un_list=[],[],[],[]
+
     text_num=300
     for idx in range(min(int(text_num*3)+1, len(wm_data))):
         if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
@@ -120,15 +122,19 @@ def test_rand_attack(
                 'count': (count_num, base_num),
                 'ref_score': round(np.mean(ref_l),4),
             })
+            # rand_attack.log_info({
+            #     'wm_drop_rate': round(np.mean(wm_score_drop_rate_l),4),
+            #     'ASR': round(count_num/base_num, 4),
+            #     'token_budget_rate': round(np.mean(t_edit_dist_l)/np.mean(token_num_l),4),
+            #     'char_budget_rate': round(np.mean(c_edit_dist_l)/np.mean(char_num_l),4),
+            #     'belu': round(np.mean(belu_score_l),4),
+            #     'rouge-f1': round(np.mean(rouge_score_l),4),
+            #     'ppl_rate': round(np.mean(ppl_l),4),
+            #     'adv_ppl': round(np.mean(adv_ppl_l),4),
+            # })
             rand_attack.log_info({
-                'wm_drop_rate': round(np.mean(wm_score_drop_rate_l),4),
-                'ASR': round(count_num/base_num, 4),
-                'token_budget_rate': round(np.mean(t_edit_dist_l)/np.mean(token_num_l),4),
-                'char_budget_rate': round(np.mean(c_edit_dist_l)/np.mean(char_num_l),4),
-                'belu': round(np.mean(belu_score_l),4),
-                'rouge-f1': round(np.mean(rouge_score_l),4),
-                'ppl_rate': round(np.mean(ppl_l),4),
-                'adv_ppl': round(np.mean(adv_ppl_l),4),
+                'pre auc': round(compute_auc(pre_wm_list, pre_un_list),4),
+                'adv auc': round(compute_auc(adv_wm_list, adv_un_list),4),
             })
             if def_stl!='':
                 rand_attack.log_info({
@@ -144,23 +150,26 @@ def test_rand_attack(
                     'ocr_wm_ppl': round(np.mean(ocr_wm_ppl_l),4),
                 })
             rand_attack.log_info('******')
-        if idx>=text_num and base_num>=text_num*0.8:
+        if idx>=text_num:
             break
         
         rand_attack.log_info(str(idx))
         
         wm_text=wm_data[idx]['wm_text']
         wm_text, token_num=rand_attack.truncation(wm_text, max_token_num=max_token_num)
+        un_text=wm_data[idx]['un_text']
+        un_text, un_token_num=rand_attack.truncation(un_text, max_token_num=max_token_num)
         if len(wm_text)==0:
             continue
 
         wm_det=wm_scheme.detect_wm(wm_text)
+        un_det=wm_scheme.detect_wm(un_text)
         # if wm_name == 'KGW' and wm_det['score']<6:
         #     continue
-        if wm_det['is_watermarked']==True:
-            base_num+=1
-        else:
-            continue
+        # if wm_det['is_watermarked']==True:
+        #     base_num+=1
+        # else:
+        #     continue
 
         adv_rlt=rand_attack.get_adv(
             wm_text, max_edit_rate=max_edit_rate,
@@ -168,8 +177,21 @@ def test_rand_attack(
             target_class=target_class,
             atk_times=atk_times,
         )
+        un_adv_rlt=rand_attack.get_adv(
+            un_text, max_edit_rate=max_edit_rate,
+            atk_style=atk_style,
+            target_class=target_class,
+            atk_times=atk_times,
+        )
 
         adv_det=wm_scheme.detect_wm(adv_rlt['sentence'])
+        un_adv_det=wm_scheme.detect_wm(un_adv_rlt['sentence'])
+        pre_wm_list.append(wm_det['score'])
+        pre_un_list.append(un_det['score'])
+        adv_wm_list.append(adv_det['score'])
+        adv_un_list.append(un_adv_det['score'])
+
+
         if atk_times>0:
             ori_score=rand_attack.ref_score(wm_text, target_class)
             rand_attack.log_info(['ori_score:', ori_score[0]])
@@ -265,8 +287,8 @@ def test_rand_attack(
             attk_name, 
             # llm_name.replace('/','_'), wm_name.replace('/','_'), 
             str(max_edit_rate), str(max_token_num), atk_style, 
-            str(atk_times), str(ori_flag), def_stl, 
-            ref_model.replace('saved_model/',''), 
+            str(atk_times), str(ori_flag), def_stl,
+            ref_model.replace('saved_model/',''), 'auc',
         ])+".json"
     )
 
