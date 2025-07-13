@@ -65,16 +65,6 @@ def test_sam_attack(
         ref_attack.log_info(['wm_detect:', wm_rlt])
         ref_attack.log_info(['token_num:', token_num])
 
-        # token_importance=ref_attack.get_gradient(wm_text, ground_truth_output=0)
-
-        # ref_acc=ref_attack.gradient_match(
-        #     wm_text, token_importance, wm_rlt['green_token_flags'], 
-        #     wm_tokenizer=wm_scheme.wm_model.config.generation_tokenizer, 
-        #     ref_tokenizer=ref_attack.tokenizer
-        # )
-        # ref_acc_l.append(ref_acc[0])
-        # ref_attack.log_info(['ref_acc', ref_acc])
-
         attk_rlt, cls_score, num_queries, budget=ref_attack.get_adv(
             wm_text, wm_rlt, ground_truth_output=0, 
             # sep_size=sep_size, 

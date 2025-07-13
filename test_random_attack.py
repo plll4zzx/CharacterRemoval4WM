@@ -1,15 +1,4 @@
 
-# import torch
-# import json
-# from MarkLLM.watermark.auto_watermark import AutoWatermark
-# from MarkLLM.utils.transformers_config import TransformersConfig
-# from transformers import AutoModelForCausalLM, AutoTokenizer
-# import transformers
-
-# import textattack
-# from read_data import c4
-# import textattack.attack_sems
-# import datetime
 import numpy as np
 from textattack.utils import to_string, load_json, save_json
 from llm_wm import LLM_WM
@@ -30,12 +19,6 @@ def test_rand_attack(
 
     device="cuda:"+str(device)
     wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)
-    
-    # if 'ZWJ' in atk_style:
-    #     char_op=3
-    #     atk_style='char'
-    # else:
-    #     char_op=2
 
     if ref_tokenizer is None:
         rand_attack=RandomAttack(
