@@ -121,3 +121,9 @@ python test_ga_sh.py \
 ```
 
 the results of these three methods are saved by default as log files in the "attack_log/Rand" and "attack_log/GA" directories and as json files in the "saved_attk_data" folder. Setting the "do_flag" parameter to "False" will print the results directly to the terminal.
+
+
+
+### The following projects have been used:
+[MarkLLM](https://github.com/THU-BPM/MarkLLM)
+[TextAttack](https://github.com/QData/TextAttack)
