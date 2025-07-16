@@ -5,6 +5,7 @@ from llm_wm import LLM_WM
 import os
 from tqdm import tqdm
 import argparse
+import torch
 # from semantic_attack import SemanticAttack
 import numpy as np
 # from deep_translator import GoogleTranslator
@@ -25,6 +26,7 @@ def get_wm_data(
     language='en',
 ):
     print(language)
+    device = "cuda:"+str(device) if torch.cuda.is_available() else "cpu"
     if language!='en':
         # translator = pipeline("translation_en_to_fr", model="Helsinki-NLP/opus-mt-en-fr")
         # translator = GoogleTranslator(source='auto', target=language)
@@ -34,12 +36,11 @@ def get_wm_data(
             tokenizer="facebook/mbart-large-50-many-to-many-mmt",
             src_lang="en_XX",
             tgt_lang="fr_XX",
-            device=0  
+            device=device 
         )
 
     c4_dataset=c4(dir_path=dataset_name, file_num=file_num, file_data_num=file_data_num, rand_seed=rand_seed)
     c4_dataset.load_data(text_len)
-    device = "cuda:"+str(device)
     wm_scheme=LLM_WM(model_name = model_name, device = device, wm_name=wm_name, context_len=context_len)
     
     count_num=0

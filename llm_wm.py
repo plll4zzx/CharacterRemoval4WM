@@ -27,18 +27,17 @@ class LLM_WM:
                 self.model_name,
                 device_map=self.device,#"auto",
                 torch_dtype="auto",
-                # quantization_config={
-                #     "load_in_4bit":True, 
-                #     # "load_in_8bit": True,  
-                #     "bnb_4bit_compute_dtype": "float16",  
-                #     "bnb_4bit_use_double_quant": True,   
-                #     "bnb_4bit_quant_type": "nf4"         
-                # }
+                quantization_config={
+                    "load_in_4bit":True, 
+                    # "load_in_8bit": True,  
+                    # "bnb_4bit_compute_dtype": "float16",  
+                    # "bnb_4bit_use_double_quant": True,   
+                    # "bnb_4bit_quant_type": "nf4"         
+                }
             )
             tokenizer.pad_token = "[PAD]"
             model.config.pad_token_id = tokenizer.eos_token_id
             model=model.to(self.device)
-            # model = BetterTransformer.transform(model)#.to(self.device)
         else:
             model=AutoModelForCausalLM.from_pretrained(self.model_name).to(self.device)
         if "opt" in model_name.lower():

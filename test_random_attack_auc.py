@@ -30,12 +30,6 @@ def test_rand_attack(
 
     device="cuda:"+str(device)
     wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)
-    
-    # if 'ZWJ' in atk_style:
-    #     char_op=3
-    #     atk_style='char'
-    # else:
-    #     char_op=2
 
     if ref_tokenizer is None:
         rand_attack=RandomAttack(

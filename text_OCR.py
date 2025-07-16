@@ -2,12 +2,12 @@ from PIL import Image, ImageDraw, ImageFont
 # import mmocr.utils
 import pytesseract
 import numpy as np
-from paddleocr import PaddleOCR
 # from mmocr.apis import MMOCR
 
 
-ocr = PaddleOCR(use_angle_cls=True, lang="en") 
-def text_OCR_text(text, img_path=None, style='ocr_p'):
+# from paddleocr import PaddleOCR
+ocr = None#PaddleOCR(use_angle_cls=True, lang="en") 
+def text_OCR_text(text, img_path=None, style='ocr_t'):
     
     img=text_to_image(text)
     if img_path is not None:
@@ -15,6 +15,9 @@ def text_OCR_text(text, img_path=None, style='ocr_p'):
     
     if style=='ocr_t':
         extracted_text = pytesseract.image_to_string(img)
+        cid=extracted_text.find('\n')
+        if cid>-1:
+            extracted_text=extracted_text[:cid]
         return extracted_text
     else:
         img=np.array(img)

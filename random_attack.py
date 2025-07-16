@@ -17,6 +17,7 @@ import random
 from spellchecker import SpellChecker
 import language_tool_python
 from text_OCR import text_OCR_text
+import os
 
 def check_num(x_str):
     num_str_list=[str(idx) for idx in range(10)]
@@ -132,7 +133,7 @@ class RandomAttack:
         self.token_len_flag=True
         self.simi_num_for_token=5
         self.special_char=[zwsp, zwj]#, zwj, ZWNJ' ',, [WJ]#, VS16, zwj, ZWNJ,
-        self.device=device
+        self.device=device if torch.cuda.is_available() else "cpu"
         self.wm_detector=wm_detector
         self.ppl_checker=ppl_checker
         self.ori_flag=ori_flag
@@ -144,17 +145,19 @@ class RandomAttack:
         else:
             self.tokenizer = tokenizer
         self.vocab_size=self.tokenizer.vocab_size
-        if isinstance(ref_model,str):
-            self.ref_model = AutoModelForSequenceClassification.from_pretrained(ref_model)
-            self.ref_model.to(self.device)
+        try:
+            if isinstance(ref_model, str):
+                self.ref_model = AutoModelForSequenceClassification.from_pretrained(ref_model)
+                self.ref_model.to(self.device)
+        except:
+            self.ref_model=None
         
         if logger is None:
+            log_path='attack_log/Rand/'
+            os.makedirs(log_path, exist_ok=True)
             self.log=Logger(
-                'attack_log/len/RandomAttack'+'-'.join([
+                log_path+'RandomAttack'+'-'.join([
                     wm_name, 
-                    # self.attack_name, 
-                    # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
-                    # str(self.temperature)
                 ])+'-'+str(datetime.datetime.now())[0:-7]+'.log',
                 level='debug', 
                 screen=False
@@ -529,7 +532,7 @@ class RandomAttack:
             #     break
         return new_sentence, edit_dist
     
-    def agg_sentence(self, sentence):
+    def agg_sentence(self, sentence, max_edit_rate=None):
         if self.paraphraser is None:
             self.paraphraser=Authormist()
 

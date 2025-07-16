@@ -4,11 +4,11 @@ from transformers import T5Tokenizer, T5ForConditionalGeneration, AutoModelForCa
 
 import nltk
 from nltk.tokenize import sent_tokenize
-nltk.download('punkt')
-nltk.download('punkt_tab')
 
 class DipperParaphraser(object):
     def __init__(self, model="kalpeshk2011/dipper-paraphraser-xxl", verbose=True):
+        nltk.download('punkt')
+        nltk.download('punkt_tab')
         time1 = time.time()
         self.tokenizer = T5Tokenizer.from_pretrained('google/t5-v1_1-xxl')
         self.model = T5ForConditionalGeneration.from_pretrained(
@@ -64,9 +64,11 @@ class DipperParaphraser(object):
 
 class Authormist:
     def __init__(self):
+        self.device='cuda' if torch.cuda.is_available() else "cpu"
         self.model_name = "authormist/authormist-originality"
         self.tokenizer = AutoTokenizer.from_pretrained(self.model_name)
-        self.model = AutoModelForCausalLM.from_pretrained(self.model_name)
+        self.model = AutoModelForCausalLM.from_pretrained(self.model_name,
+                torch_dtype="auto",).to(self.device)
 
     def paraphrase(self, input_text):
         # Prepare input text
@@ -80,7 +82,7 @@ class Authormist:
         # Generate paraphrased text
         inputs = self.tokenizer(prompt, return_tensors="pt")
         outputs = self.model.generate(
-            inputs.input_ids,
+            inputs.input_ids.to(self.device),
             max_new_tokens=512,
             temperature=0.7,
             top_p=0.9,
@@ -101,4 +103,4 @@ if __name__ == "__main__":
     # print(f"Output (Lexical diversity = 60, Sample p = 0.75) = {output_l60_sample}\n")
 
     am=Authormist()
-    am.paraphrase(input_text)
+    output_text=am.paraphrase(input_text)

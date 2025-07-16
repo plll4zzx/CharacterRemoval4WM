@@ -14,6 +14,8 @@ import random
 from spellchecker import SpellChecker
 import Levenshtein
 import language_tool_python
+from defence_homo import defence_method
+import os
 
 zwsp = chr(0x200B)
 zwj = chr(0x200D)
@@ -66,14 +68,15 @@ class GA_Attack:
         self.def_stl=def_stl
 
         if ocr_flag:
-            # self.spellchecker = SpellChecker()
             self.spellchecker = language_tool_python.LanguageTool('en-US')
 
         self.model.to(self.device)
 
         if logger is None:
+            log_path='attack_log/GA/'
+            os.makedirs(log_path, exist_ok=True)
             self.log=Logger(
-                'attack_log/GAAttack'+'-'.join([
+                log_path+'GAAttack'+'-'.join([
                     self.wm_name, 
                     # self.victim_name.replace('/','_'), self.llm_name.replace('/','_'),
                     # str(self.temperature)
@@ -231,25 +234,29 @@ class GA_Attack:
                             tmp_token=self.best_adv_token[tmp_token]
                             continue
                         tmp_token_list=[
-                            tmp_token[:m_loc] + find_homo(tmp_char)+ ' ' + random_keyboard_neighbor(tmp_token[m_loc+1])+ tmp_token[m_loc+2:], #2 4
+                            tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + random_keyboard_neighbor(tmp_token[m_loc+1])+ tmp_token[m_loc+2:], #2 4
+                            tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + tmp_token[m_loc+1]+ tmp_token[m_loc+2:], #2 4
+                            # tmp_token[:m_loc] + find_homo(tmp_token[m_loc+1]) + random_keyboard_neighbor(tmp_token[m_loc]) + tmp_token[m_loc+2:],
+                            # tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:],
                             # tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
                             # tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
-                            # tmp_token[:m_loc]+ ' ' + find_homo(tmp_char)+ tmp_token[m_loc+1:],
+                            # tmp_token[:m_loc] + random.choice(self.special_char) + find_homo(tmp_char)+ tmp_token[m_loc+1:],
                         ]
                         # w=[1,3,1]
                         dist_dict={}
                         for idx, word in enumerate(tmp_token_list):
-                            # c_word=''#self.spellchecker.correction(word)
-                            if 'spell' in self.def_stl:
-                                matches = self.spellchecker.check(word)
-                                c_word=language_tool_python.utils.correct(word, matches)
-                                if c_word is None:
-                                    c_word=word
-                            else:
-                                c_word=text_OCR_text(word, style='ocr_t')
-                                cid=c_word.find('\n')
-                                if cid>-1:
-                                    c_word=c_word[:cid]
+                            c_word=defence_method[self.def_stl](word)
+                            if c_word is None:
+                                c_word=word
+                            # if 'spell' in self.def_stl:
+                            #     matches = self.spellchecker.check(word)
+                            #     c_word=language_tool_python.utils.correct(word, matches)
+                            # elif 'ocr' in self.def_stl:
+                            #     c_word=text_OCR_text(word, style='ocr_t')
+                            #     cid=c_word.find('\n')
+                            #     if cid>-1:
+                            #         c_word=c_word[:cid]
+
                             c_word=c_word.lower()
                             word=word.lower()
                             d0=Levenshtein.distance(word, c_word)

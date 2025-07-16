@@ -31,21 +31,23 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 # python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='../model/Llama3.1-8B_hg')
-parser.add_argument('--wm_name', type=str, default='KGWfr')
+parser.add_argument('--wm_name', type=str, default='KGW')
 parser.add_argument('--atk_style', type=str, default='char')
 parser.add_argument('--ori_flag', type=str, default='False')
 parser.add_argument('--data_aug', type=int, default=9)
-parser.add_argument('--ab_std', type=int, default=3)
+parser.add_argument('--ab_std', type=int, default=-2)
 parser.add_argument('--device', type=int, default=0)
 parser.add_argument('--max_edit_rate', type=float, default=-1)
 parser.add_argument('--remove_spoof', type=str, default='True')
 parser.add_argument('--ocr_flag', type=str, default='False')
 parser.add_argument('--num_generations', type=int, default=-1)
 parser.add_argument('--do_flag', type=str, default='True')
+parser.add_argument('--def_stl', type=str, default='')
+parser.add_argument('--max_token_num_list', type=str, default='[100]')
 args = parser.parse_args()
 
 do_flag=bool(args.do_flag=='True')
-def_stl=""#"spell_check_ltp"#ocr
+def_stl=args.def_stl#"ocr"#"spell_check_ltp"#ocr
 atk_style=args.atk_style
 data_aug=args.data_aug
 device=args.device
@@ -60,7 +62,7 @@ if 'opt' in llm_name:
     ga_config=load_json(file_path='attk_config/opt_ga_config.json')
 else:
     ga_config=load_json(file_path='attk_config/llama_ga_config.json')
-max_token_num_list=[100]#,200
+max_token_num_list=eval(args.max_token_num_list)
 
 if args.wm_name=='':
     wm_name_list=ga_config.keys()
@@ -169,7 +171,21 @@ for max_token_num in max_token_num_list:
                 ])+".json"
             )
             
-            wm_score_drop=np.mean([data_record['wm_score_drop']/data_record['wm_detect']['score'] for data_record in data_records])
+            un_records=load_json(
+                "saved_attk_data/"+"_".join([
+                    'un_text',
+                    llm_name.replace('/','_'), wm_name.replace('/','_'), 
+                    str(max_token_num), 
+                ])+".json"
+            )
+            
+            wm_score_min=np.min([data_record['un_detect']['score'] for data_record in un_records])
+            wm_score_max=np.max([data_record['wm_detect']['score'] for data_record in data_records if data_record['wm_detect']['score']<10])
+            # for data_record in data_records:
+            #     if data_record['wm_detect']['score']>10:
+            #         print(data_record)
+            # print(wm_score_max, wm_score_min)
+            wm_score_drop=np.mean([data_record['wm_score_drop']/(wm_score_max-wm_score_min) for data_record in data_records])
             asr=np.mean([data_record['adv_detect']['is_watermarked']==False for data_record in data_records])
             token_budget_rate=np.mean([data_record['t_edit_dist']/data_record['token_num'] for data_record in data_records])
             char_budget_rate=np.mean([data_record['c_edit_dist']/data_record['char_num'] for data_record in data_records])
@@ -177,6 +193,7 @@ for max_token_num in max_token_num_list:
             rouge=np.mean([data_record['rouge-f1'] for data_record in data_records])
             ppl_rate=np.mean([data_record['ppl_rate'] for data_record in data_records])
             adv_ppl=np.mean([data_record['adv_ppl'] for data_record in data_records])
+            print(to_string(['wm_score_drop', 'asr', 'token_budget_rate', 'char_budget_rate', 'belu', 'rouge', 'ppl_rate', 'adv_ppl'], step_char=' '))
             print(to_string([wm_score_drop, asr, token_budget_rate, char_budget_rate, belu, rouge, ppl_rate, adv_ppl], step_char=' '))
             
             if ocr_flag:

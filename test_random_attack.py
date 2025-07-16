@@ -7,6 +7,7 @@ import argparse
 import Levenshtein
 from defence_homo import defence_method
 import os
+import torch
 
 def test_rand_attack(
     llm_name, wm_name, max_edit_rate, max_token_num=80, atk_style='char',
@@ -17,7 +18,7 @@ def test_rand_attack(
     dataset_name='../../dataset/c4/realnewslike'
     wm_data=load_json("saved_data/"+"_".join([wm_name, dataset_name.replace('/','_'), llm_name.replace('/','_')])+"_5000.json")
 
-    device="cuda:"+str(device)
+    device="cuda:"+str(device) if torch.cuda.is_available() else "cpu"
     wm_scheme=LLM_WM(model_name = llm_name, device = device, wm_name=wm_name)
 
     if ref_tokenizer is None:
@@ -75,7 +76,6 @@ def test_rand_attack(
     rouge_score_l=[]
     ppl_l=[]
     adv_ppl_l=[]
-    text_num=500
 
     adv_ocr_num=0
     wm_ocr_num=0
@@ -91,7 +91,6 @@ def test_rand_attack(
 
     data_records=[]
 
-    # if len(atk_style)>5 or len(def_stl)>0 or atk_times>100:
     text_num=300
     for idx in range(min(int(text_num*3)+1, len(wm_data))):
         if (idx%25==0 and idx>0) or (idx>=text_num and base_num>=text_num*0.8):
