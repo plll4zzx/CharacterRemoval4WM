@@ -37,6 +37,7 @@ For sentence-level attacks, we leverage the [DIPPER](https://huggingface.co/kalp
 ### Baseline Removal Evaluation
 
 **Preparation**
+
 To run this experiment, the C4 dataset is needed. We recommend storing it in the path "../../dataset/c4/realnewslike", where ".." refers to the parent directory relative to the current working directory. Watermarked text is generated using the OPT-1.3B model. The model weights do not require a separate download, as they are automatically retrieved during script execution.
 This process can be performed with the script collect_wm_text.py, which requires specifying the watermark name, dataset path, model name, the number of text, and the GPU device. For example:
 
@@ -68,6 +69,7 @@ The results of this script are saved as log files in "attack_log/Rand" and as JS
 ### Guided Removal Evaluation
 
 **Preparation**
+
 Train the reference detector:
 
 ```
@@ -80,6 +82,8 @@ python train_ref_detector.py  --device 0\
 In this example, the watermarking scheme is set to KGW. Each sample is augmented 9 times, with an editing rate of 0.15 ("rand_char_rate"). The "ths" is detection threshold used to evaluate the performance of the reference detector. The number of training epochs is set to 15. Due to both data augmentation and model training are computationally intensive and time-consuming, preprocessed datasets and pre-trained reference detector are provided in the "saved_data" and "saved_model" to facilitate artifact evaluation.
 
 **Execution**
+
+
 Best-of-N:
 
 ```
@@ -107,8 +111,6 @@ python test_rand_sh.py \
     --max_token_num_list "[100]"
 ```
 
-
-
 GA:
 
 ```
@@ -122,8 +124,7 @@ python test_ga_sh.py \
 
 the results of these three methods are saved by default as log files in the "attack_log/Rand" and "attack_log/GA" directories and as json files in the "saved_attk_data" folder. Setting the "do_flag" parameter to "False" will print the results directly to the terminal.
 
-
-
 ### The following projects have been used:
+
 [MarkLLM](https://github.com/THU-BPM/MarkLLM)
 [TextAttack](https://github.com/QData/TextAttack)
