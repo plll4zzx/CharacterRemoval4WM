@@ -27,8 +27,7 @@ sh_templte='python test_ga_attack.py --num_generations {num_generations} \
 --std {std} --ab_std {ab_std} --atk_style "{atk_style}" --ori_flag "{ori_flag}" --device {device}  \
 --def_stl "{def_stl}" --remove_spoof "{remove_spoof}" --ocr_flag "{ocr_flag}"'
 
-# python test_ga_sh.py --llm_name "facebook/opt-1.3b" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
-# python test_ga_sh.py --llm_name "../model/Llama3.1-8B_hg" --wm_name "UPV" --atk_style "char" --ori_flag "False" --data_aug 9 --ab_std -1 --device 0
+
 parser = argparse.ArgumentParser(description='test_ga_attack')
 parser.add_argument('--llm_name', type=str, default='../model/Llama3.1-8B_hg')
 parser.add_argument('--wm_name', type=str, default='KGW')
@@ -42,7 +41,7 @@ parser.add_argument('--remove_spoof', type=str, default='True')
 parser.add_argument('--ocr_flag', type=str, default='False')
 parser.add_argument('--num_generations', type=int, default=-1)
 parser.add_argument('--do_flag', type=str, default='True')
-parser.add_argument('--def_stl', type=str, default='')
+parser.add_argument('--def_stl', type=str, default='ocr')
 parser.add_argument('--max_token_num_list', type=str, default='[100]')
 args = parser.parse_args()
 

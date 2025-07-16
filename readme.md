@@ -44,7 +44,7 @@ This process can be performed with the script collect_wm_text.py, which requires
 ```
 python collect_wm_text.py --wm_name "KGW" \
 --dataset_name "../../dataset/c4/realnewslike" \
---model_name "facebook/opt-1.3b" --device 0\
+--model_name "facebook/opt-1.3b" --device 0 \
 --file_num 50 --file_data_num 1000 
 ```
 
@@ -73,9 +73,9 @@ The results of this script are saved as log files in "attack_log/Rand" and as JS
 Train the reference detector:
 
 ```
-python train_ref_detector.py  --device 0\
---wm_name "KGW" --num_epochs 15\
---rand_char_rate 0.15 --rand_times 9\
+python train_ref_detector.py  --device 0 \
+--wm_name "KGW" --num_epochs 15 \
+--rand_char_rate 0.15 --rand_times 9 \
 --llm_name "facebook/opt-1.3b" --ths 4
 ```
 
@@ -88,12 +88,12 @@ Best-of-N:
 
 ```
 python test_rand_sh.py \
---llm_name "facebook/opt-1.3b" \ 
+--llm_name "facebook/opt-1.3b" \
 --wm_name_list "['KGW']" \
 --atk_style_list "['token','char']" \
---data_aug_list "[9]" --max_token_num_list "[100]"\
+--data_aug_list "[9]" --max_token_num_list "[100]" \
 --max_edit_rate_list "[0.1]" \
---do_flag "True" --atk_times_list "[10]" \
+--do_flag "True" --atk_times_list "[10]"
 ```
 
 the atk_times_list parameter specifies the value of $N$ in the Best-of-$N$ strategy, determining how many perturbation candidates are sampled for each input. The data_aug_list is used to choose reference detector. Due to we set rand_times to 9 when training the reference detector, data_aug_list is also set to 9 here to maintain consistency.
@@ -102,7 +102,7 @@ Sand:
 
 ```
 python test_rand_sh.py \
-    --llm_name "facebook/opt-1.3b" \ 
+    --llm_name "facebook/opt-1.3b" \
     --wm_name_list "['KGW']" \
     --atk_style_list "['sand_token','sand_char']" \
     --data_aug_list "[9]" --do_flag "True" \

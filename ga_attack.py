@@ -11,7 +11,7 @@ from difflib import SequenceMatcher
 from random_attack import GensimModel
 from text_OCR import text_OCR_text
 import random
-from spellchecker import SpellChecker
+# from spellchecker import SpellChecker
 import Levenshtein
 import language_tool_python
 from defence_homo import defence_method
@@ -236,11 +236,11 @@ class GA_Attack:
                         tmp_token_list=[
                             tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + random_keyboard_neighbor(tmp_token[m_loc+1])+ tmp_token[m_loc+2:], #2 4
                             tmp_token[:m_loc] + find_homo(tmp_char) + random.choice(self.special_char) + tmp_token[m_loc+1]+ tmp_token[m_loc+2:], #2 4
-                            # tmp_token[:m_loc] + find_homo(tmp_token[m_loc+1]) + random_keyboard_neighbor(tmp_token[m_loc]) + tmp_token[m_loc+2:],
-                            # tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:],
-                            # tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
-                            # tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
-                            # tmp_token[:m_loc] + random.choice(self.special_char) + find_homo(tmp_char)+ tmp_token[m_loc+1:],
+                            tmp_token[:m_loc] + find_homo(tmp_token[m_loc+1]) + random_keyboard_neighbor(tmp_token[m_loc]) + tmp_token[m_loc+2:],
+                            tmp_token[:m_loc] + random_keyboard_neighbor(tmp_char)+ tmp_token[m_loc+1:],
+                            tmp_token[:m_loc] + tmp_token[m_loc+1]+find_homo(tmp_char)+ tmp_token[m_loc+2:], #2 4
+                            tmp_token[:m_loc] + find_homo(random_keyboard_neighbor(tmp_char))+ tmp_token[m_loc+1:], #2 5
+                            tmp_token[:m_loc] + random.choice(self.special_char) + find_homo(tmp_char)+ tmp_token[m_loc+1:],
                         ]
                         # w=[1,3,1]
                         dist_dict={}

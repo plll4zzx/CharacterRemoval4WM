@@ -14,7 +14,6 @@ from nltk.translate.bleu_score import sentence_bleu, SmoothingFunction
 from rouge_score import rouge_scorer
 import Levenshtein
 import random
-from spellchecker import SpellChecker
 import language_tool_python
 from text_OCR import text_OCR_text
 import os
