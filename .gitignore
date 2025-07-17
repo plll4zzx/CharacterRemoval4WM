@@ -74,3 +74,5 @@ output_text.png
 text.png
 *.png
 textA.png
+*.Identifier
+saved_attk_data/*.endpointdlp

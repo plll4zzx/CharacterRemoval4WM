@@ -298,7 +298,7 @@ class RefDetector:
         t_score_l=[]
         
         loss_l=[]
-        metric = evaluate.load(os.path.expanduser('~/python/metrics/accuracy/accuracy.py'))
+        metric = evaluate.load(os.path.expanduser('metrics/accuracy/accuracy.py'))
         for idx, batch in enumerate(self.train_dataloader):
             if idx == 20:
                 break
@@ -320,7 +320,7 @@ class RefDetector:
         print('train loss', np.round(np.mean(loss_l),4))
         print('train', result)
         
-        metric = evaluate.load(os.path.expanduser('~/python/metrics/accuracy/accuracy.py'))
+        metric = evaluate.load(os.path.expanduser('metrics/accuracy/accuracy.py'))
         loss_l=[]
         for batch in self.eval_dataloader:
             batch = {k: v.to(self.device) for k, v in batch.items()}
@@ -341,6 +341,7 @@ class RefDetector:
         if wm_threshold is not None:
             t_score=np.hstack(t_score_l)
             p_score=np.hstack(logits_l)
+            os.makedirs('plot', exist_ok=True)
             fig_path=os.path.join(
                 'plot', '_'.join([
                     self.wm_name,
