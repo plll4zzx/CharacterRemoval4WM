@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.metrics import auc
 import unicodedata
 import matplotlib.pyplot as plt
+import os
 
 keyboard_neighbors = {
     'a': 'qs', 'b': 'vn', 'c': 'xv', 'd': 'sf', 'e': 'wr',
@@ -284,6 +285,9 @@ def to_string(inputs, step_char=' '):
     return output_str[0:-1]
 
 def load_json(file_path):
+    # print(file_path)
+    # if os.path.isfile('/home/zzx/python/charwmdata/'+file_path)==False:
+    #     os.system('cp '+ file_path +' /home/zzx/python/charwmdata/'+file_path)
     with open(file_path, 'r') as file:
         dict_list=json.load(file)
     return dict_list
