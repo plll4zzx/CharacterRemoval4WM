@@ -15,9 +15,7 @@ def text_OCR_text(text, img_path=None, style='ocr_t'):
     
     if style=='ocr_t':
         extracted_text = pytesseract.image_to_string(img)
-        cid=extracted_text.find('\n')
-        if cid>-1:
-            extracted_text=extracted_text[:cid]
+        extracted_text = extracted_text.replace('\n', ' ').lstrip()
         return extracted_text
     else:
         img=np.array(img)
@@ -25,6 +23,7 @@ def text_OCR_text(text, img_path=None, style='ocr_t'):
             extracted_text = ocr.ocr(img, cls=True)[0][0][1][0]
         except:
             return text
+        extracted_text = extracted_text.replace('\n', ' ').lstrip()
         return extracted_text
 
 def find_max_font_size(text, max_width, max_height, font_path, line_spacing, padding, bg_color):

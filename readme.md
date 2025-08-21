@@ -23,7 +23,7 @@ We recommend downloading it via git for convenience. The commands are:
 ```
 GIT_LFS_SKIP_SMUDGE=1 git clone https://huggingface.co/datasets/allenai/c4
 cd c4
-git lfs pull --include realnewslike/*
+git lfs pull --include "realnewslike/*"
 ```
 
 Our reference detectors are finetuned from [Bert](https://huggingface.co/google-bert/bert-base-uncased).
@@ -45,7 +45,7 @@ This process can be performed with the script collect_wm_text.py, which requires
 python collect_wm_text.py --wm_name "KGW" \
 --dataset_name "../../dataset/c4/realnewslike" \
 --model_name "facebook/opt-1.3b" --device 0 \
---file_num 50 --file_data_num 1000 
+--file_num 50 --file_data_num 100 
 ```
 
 This command generates 5000 (file_num * file_data_num) watermarked samples using the "facebook/opt-1.3b" model with the KGW watermark on GPU device 0. To produce watermarked text with other watermarking schemes, simply modify the --wm_name parameter. We recommend generating at least 5000 examples to support reference detector training
