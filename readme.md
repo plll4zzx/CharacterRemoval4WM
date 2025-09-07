@@ -1,4 +1,4 @@
-## Character-Level Perturbations in Disrupt LLM Watermark
+## Character-Level Perturbations Disrupt LLM Watermarks
 
 We provide a scaled-down version of the experiments to validate the two primary claims presented in the paper: (1) character-level perturbations achieve superior watermark removal effectiveness compared to token-level perturbations under the same editing rate, and (2) genetic algorithm-based optimization can leverage the guidance of a reference detector to further improve removal attack performance.
 
